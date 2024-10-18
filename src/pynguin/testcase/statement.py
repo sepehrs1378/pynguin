@@ -5,6 +5,7 @@
 #  SPDX-License-Identifier: MIT
 #
 """Provides a base implementation of a statement representation."""
+
 from __future__ import annotations
 
 import abc
@@ -164,9 +165,7 @@ class Statement(abc.ABC):
         """
         self._assertions.add(assertion)
 
-    def copy_assertions(
-        self, memo: dict[vr.VariableReference, vr.VariableReference]
-    ) -> OrderedSet[ass.Assertion]:
+    def copy_assertions(self, memo: dict[vr.VariableReference, vr.VariableReference]) -> OrderedSet[ass.Assertion]:
         """Returns a copy of the assertions of this statement.
 
         Args:
@@ -186,9 +185,7 @@ class Statement(abc.ABC):
         Returns:
             True, if there is only an exception assertion.
         """
-        return len(self._assertions) == 1 and isinstance(
-            next(iter(self._assertions)), ass.ExceptionAssertion
-        )
+        return len(self._assertions) == 1 and isinstance(next(iter(self._assertions)), ass.ExceptionAssertion)
 
     @property
     def assertions(self) -> OrderedSet[ass.Assertion]:
@@ -215,9 +212,7 @@ class Statement(abc.ABC):
         return False
 
     @abstractmethod
-    def structural_eq(
-        self, other: Statement, memo: dict[vr.VariableReference, vr.VariableReference]
-    ) -> bool:
+    def structural_eq(self, other: Statement, memo: dict[vr.VariableReference, vr.VariableReference]) -> bool:
         """Implements a structural equivalence criterion.
 
         Comparing a statement with another statement only makes sense in the context
@@ -500,9 +495,11 @@ class AssignmentStatement(Statement):
         if not isinstance(other, AssignmentStatement):
             return False
         return self._lhs.structural_eq(
-            other._lhs, memo  # noqa: SLF001
+            other._lhs,
+            memo,  # noqa: SLF001
         ) and self._rhs.structural_eq(
-            other._rhs, memo  # noqa: SLF001
+            other._rhs,
+            memo,  # noqa: SLF001
         )
 
 
@@ -543,34 +540,25 @@ class CollectionStatement(VariableCreatingStatement, Generic[T]):
     def mutate(self) -> bool:  # noqa: D102
         changed = False
         if (
-            randomness.next_float()
-            < config.configuration.search_algorithm.test_delete_probability
+            randomness.next_float() < config.configuration.search_algorithm.test_delete_probability
             and len(self._elements) > 0
         ):
             changed |= self._random_deletion()
 
         if (
-            randomness.next_float()
-            < config.configuration.search_algorithm.test_change_probability
+            randomness.next_float() < config.configuration.search_algorithm.test_change_probability
             and len(self._elements) > 0
         ):
             changed |= self._random_replacement()
 
-        if (
-            randomness.next_float()
-            < config.configuration.search_algorithm.test_insert_probability
-        ):
+        if randomness.next_float() < config.configuration.search_algorithm.test_insert_probability:
             changed |= self._random_insertion()
         return changed
 
     def _random_deletion(self) -> bool:
         p_per_element = 1.0 / len(self._elements)
         previous_length = len(self._elements)
-        self._elements = [
-            element
-            for element in self._elements
-            if randomness.next_float() >= p_per_element
-        ]
+        self._elements = [element for element in self._elements if randomness.next_float() >= p_per_element]
         return previous_length != len(self._elements)
 
     @abstractmethod
@@ -633,23 +621,17 @@ class NonDictCollection(CollectionStatement[vr.VariableReference], abc.ABC):
             return None
         return randomness.choice(possible_insertions)
 
-    def _replacement_supplier(
-        self, element: vr.VariableReference
-    ) -> vr.VariableReference:
+    def _replacement_supplier(self, element: vr.VariableReference) -> vr.VariableReference:
         # TODO(fk) what if the current type is not correct?
-        return randomness.choice(
-            [*self.test_case.get_objects(element.type, self.get_position()), element]
-        )
+        return randomness.choice([*self.test_case.get_objects(element.type, self.get_position()), element])
 
     def structural_hash(  # noqa: D102
         self, memo: dict[vr.VariableReference, int]
     ) -> int:
-        return hash(
-            (
-                self.ret_val.structural_hash(memo),
-                frozenset((v.structural_hash(memo)) for v in self._elements),
-            )
-        )
+        return hash((
+            self.ret_val.structural_hash(memo),
+            frozenset((v.structural_hash(memo)) for v in self._elements),
+        ))
 
     def structural_eq(  # noqa: D102
         self, other: Any, memo: dict[vr.VariableReference, vr.VariableReference]
@@ -662,7 +644,9 @@ class NonDictCollection(CollectionStatement[vr.VariableReference], abc.ABC):
             and all(
                 left.structural_eq(right, memo)
                 for left, right in zip(
-                    self._elements, other._elements, strict=True  # noqa: SLF001
+                    self._elements,
+                    other._elements,
+                    strict=True,  # noqa: SLF001
                 )
             )
         )
@@ -769,9 +753,7 @@ class TupleStatement(NonDictCollection):
         return False
 
 
-class DictStatement(
-    CollectionStatement[tuple[vr.VariableReference, vr.VariableReference]]
-):
+class DictStatement(CollectionStatement[tuple[vr.VariableReference, vr.VariableReference]]):
     """Represents a dict. The tuples represent key-value pairs."""
 
     def get_variable_references(self) -> set[vr.VariableReference]:  # noqa: D102
@@ -788,8 +770,7 @@ class DictStatement(
         if self.ret_val == old:
             self.ret_val = new
         self._elements = [
-            (new if elem[0] == old else elem[0], new if elem[1] == old else elem[1])
-            for elem in self._elements
+            (new if elem[0] == old else elem[0], new if elem[1] == old else elem[1]) for elem in self._elements
         ]
 
     def _replacement_supplier(
@@ -798,14 +779,10 @@ class DictStatement(
         change_idx = randomness.next_int(0, 2)
         new = list(element)
         # TODO(fk) what if the current type is not correct?
-        new[change_idx] = randomness.choice(
-            [
-                *self.test_case.get_objects(
-                    element[change_idx].type, self.get_position()
-                ),
-                element[change_idx],
-            ]
-        )
+        new[change_idx] = randomness.choice([
+            *self.test_case.get_objects(element[change_idx].type, self.get_position()),
+            element[change_idx],
+        ])
         assert len(new) == 2, "Tuple must consist of key and value"
         return new[0], new[1]
 
@@ -841,15 +818,10 @@ class DictStatement(
     def structural_hash(  # noqa: D102
         self, memo: dict[vr.VariableReference, int]
     ) -> int:
-        return hash(
-            (
-                self.ret_val.structural_hash(memo),
-                frozenset(
-                    (k.structural_hash(memo), v.structural_hash(memo))
-                    for k, v in self._elements
-                ),
-            )
-        )
+        return hash((
+            self.ret_val.structural_hash(memo),
+            frozenset((k.structural_hash(memo), v.structural_hash(memo)) for k, v in self._elements),
+        ))
 
     def structural_eq(  # noqa: D102
         self, other: Any, memo: dict[vr.VariableReference, vr.VariableReference]
@@ -862,7 +834,9 @@ class DictStatement(
             and all(
                 lk.structural_eq(rk, memo) and lv.structural_eq(rv, memo)
                 for (lk, lv), (rk, rv) in zip(
-                    self._elements, other._elements, strict=True  # noqa: SLF001
+                    self._elements,
+                    other._elements,
+                    strict=True,  # noqa: SLF001
                 )
             )
         )
@@ -890,9 +864,7 @@ class FieldStatement(VariableCreatingStatement):
             field: The reference to the field
             source: The reference to the object the field belongs to
         """
-        super().__init__(
-            test_case, vr.VariableReference(test_case, field.generated_type())
-        )
+        super().__init__(test_case, vr.VariableReference(test_case, field.generated_type()))
         self._field = field
         self._source = source
 
@@ -918,10 +890,7 @@ class FieldStatement(VariableCreatingStatement):
         return self._field
 
     def mutate(self) -> bool:  # noqa: D102
-        if (
-            randomness.next_float()
-            >= config.configuration.search_algorithm.change_parameter_probability
-        ):
+        if randomness.next_float() >= config.configuration.search_algorithm.change_parameter_probability:
             return False
 
         objects = self.test_case.get_objects(self.source.type, self.get_position())
@@ -1047,9 +1016,7 @@ class ParametrizedStatement(VariableCreatingStatement, abc.ABC):
             if value == old:
                 self._args[key] = new
 
-    def _clone_args(
-        self, memo: dict[vr.VariableReference, vr.VariableReference]
-    ) -> dict[str, vr.VariableReference]:
+    def _clone_args(self, memo: dict[vr.VariableReference, vr.VariableReference]) -> dict[str, vr.VariableReference]:
         """Small helper method, to clone the args into a new test case.
 
         Args:
@@ -1061,10 +1028,7 @@ class ParametrizedStatement(VariableCreatingStatement, abc.ABC):
         return {name: var.clone(memo) for name, var in self._args.items()}
 
     def mutate(self) -> bool:  # noqa: D102
-        if (
-            randomness.next_float()
-            >= config.configuration.search_algorithm.change_parameter_probability
-        ):
+        if randomness.next_float() >= config.configuration.search_algorithm.change_parameter_probability:
             return False
 
         changed = False
@@ -1109,9 +1073,7 @@ class ParametrizedStatement(VariableCreatingStatement, abc.ABC):
         changed = False
         for param_name in self._generic_callable.inferred_signature.original_parameters:
             if randomness.next_float() < p_per_param:
-                changed |= self._mutate_parameter(
-                    param_name, self._generic_callable.inferred_signature
-                )
+                changed |= self._mutate_parameter(param_name, self._generic_callable.inferred_signature)
 
         return changed
 
@@ -1127,16 +1089,13 @@ class ParametrizedStatement(VariableCreatingStatement, abc.ABC):
         """
         current = self._args.get(param_name, None)
         param_type = inf_sig.get_parameter_types({})[param_name]
-        possible_replacements = self.test_case.get_objects(
-            param_type, self.get_position()
-        )
+        possible_replacements = self.test_case.get_objects(param_type, self.get_position())
 
         # Param has to be optional, otherwise it would be set.
         if current is None:
             # Create value for currently unset parameter.
             if (
-                randomness.next_float()
-                > config.configuration.test_creation.skip_optional_parameter_probability
+                randomness.next_float() > config.configuration.test_creation.skip_optional_parameter_probability
                 and len(possible_replacements) > 0
             ):
                 self._args[param_name] = randomness.choice(possible_replacements)
@@ -1145,8 +1104,7 @@ class ParametrizedStatement(VariableCreatingStatement, abc.ABC):
 
         if (
             is_optional_parameter(inf_sig, param_name)
-            and randomness.next_float()
-            < config.configuration.test_creation.skip_optional_parameter_probability
+            and randomness.next_float() < config.configuration.test_creation.skip_optional_parameter_probability
         ):
             # unset parameters that are not necessary with a certain probability,
             # e.g., if they have default value or are *args, **kwargs.
@@ -1158,18 +1116,12 @@ class ParametrizedStatement(VariableCreatingStatement, abc.ABC):
         # Consider duplicating an existing statement/variable.
         copy: Statement | None = None
         if self._param_count_of_type(param_type) > len(possible_replacements) + 1:
-            original_param_source = self.test_case.get_statement(
-                current.get_statement_position()
-            )
+            original_param_source = self.test_case.get_statement(current.get_statement_position())
             copy = cast(
                 VariableCreatingStatement,
                 original_param_source.clone(
                     self.test_case,
-                    {
-                        s.ret_val: s.ret_val
-                        for s in self.test_case.statements
-                        if s.ret_val is not None
-                    },
+                    {s.ret_val: s.ret_val for s in self.test_case.statements if s.ret_val is not None},
                 ),
             )
             possible_replacements.append(copy.ret_val)
@@ -1207,9 +1159,7 @@ class ParametrizedStatement(VariableCreatingStatement, abc.ABC):
         if type_ is None:
             return 0
         for var_ref in self.args.values():
-            if self.test_case.test_cluster.type_system.is_maybe_subtype(
-                var_ref.type, type_
-            ):
+            if self.test_case.test_cluster.type_system.is_maybe_subtype(var_ref.type, type_):
                 count += 1
         return count
 
@@ -1220,13 +1170,11 @@ class ParametrizedStatement(VariableCreatingStatement, abc.ABC):
     def structural_hash(  # noqa: D102
         self, memo: dict[vr.VariableReference, int]
     ) -> int:
-        return hash(
-            (
-                self.ret_val.structural_hash(memo),
-                self._generic_callable,
-                frozenset((k, v.structural_hash(memo)) for k, v in self._args.items()),
-            )
-        )
+        return hash((
+            self.ret_val.structural_hash(memo),
+            self._generic_callable,
+            frozenset((k, v.structural_hash(memo)) for k, v in self._args.items()),
+        ))
 
     def structural_eq(  # noqa: D102
         self, other: Any, memo: dict[vr.VariableReference, vr.VariableReference]
@@ -1252,9 +1200,7 @@ class ConstructorStatement(ParametrizedStatement):
         test_case: tc.TestCase,
         memo: dict[vr.VariableReference, vr.VariableReference],
     ) -> Statement:
-        return ConstructorStatement(
-            test_case, self.accessible_object(), self._clone_args(memo)
-        )
+        return ConstructorStatement(test_case, self.accessible_object(), self._clone_args(memo))
 
     def accept(self, visitor: StatementVisitor) -> None:  # noqa: D102
         visitor.visit_constructor_statement(self)
@@ -1268,10 +1214,7 @@ class ConstructorStatement(ParametrizedStatement):
         return cast(gao.GenericConstructor, self._generic_callable)
 
     def __repr__(self) -> str:
-        return (
-            f"ConstructorStatement({self._test_case}, "
-            f"{self._generic_callable}(args={self._args})"
-        )
+        return f"ConstructorStatement({self._test_case}, " f"{self._generic_callable}(args={self._args})"
 
     def __str__(self) -> str:
         return f"{self._generic_callable}(args={self._args})" + "-> None"
@@ -1316,8 +1259,7 @@ class MethodStatement(ParametrizedStatement):
             callee = self.callee
             typ = (
                 ANY
-                if randomness.next_float()
-                < config.configuration.test_creation.use_random_object_for_call
+                if randomness.next_float() < config.configuration.test_creation.use_random_object_for_call
                 else callee.type
             )
             objects = self.test_case.get_objects(typ, self.get_position())
@@ -1383,7 +1325,8 @@ class MethodStatement(ParametrizedStatement):
         self, other: Any, memo: dict[vr.VariableReference, vr.VariableReference]
     ) -> bool:
         return super().structural_eq(other, memo) and self._callee.structural_eq(
-            other._callee, memo  # noqa: SLF001
+            other._callee,
+            memo,  # noqa: SLF001
         )
 
     def __repr__(self) -> str:
@@ -1394,10 +1337,7 @@ class MethodStatement(ParametrizedStatement):
         )
 
     def __str__(self) -> str:
-        return (
-            f"{self._generic_callable}(args={self._args}) -> "
-            f"{self._generic_callable.generated_type()}"
-        )
+        return f"{self._generic_callable}(args={self._args}) -> " f"{self._generic_callable.generated_type()}"
 
 
 class FunctionStatement(ParametrizedStatement):
@@ -1416,9 +1356,7 @@ class FunctionStatement(ParametrizedStatement):
         test_case: tc.TestCase,
         memo: dict[vr.VariableReference, vr.VariableReference],
     ) -> Statement:
-        return FunctionStatement(
-            test_case, self.accessible_object(), self._clone_args(memo)
-        )
+        return FunctionStatement(test_case, self.accessible_object(), self._clone_args(memo))
 
     def accept(self, visitor: StatementVisitor) -> None:  # noqa: D102
         visitor.visit_function_statement(self)
@@ -1431,9 +1369,7 @@ class FunctionStatement(ParametrizedStatement):
         )
 
     def __str__(self) -> str:
-        return (
-            f"{self._generic_callable}(args={self._args}) -> " + f"{self.ret_val.type}"
-        )
+        return f"{self._generic_callable}(args={self._args}) -> " + f"{self.ret_val.type}"
 
 
 class PrimitiveStatement(VariableCreatingStatement, Generic[T]):
@@ -1479,10 +1415,7 @@ class PrimitiveStatement(VariableCreatingStatement, Generic[T]):
     def mutate(self) -> bool:  # noqa: D102
         old_value = self._value
         while self._value == old_value and self._value is not None:
-            if (
-                randomness.next_float()
-                < config.configuration.search_algorithm.random_perturbation
-            ):
+            if randomness.next_float() < config.configuration.search_algorithm.random_perturbation:
                 self.randomize_value()
             else:
                 self.delta()
@@ -1519,8 +1452,7 @@ class PrimitiveStatement(VariableCreatingStatement, Generic[T]):
         if not isinstance(other, self.__class__):
             return False
         return (
-            self.ret_val.structural_eq(other.ret_val, memo)
-            and self._value == other._value  # noqa: SLF001
+            self.ret_val.structural_eq(other.ret_val, memo) and self._value == other._value  # noqa: SLF001
         )
 
     def structural_hash(  # noqa: D102
@@ -1548,22 +1480,16 @@ class IntPrimitiveStatement(PrimitiveStatement[int]):
     def randomize_value(self) -> None:  # noqa: D102
         if (
             self._constant_provider
-            and randomness.next_float()
-            <= config.configuration.seeding.seeded_primitives_reuse_probability
-            and (seeded_value := self._constant_provider.get_constant_for(int))
-            is not None
+            and randomness.next_float() <= config.configuration.seeding.seeded_primitives_reuse_probability
+            and (seeded_value := self._constant_provider.get_constant_for(int)) is not None
         ):
             self._value = seeded_value
         else:
-            self._value = int(
-                randomness.next_gaussian() * config.configuration.test_creation.max_int
-            )
+            self._value = int(randomness.next_gaussian() * config.configuration.test_creation.max_int)
 
     def delta(self) -> None:  # noqa: D102
         assert self._value is not None
-        delta = math.floor(
-            randomness.next_gaussian() * config.configuration.test_creation.max_delta
-        )
+        delta = math.floor(randomness.next_gaussian() * config.configuration.test_creation.max_delta)
         self._value += delta
 
     def clone(  # noqa: D102
@@ -1571,9 +1497,7 @@ class IntPrimitiveStatement(PrimitiveStatement[int]):
         test_case: tc.TestCase,
         memo: dict[vr.VariableReference, vr.VariableReference],
     ) -> IntPrimitiveStatement:
-        return IntPrimitiveStatement(
-            test_case, self._value, constant_provider=self._constant_provider
-        )
+        return IntPrimitiveStatement(test_case, self._value, constant_provider=self._constant_provider)
 
     def __repr__(self) -> str:
         return f"IntPrimitiveStatement({self._test_case}, {self._value})"
@@ -1604,16 +1528,12 @@ class FloatPrimitiveStatement(PrimitiveStatement[float]):
     def randomize_value(self) -> None:  # noqa: D102
         if (
             self._constant_provider
-            and randomness.next_float()
-            <= config.configuration.seeding.seeded_primitives_reuse_probability
-            and (seeded_value := self._constant_provider.get_constant_for(float))
-            is not None
+            and randomness.next_float() <= config.configuration.seeding.seeded_primitives_reuse_probability
+            and (seeded_value := self._constant_provider.get_constant_for(float)) is not None
         ):
             self._value = seeded_value
         else:
-            val = (
-                randomness.next_gaussian() * config.configuration.test_creation.max_int
-            )
+            val = randomness.next_gaussian() * config.configuration.test_creation.max_int
             precision = randomness.next_int(0, 7)
             self._value = round(val, precision)
 
@@ -1621,10 +1541,7 @@ class FloatPrimitiveStatement(PrimitiveStatement[float]):
         assert self._value is not None
         probability = randomness.next_float()
         if probability < 1.0 / 3.0:
-            self._value += (
-                randomness.next_gaussian()
-                * config.configuration.test_creation.max_delta
-            )
+            self._value += randomness.next_gaussian() * config.configuration.test_creation.max_delta
         elif probability < 2.0 / 3.0:
             self._value += randomness.next_gaussian()
         else:
@@ -1635,9 +1552,7 @@ class FloatPrimitiveStatement(PrimitiveStatement[float]):
         test_case: tc.TestCase,
         memo: dict[vr.VariableReference, vr.VariableReference],
     ) -> FloatPrimitiveStatement:
-        return FloatPrimitiveStatement(
-            test_case, self._value, constant_provider=self._constant_provider
-        )
+        return FloatPrimitiveStatement(test_case, self._value, constant_provider=self._constant_provider)
 
     def __repr__(self) -> str:
         return f"FloatPrimitiveStatement({self._test_case}, {self._value})"
@@ -1668,24 +1583,16 @@ class ComplexPrimitiveStatement(PrimitiveStatement[complex]):
     def randomize_value(self) -> None:  # noqa: D102
         if (
             self._constant_provider
-            and randomness.next_float()
-            <= config.configuration.seeding.seeded_primitives_reuse_probability
-            and (seeded_value := self._constant_provider.get_constant_for(complex))
-            is not None
+            and randomness.next_float() <= config.configuration.seeding.seeded_primitives_reuse_probability
+            and (seeded_value := self._constant_provider.get_constant_for(complex)) is not None
         ):
             self._value = seeded_value
         else:
-            real = (
-                randomness.next_gaussian() * config.configuration.test_creation.max_int
-            )
+            real = randomness.next_gaussian() * config.configuration.test_creation.max_int
             precision_real = randomness.next_int(0, 7)
-            imag = (
-                randomness.next_gaussian() * config.configuration.test_creation.max_int
-            )
+            imag = randomness.next_gaussian() * config.configuration.test_creation.max_int
             precision_imag = randomness.next_int(0, 7)
-            self._value = complex(
-                round(real, precision_real), round(imag, precision_imag)
-            )
+            self._value = complex(round(real, precision_real), round(imag, precision_imag))
 
     def delta(self) -> None:  # noqa: D102
         assert self._value is not None
@@ -1694,44 +1601,30 @@ class ComplexPrimitiveStatement(PrimitiveStatement[complex]):
         if probability < 1 / 3:
             if real_or_imag:
                 self._value = complex(
-                    self._value.real
-                    + randomness.next_gaussian()
-                    * config.configuration.test_creation.max_delta,
+                    self._value.real + randomness.next_gaussian() * config.configuration.test_creation.max_delta,
                     self._value.imag,
                 )
             else:
                 self._value = complex(
                     self._value.real,
-                    self._value.imag
-                    + randomness.next_gaussian()
-                    * config.configuration.test_creation.max_delta,
+                    self._value.imag + randomness.next_gaussian() * config.configuration.test_creation.max_delta,
                 )
         elif probability < 2 / 3:
             if real_or_imag:
-                self._value = complex(
-                    self._value.real + randomness.next_gaussian(), self._value.imag
-                )
+                self._value = complex(self._value.real + randomness.next_gaussian(), self._value.imag)
             else:
-                self._value = complex(
-                    self._value.real, self._value.imag + +randomness.next_gaussian()
-                )
+                self._value = complex(self._value.real, self._value.imag + +randomness.next_gaussian())
         elif real_or_imag:
-            self._value = complex(
-                round(self._value.real, randomness.next_int(0, 7)), self._value.imag
-            )
+            self._value = complex(round(self._value.real, randomness.next_int(0, 7)), self._value.imag)
         else:
-            self._value = complex(
-                self._value.real, round(self._value.imag, randomness.next_int(0, 7))
-            )
+            self._value = complex(self._value.real, round(self._value.imag, randomness.next_int(0, 7)))
 
     def clone(  # noqa: D102
         self,
         test_case: tc.TestCase,
         memo: dict[vr.VariableReference, vr.VariableReference],
     ) -> ComplexPrimitiveStatement:
-        return ComplexPrimitiveStatement(
-            test_case, self._value, constant_provider=self._constant_provider
-        )
+        return ComplexPrimitiveStatement(test_case, self._value, constant_provider=self._constant_provider)
 
     def __repr__(self) -> str:
         return f"ComplexPrimitiveStatement({self._test_case}, {self._value})"
@@ -1762,16 +1655,12 @@ class StringPrimitiveStatement(PrimitiveStatement[str]):
     def randomize_value(self) -> None:  # noqa: D102
         if (
             self._constant_provider
-            and randomness.next_float()
-            <= config.configuration.seeding.seeded_primitives_reuse_probability
-            and (seeded_value := self._constant_provider.get_constant_for(str))
-            is not None
+            and randomness.next_float() <= config.configuration.seeding.seeded_primitives_reuse_probability
+            and (seeded_value := self._constant_provider.get_constant_for(str)) is not None
         ):
             self._value = seeded_value
         else:
-            length = randomness.next_int(
-                0, config.configuration.test_creation.string_length + 1
-            )
+            length = randomness.next_int(0, config.configuration.test_creation.string_length + 1)
             self._value = randomness.next_string(length)
 
     def delta(self) -> None:  # noqa: D102
@@ -1797,10 +1686,7 @@ class StringPrimitiveStatement(PrimitiveStatement[str]):
     @staticmethod
     def _random_replacement(working_on: list[str]) -> list[str]:
         p_per_char = 1.0 / len(working_on)
-        return [
-            randomness.next_char() if randomness.next_float() < p_per_char else char
-            for char in working_on
-        ]
+        return [randomness.next_char() if randomness.next_float() < p_per_char else char for char in working_on]
 
     @staticmethod
     def _random_insertion(working_on: list[str]) -> list[str]:
@@ -1822,9 +1708,7 @@ class StringPrimitiveStatement(PrimitiveStatement[str]):
         test_case: tc.TestCase,
         memo: dict[vr.VariableReference, vr.VariableReference],
     ) -> StringPrimitiveStatement:
-        return StringPrimitiveStatement(
-            test_case, self._value, constant_provider=self._constant_provider
-        )
+        return StringPrimitiveStatement(test_case, self._value, constant_provider=self._constant_provider)
 
     def __repr__(self) -> str:
         return f"StringPrimitiveStatement({self._test_case}, {self._value})"
@@ -1855,16 +1739,12 @@ class BytesPrimitiveStatement(PrimitiveStatement[bytes]):
     def randomize_value(self) -> None:  # noqa: D102
         if (
             self._constant_provider
-            and randomness.next_float()
-            <= config.configuration.seeding.seeded_primitives_reuse_probability
-            and (seeded_value := self._constant_provider.get_constant_for(bytes))
-            is not None
+            and randomness.next_float() <= config.configuration.seeding.seeded_primitives_reuse_probability
+            and (seeded_value := self._constant_provider.get_constant_for(bytes)) is not None
         ):
             self._value = seeded_value
         else:
-            length = randomness.next_int(
-                0, config.configuration.test_creation.bytes_length + 1
-            )
+            length = randomness.next_int(0, config.configuration.test_creation.bytes_length + 1)
             self._value = randomness.next_bytes(length)
 
     def delta(self) -> None:  # noqa: D102
@@ -1890,10 +1770,7 @@ class BytesPrimitiveStatement(PrimitiveStatement[bytes]):
     @staticmethod
     def _random_replacement(working_on: list[int]) -> list[int]:
         p_per_char = 1.0 / len(working_on)
-        return [
-            randomness.next_byte() if randomness.next_float() < p_per_char else byte
-            for byte in working_on
-        ]
+        return [randomness.next_byte() if randomness.next_float() < p_per_char else byte for byte in working_on]
 
     @staticmethod
     def _random_insertion(working_on: list[int]) -> list[int]:
@@ -1915,9 +1792,7 @@ class BytesPrimitiveStatement(PrimitiveStatement[bytes]):
         test_case: tc.TestCase,
         memo: dict[vr.VariableReference, vr.VariableReference],
     ) -> BytesPrimitiveStatement:
-        return BytesPrimitiveStatement(
-            test_case, self._value, constant_provider=self._constant_provider
-        )
+        return BytesPrimitiveStatement(test_case, self._value, constant_provider=self._constant_provider)
 
     def __repr__(self) -> str:
         return f"BytesPrimitiveStatement({self._test_case}, {self._value!r})"
@@ -1933,7 +1808,9 @@ class BooleanPrimitiveStatement(PrimitiveStatement[bool]):
     """Primitive Statement that creates a boolean."""
 
     def __init__(
-        self, test_case: tc.TestCase, value: bool | None = None  # noqa: FBT001
+        self,
+        test_case: tc.TestCase,
+        value: bool | None = None,  # noqa: FBT001
     ) -> None:
         """Initializes a primitive statement for a boolean.
 
@@ -2012,9 +1889,7 @@ class EnumPrimitiveStatement(PrimitiveStatement[int]):
     def delta(self) -> None:  # noqa: D102
         assert self._value is not None
         self._value += randomness.choice([-1, 1])
-        self._value = (self._value + len(self._generic_enum.names)) % len(
-            self._generic_enum.names
-        )
+        self._value = (self._value + len(self._generic_enum.names)) % len(self._generic_enum.names)
 
     def clone(  # noqa: D102
         self,
@@ -2072,9 +1947,7 @@ class ClassPrimitiveStatement(PrimitiveStatement[int]):
         return self._test_case.test_cluster.type_system.get_all_types()[self._value]
 
     def randomize_value(self) -> None:  # noqa: D102
-        self._value = randomness.next_int(
-            0, len(self._test_case.test_cluster.type_system.get_all_types())
-        )
+        self._value = randomness.next_int(0, len(self._test_case.test_cluster.type_system.get_all_types()))
 
     def delta(self) -> None:  # noqa: D102
         assert self._value is not None
@@ -2101,9 +1974,7 @@ class ClassPrimitiveStatement(PrimitiveStatement[int]):
         other: Statement,
         memo: dict[vr.VariableReference, vr.VariableReference],
     ) -> bool:
-        return super().structural_eq(other, memo) and isinstance(
-            other, ClassPrimitiveStatement
-        )
+        return super().structural_eq(other, memo) and isinstance(other, ClassPrimitiveStatement)
 
     def accept(self, visitor: StatementVisitor) -> None:  # noqa: D102
         visitor.visit_class_primitive_statement(self)

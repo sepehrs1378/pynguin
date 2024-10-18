@@ -5,6 +5,7 @@
 #  SPDX-License-Identifier: MIT
 #
 """Provides a factories for generating different kind of test cases."""
+
 from __future__ import annotations
 
 from abc import abstractmethod
@@ -56,14 +57,9 @@ class RandomLengthTestCaseFactory(TestCaseFactory):
     def get_test_case(self) -> tc.TestCase:  # noqa: D102
         test_case = dtc.DefaultTestCase(self._test_cluster)
         attempts = 0
-        size = randomness.next_int(
-            1, config.configuration.search_algorithm.chromosome_length + 1
-        )
+        size = randomness.next_int(1, config.configuration.search_algorithm.chromosome_length + 1)
 
-        while (
-            test_case.size() < size
-            and attempts < config.configuration.test_creation.max_attempts
-        ):
+        while test_case.size() < size and attempts < config.configuration.test_creation.max_attempts:
             self.test_factory.insert_random_statement(test_case, test_case.size())
             attempts += 1
         return test_case
@@ -86,9 +82,6 @@ class SeededTestCaseFactory(TestCaseFactory):
         self._population_provider = population_provider
 
     def get_test_case(self) -> tc.TestCase:  # noqa: D102
-        if (
-            randomness.next_float()
-            <= config.configuration.seeding.seeded_testcases_reuse_probability
-        ):
+        if randomness.next_float() <= config.configuration.seeding.seeded_testcases_reuse_probability:
             return self._population_provider.random_testcase()
         return self._delegate.get_test_case()

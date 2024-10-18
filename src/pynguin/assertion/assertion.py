@@ -5,6 +5,7 @@
 #  SPDX-License-Identifier: MIT
 #
 """Provides a base class for assertions."""
+
 from __future__ import annotations
 
 from abc import ABC
@@ -44,9 +45,7 @@ class Assertion:
         """
 
     @abstractmethod
-    def clone(
-        self, memo: dict[vr.VariableReference, vr.VariableReference]
-    ) -> Assertion:
+    def clone(self, memo: dict[vr.VariableReference, vr.VariableReference]) -> Assertion:
         """Clone this assertion.
 
         Args:
@@ -168,11 +167,7 @@ class FloatAssertion(ReferenceAssertion):
         return FloatAssertion(self.source.clone(memo), self._value)
 
     def __eq__(self, other: object) -> bool:
-        return (
-            isinstance(other, FloatAssertion)
-            and self._source == other._source
-            and self._value == other._value
-        )
+        return isinstance(other, FloatAssertion) and self._source == other._source and self._value == other._value
 
     def __hash__(self) -> int:
         return hash((self._source, self._value))
@@ -215,11 +210,7 @@ class ObjectAssertion(ReferenceAssertion):
         return ObjectAssertion(self.source.clone(memo), self._object)
 
     def __eq__(self, other: Any) -> bool:  # noqa: PYI032
-        return (
-            isinstance(other, ObjectAssertion)
-            and self._source == other._source
-            and self._object == other._object
-        )
+        return isinstance(other, ObjectAssertion) and self._source == other._source and self._object == other._object
 
     def __hash__(self) -> int:
         # We cannot include the value in the hash, as it might be unhashable.
@@ -364,9 +355,7 @@ class AssertionVisitor:
         """
 
     @abstractmethod
-    def visit_collection_length_assertion(
-        self, assertion: CollectionLengthAssertion
-    ) -> None:
+    def visit_collection_length_assertion(self, assertion: CollectionLengthAssertion) -> None:
         """Visit a collection length assertion.
 
         Args:

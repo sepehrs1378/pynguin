@@ -5,6 +5,7 @@
 #  SPDX-License-Identifier: MIT
 #
 """Provides classes for various bytecode instrumentations."""
+
 from __future__ import annotations
 
 import builtins
@@ -276,13 +277,9 @@ class InstrumentationTransformer:
         for adapter in self._instrumentation_adapters:
             adapter.visit_entry_node(real_entry_node.basic_block, code_object_id)
         self._instrument_cfg(cfg, code_object_id)
-        return self._instrument_inner_code_objects(
-            cfg.bytecode_cfg().to_code(), code_object_id
-        )
+        return self._instrument_inner_code_objects(cfg.bytecode_cfg().to_code(), code_object_id)
 
-    def _instrument_inner_code_objects(
-        self, code: CodeType, parent_code_object_id: int
-    ) -> CodeType:
+    def _instrument_inner_code_objects(self, code: CodeType, parent_code_object_id: int) -> CodeType:
         """Apply the instrumentation to all constants of the given code object.
 
         Args:
@@ -296,11 +293,7 @@ class InstrumentationTransformer:
         for const in code.co_consts:
             if isinstance(const, CodeType):
                 # The const is an inner code object
-                new_consts.append(
-                    self._instrument_code_recursive(
-                        const, parent_code_object_id=parent_code_object_id
-                    )
-                )
+                new_consts.append(self._instrument_code_recursive(const, parent_code_object_id=parent_code_object_id))
             else:
                 new_consts.append(const)
         return code.replace(co_consts=tuple(new_consts))
@@ -317,9 +310,7 @@ class InstrumentationTransformer:
                 # Artificial nodes don't have a basic block, so we don't need to
                 # instrument anything.
                 continue
-            assert (
-                node.basic_block is not None
-            ), "Non artificial node does not have a basic block."
+            assert node.basic_block is not None, "Non artificial node does not have a basic block."
             for adapter in self._instrumentation_adapters:
                 adapter.visit_node(cfg, code_object_id, node, node.basic_block)
 
@@ -361,9 +352,7 @@ class BranchCoverageInstrumentation(InstrumentationAdapter):
         """
         assert len(basic_block) > 0, "Empty basic block in CFG."
         maybe_jump: Instr = basic_block[self._JUMP_OP_POS]  # type: ignore[assignment]
-        orig_instructions_positions = InstrumentationAdapter.map_instr_positions(
-            basic_block
-        )
+        orig_instructions_positions = InstrumentationAdapter.map_instr_positions(basic_block)
         maybe_compare_idx: int | None = orig_instructions_positions.get(
             len(orig_instructions_positions) + self._COMPARE_OP_POS
         )
@@ -412,11 +401,7 @@ class BranchCoverageInstrumentation(InstrumentationAdapter):
             The id that was assigned to the predicate.
         """
         maybe_compare = None if maybe_compare_idx is None else block[maybe_compare_idx]
-        if (
-            maybe_compare is not None
-            and isinstance(maybe_compare, Instr)
-            and maybe_compare.opcode in op.OP_COMPARE
-        ):
+        if maybe_compare is not None and isinstance(maybe_compare, Instr) and maybe_compare.opcode in op.OP_COMPARE:
             assert maybe_compare_idx is not None
             return self._instrument_compare_based_conditional_jump(
                 block=block,
@@ -428,9 +413,7 @@ class BranchCoverageInstrumentation(InstrumentationAdapter):
             return self._instrument_exception_based_conditional_jump(
                 basic_block=block, code_object_id=code_object_id, node=node
             )
-        return self._instrument_bool_based_conditional_jump(
-            block=block, code_object_id=code_object_id, node=node
-        )
+        return self._instrument_bool_based_conditional_jump(block=block, code_object_id=code_object_id, node=node)
 
     def _instrument_bool_based_conditional_jump(
         self, block: BasicBlock, code_object_id: int, node: ProgramGraphNode
@@ -462,7 +445,9 @@ class BranchCoverageInstrumentation(InstrumentationAdapter):
         block[self._JUMP_OP_POS : self._JUMP_OP_POS] = [
             ArtificialInstr("DUP_TOP", lineno=lineno),
             ArtificialInstr(
-                "LOAD_CONST", self._tracer, lineno=lineno  # type: ignore[arg-type]
+                "LOAD_CONST",
+                self._tracer,
+                lineno=lineno,  # type: ignore[arg-type]
             ),
             ArtificialInstr(
                 "LOAD_METHOD",
@@ -540,7 +525,9 @@ class BranchCoverageInstrumentation(InstrumentationAdapter):
         block[compare_idx:compare_idx] = [
             ArtificialInstr("DUP_TOP_TWO", lineno=lineno),
             ArtificialInstr(
-                "LOAD_CONST", self._tracer, lineno=lineno  # type: ignore[arg-type]
+                "LOAD_CONST",
+                self._tracer,
+                lineno=lineno,  # type: ignore[arg-type]
             ),
             ArtificialInstr(
                 "LOAD_METHOD",
@@ -588,7 +575,9 @@ class BranchCoverageInstrumentation(InstrumentationAdapter):
         basic_block[self._JUMP_OP_POS : self._JUMP_OP_POS] = [
             ArtificialInstr("DUP_TOP_TWO", lineno=lineno),
             ArtificialInstr(
-                "LOAD_CONST", self._tracer, lineno=lineno  # type: ignore[arg-type]
+                "LOAD_CONST",
+                self._tracer,
+                lineno=lineno,  # type: ignore[arg-type]
             ),
             ArtificialInstr(
                 "LOAD_METHOD",
@@ -622,7 +611,9 @@ class BranchCoverageInstrumentation(InstrumentationAdapter):
         # Insert instructions at the beginning.
         basic_block[0:0] = [
             ArtificialInstr(
-                "LOAD_CONST", self._tracer, lineno=lineno  # type: ignore[arg-type]
+                "LOAD_CONST",
+                self._tracer,
+                lineno=lineno,  # type: ignore[arg-type]
             ),
             ArtificialInstr(
                 "LOAD_METHOD",
@@ -690,56 +681,54 @@ class BranchCoverageInstrumentation(InstrumentationAdapter):
         for_loop_exit = for_instr.arg  # type: ignore[union-attr]
         for_loop_body = basic_block.next_block
 
-        entered, not_entered = self._create_consecutive_blocks(
-            cfg.bytecode_cfg(), basic_block, 2
-        )
+        entered, not_entered = self._create_consecutive_blocks(cfg.bytecode_cfg(), basic_block, 2)
         # TODO(fk) for_instr is not artificial but we changed it
         #  How to deal with this?
         for_instr.arg = not_entered  # type: ignore[union-attr]
 
-        entered.extend(
-            [
-                ArtificialInstr(
-                    "LOAD_CONST", self._tracer, lineno=lineno  # type: ignore[arg-type]
-                ),
-                ArtificialInstr(
-                    "LOAD_METHOD",
-                    # references method in the ExecutionTracer by name
-                    # to avoid circular import
-                    "executed_bool_predicate",
-                    lineno=lineno,
-                ),
-                ArtificialInstr("LOAD_CONST", arg=True, lineno=lineno),
-                ArtificialInstr("LOAD_CONST", predicate_id, lineno=lineno),
-                ArtificialInstr("CALL_METHOD", arg=2, lineno=lineno),
-                ArtificialInstr("POP_TOP", lineno=lineno),
-                ArtificialInstr(
-                    "JUMP_ABSOLUTE",
-                    for_loop_body,  # type: ignore[arg-type]
-                    lineno=lineno,
-                ),
-            ]
-        )
+        entered.extend([
+            ArtificialInstr(
+                "LOAD_CONST",
+                self._tracer,
+                lineno=lineno,  # type: ignore[arg-type]
+            ),
+            ArtificialInstr(
+                "LOAD_METHOD",
+                # references method in the ExecutionTracer by name
+                # to avoid circular import
+                "executed_bool_predicate",
+                lineno=lineno,
+            ),
+            ArtificialInstr("LOAD_CONST", arg=True, lineno=lineno),
+            ArtificialInstr("LOAD_CONST", predicate_id, lineno=lineno),
+            ArtificialInstr("CALL_METHOD", arg=2, lineno=lineno),
+            ArtificialInstr("POP_TOP", lineno=lineno),
+            ArtificialInstr(
+                "JUMP_ABSOLUTE",
+                for_loop_body,  # type: ignore[arg-type]
+                lineno=lineno,
+            ),
+        ])
 
-        not_entered.extend(
-            [
-                ArtificialInstr(
-                    "LOAD_CONST", self._tracer, lineno=lineno  # type: ignore[arg-type]
-                ),
-                ArtificialInstr(
-                    "LOAD_METHOD",
-                    # references method in the ExecutionTracer by name
-                    # to avoid circular import
-                    "executed_bool_predicate",
-                    lineno=lineno,
-                ),
-                ArtificialInstr("LOAD_CONST", arg=False, lineno=lineno),
-                ArtificialInstr("LOAD_CONST", predicate_id, lineno=lineno),
-                ArtificialInstr("CALL_METHOD", arg=2, lineno=lineno),
-                ArtificialInstr("POP_TOP", lineno=lineno),
-                ArtificialInstr("JUMP_ABSOLUTE", for_loop_exit, lineno=lineno),
-            ]
-        )
+        not_entered.extend([
+            ArtificialInstr(
+                "LOAD_CONST",
+                self._tracer,
+                lineno=lineno,  # type: ignore[arg-type]
+            ),
+            ArtificialInstr(
+                "LOAD_METHOD",
+                # references method in the ExecutionTracer by name
+                # to avoid circular import
+                "executed_bool_predicate",
+                lineno=lineno,
+            ),
+            ArtificialInstr("LOAD_CONST", arg=False, lineno=lineno),
+            ArtificialInstr("LOAD_CONST", predicate_id, lineno=lineno),
+            ArtificialInstr("CALL_METHOD", arg=2, lineno=lineno),
+            ArtificialInstr("POP_TOP", lineno=lineno),
+            ArtificialInstr("JUMP_ABSOLUTE", for_loop_exit, lineno=lineno),
+        ])
 
         return predicate_id
 
@@ -771,7 +760,9 @@ class LineCoverageInstrumentation(InstrumentationAdapter):
             if basic_block[instr_index].lineno != lineno:  # type: ignore[union-attr]
                 lineno = basic_block[instr_index].lineno  # type: ignore[union-attr]
                 line_id = self._tracer.register_line(
-                    code_object_id, file_name, lineno  # type: ignore[arg-type]
+                    code_object_id,
+                    file_name,
+                    lineno,  # type: ignore[arg-type]
                 )
                 instr_index += (  # increment by the amount of instructions inserted
                     self.instrument_line(
@@ -783,9 +774,7 @@ class LineCoverageInstrumentation(InstrumentationAdapter):
                 )
             instr_index += 1
 
-    def instrument_line(
-        self, block: BasicBlock, instr_index: int, line_id: int, lineno: int
-    ) -> int:
+    def instrument_line(self, block: BasicBlock, instr_index: int, line_id: int, lineno: int) -> int:
         """Instrument instructions of a new line.
 
         We add a call to the tracer which reports a line was executed.
@@ -801,7 +790,9 @@ class LineCoverageInstrumentation(InstrumentationAdapter):
         """
         inserted_instructions = [
             ArtificialInstr(
-                "LOAD_CONST", self._tracer, lineno=lineno  # type: ignore[arg-type]
+                "LOAD_CONST",
+                self._tracer,
+                lineno=lineno,  # type: ignore[arg-type]
             ),
             ArtificialInstr(
                 "LOAD_METHOD",
@@ -875,14 +866,14 @@ class CheckedCoverageInstrumentation(InstrumentationAdapter):
             ):
                 lineno = instr.lineno  # type: ignore[union-attr]
                 self._tracer.register_line(
-                    code_object_id, file_name, lineno  # type: ignore[arg-type]
+                    code_object_id,
+                    file_name,
+                    lineno,  # type: ignore[arg-type]
                 )
 
             # Perform the actual instrumentation
             match instr.opcode:  # type: ignore[union-attr]
-                case opcode if opcode in (
-                    op.OP_UNARY + op.OP_BINARY + op.OP_INPLACE + op.OP_COMPARE
-                ):
+                case opcode if opcode in (op.OP_UNARY + op.OP_BINARY + op.OP_INPLACE + op.OP_COMPARE):
                     self._instrument_generic(
                         new_block_instructions,
                         code_object_id,
@@ -1001,45 +992,43 @@ class CheckedCoverageInstrumentation(InstrumentationAdapter):
         file_name: str,
     ) -> None:
         # Call tracing method
-        new_block_instructions.extend(
-            [
-                # Load tracing method
-                ArtificialInstr(
-                    "LOAD_CONST",
-                    self._tracer,  # type: ignore[arg-type]
-                    lineno=instr.lineno,
-                ),
-                ArtificialInstr(
-                    "LOAD_METHOD",
-                    # references method in the ExecutionTracer by name
-                    # to avoid circular import
-                    "track_generic",
-                    lineno=instr.lineno,
-                ),
-                # Load arguments
-                # Current module
-                ArtificialInstr("LOAD_CONST", file_name, lineno=instr.lineno),
-                # Code object id
-                ArtificialInstr("LOAD_CONST", code_object_id, lineno=instr.lineno),
-                # Basic block id
-                ArtificialInstr("LOAD_CONST", node_id, lineno=instr.lineno),
-                # Instruction opcode
-                ArtificialInstr("LOAD_CONST", instr.opcode, lineno=instr.lineno),
-                # Line number of access
-                ArtificialInstr(
-                    "LOAD_CONST",
-                    instr.lineno,  # type: ignore[arg-type]
-                    lineno=instr.lineno,
-                ),
-                # Instruction number of access
-                ArtificialInstr("LOAD_CONST", offset, lineno=instr.lineno),
-                # Call tracing method
-                ArtificialInstr("CALL_METHOD", 6, lineno=instr.lineno),
-                ArtificialInstr("POP_TOP", lineno=instr.lineno),
-                # Original instruction
-                instr,
-            ]
-        )
+        new_block_instructions.extend([
+            # Load tracing method
+            ArtificialInstr(
+                "LOAD_CONST",
+                self._tracer,  # type: ignore[arg-type]
+                lineno=instr.lineno,
+            ),
+            ArtificialInstr(
+                "LOAD_METHOD",
+                # references method in the ExecutionTracer by name
+                # to avoid circular import
+                "track_generic",
+                lineno=instr.lineno,
+            ),
+            # Load arguments
+            # Current module
+            ArtificialInstr("LOAD_CONST", file_name, lineno=instr.lineno),
+            # Code object id
+            ArtificialInstr("LOAD_CONST", code_object_id, lineno=instr.lineno),
+            # Basic block id
+            ArtificialInstr("LOAD_CONST", node_id, lineno=instr.lineno),
+            # Instruction opcode
+            ArtificialInstr("LOAD_CONST", instr.opcode, lineno=instr.lineno),
+            # Line number of access
+            ArtificialInstr(
+                "LOAD_CONST",
+                instr.lineno,  # type: ignore[arg-type]
+                lineno=instr.lineno,
+            ),
+            # Instruction number of access
+            ArtificialInstr("LOAD_CONST", offset, lineno=instr.lineno),
+            # Call tracing method
+            ArtificialInstr("CALL_METHOD", 6, lineno=instr.lineno),
+            ArtificialInstr("POP_TOP", lineno=instr.lineno),
+            # Original instruction
+            instr,
+        ])
 
     def _instrument_local_access(  # noqa: PLR0917
         self,
@@ -1054,50 +1043,38 @@ class CheckedCoverageInstrumentation(InstrumentationAdapter):
             # Original instruction before instrumentation
             new_block_instructions.append(instr)
 
-        new_block_instructions.extend(
-            [
-                # Load tracing method
-                ArtificialInstr(
-                    "LOAD_CONST",
-                    self._tracer,  # type: ignore[arg-type]
-                    lineno=instr.lineno,
-                ),
-                ArtificialInstr(
-                    "LOAD_METHOD",
-                    # references method in the ExecutionTracer by name
-                    # to avoid circular import
-                    "track_memory_access",
-                    lineno=instr.lineno,
-                ),
-            ]
-        )
+        new_block_instructions.extend([
+            # Load tracing method
+            ArtificialInstr(
+                "LOAD_CONST",
+                self._tracer,  # type: ignore[arg-type]
+                lineno=instr.lineno,
+            ),
+            ArtificialInstr(
+                "LOAD_METHOD",
+                # references method in the ExecutionTracer by name
+                # to avoid circular import
+                "track_memory_access",
+                lineno=instr.lineno,
+            ),
+        ])
 
         # Load arguments
-        new_block_instructions.extend(
-            self._load_args(
-                code_object_id, node_id, offset, instr.arg, instr, file_name
-            )
-        )
+        new_block_instructions.extend(self._load_args(code_object_id, node_id, offset, instr.arg, instr, file_name))
 
-        new_block_instructions.extend(
-            [
-                # Argument address
-                ArtificialInstr(
-                    "LOAD_GLOBAL", builtins.id.__name__, lineno=instr.lineno
-                ),
-                ArtificialInstr("LOAD_FAST", instr.arg, lineno=instr.lineno),
-                ArtificialInstr("CALL_FUNCTION", 1, lineno=instr.lineno),
-                # Argument type
-                ArtificialInstr(
-                    "LOAD_GLOBAL", builtins.type.__name__, lineno=instr.lineno
-                ),
-                ArtificialInstr("LOAD_FAST", instr.arg, lineno=instr.lineno),
-                ArtificialInstr("CALL_FUNCTION", 1, lineno=instr.lineno),
-                # Call tracing method
-                ArtificialInstr("CALL_METHOD", 9, lineno=instr.lineno),
-                ArtificialInstr("POP_TOP", lineno=instr.lineno),
-            ]
-        )
+        new_block_instructions.extend([
+            # Argument address
+            ArtificialInstr("LOAD_GLOBAL", builtins.id.__name__, lineno=instr.lineno),
+            ArtificialInstr("LOAD_FAST", instr.arg, lineno=instr.lineno),
+            ArtificialInstr("CALL_FUNCTION", 1, lineno=instr.lineno),
+            # Argument type
+            ArtificialInstr("LOAD_GLOBAL", builtins.type.__name__, lineno=instr.lineno),
+            ArtificialInstr("LOAD_FAST", instr.arg, lineno=instr.lineno),
+            ArtificialInstr("CALL_FUNCTION", 1, lineno=instr.lineno),
+            # Call tracing method
+            ArtificialInstr("CALL_METHOD", 9, lineno=instr.lineno),
+            ArtificialInstr("POP_TOP", lineno=instr.lineno),
+        ])
 
         if instr.opcode == op.DELETE_FAST:
             # Original instruction after instrumentation
@@ -1120,96 +1097,82 @@ class CheckedCoverageInstrumentation(InstrumentationAdapter):
             op.LOAD_METHOD,
         }:
             # Duplicate top of stack to access attribute
-            new_block_instructions.append(
-                ArtificialInstr("DUP_TOP", lineno=instr.lineno)
-            )
+            new_block_instructions.append(ArtificialInstr("DUP_TOP", lineno=instr.lineno))
         elif instr.opcode == op.STORE_ATTR:
-            new_block_instructions.extend(
-                [
-                    # Execute actual store instruction
-                    ArtificialInstr("DUP_TOP", lineno=instr.lineno),
-                    ArtificialInstr("ROT_THREE", lineno=instr.lineno),
-                    instr,
-                ]
-            )
+            new_block_instructions.extend([
+                # Execute actual store instruction
+                ArtificialInstr("DUP_TOP", lineno=instr.lineno),
+                ArtificialInstr("ROT_THREE", lineno=instr.lineno),
+                instr,
+            ])
 
-        new_block_instructions.extend(
-            [
-                # Load tracing method
-                ArtificialInstr(
-                    "LOAD_CONST",
-                    self._tracer,  # type: ignore[arg-type]
-                    lineno=instr.lineno,
-                ),
-                ArtificialInstr(
-                    "LOAD_METHOD",
-                    # references method in the ExecutionTracer by name
-                    # to avoid circular import
-                    "track_attribute_access",
-                    lineno=instr.lineno,
-                ),
-                # A method occupies two slots on top of the stack
-                # -> move third up and keep order of upper two
-                ArtificialInstr("ROT_THREE", lineno=instr.lineno),
-                ArtificialInstr("ROT_THREE", lineno=instr.lineno),
-            ]
-        )
+        new_block_instructions.extend([
+            # Load tracing method
+            ArtificialInstr(
+                "LOAD_CONST",
+                self._tracer,  # type: ignore[arg-type]
+                lineno=instr.lineno,
+            ),
+            ArtificialInstr(
+                "LOAD_METHOD",
+                # references method in the ExecutionTracer by name
+                # to avoid circular import
+                "track_attribute_access",
+                lineno=instr.lineno,
+            ),
+            # A method occupies two slots on top of the stack
+            # -> move third up and keep order of upper two
+            ArtificialInstr("ROT_THREE", lineno=instr.lineno),
+            ArtificialInstr("ROT_THREE", lineno=instr.lineno),
+        ])
 
         # Load arguments
         new_block_instructions.extend(
-            self._load_args_with_prop(
-                code_object_id, node_id, offset, instr.arg, instr, file_name
-            )
+            self._load_args_with_prop(code_object_id, node_id, offset, instr.arg, instr, file_name)
         )
 
-        new_block_instructions.extend(
-            [
-                # TOS is object ref -> duplicate for determination of source address,
-                # argument address and argument_type
-                ArtificialInstr("DUP_TOP", lineno=instr.lineno),
-                ArtificialInstr("DUP_TOP", lineno=instr.lineno),
-                # Determine source address
-                #   Load lookup method
-                ArtificialInstr(
-                    "LOAD_CONST",
-                    self._tracer.__class__,  # type: ignore[arg-type]
-                    lineno=instr.lineno,
-                ),
-                ArtificialInstr(
-                    "LOAD_METHOD",
-                    # references method in the ExecutionTracer by name
-                    # to avoid circular import
-                    "attribute_lookup",
-                    lineno=instr.lineno,
-                ),
-                ArtificialInstr("ROT_THREE", lineno=instr.lineno),
-                ArtificialInstr("ROT_THREE", lineno=instr.lineno),
-                #   Load attribute name (second argument)
-                ArtificialInstr("LOAD_CONST", instr.arg, lineno=instr.lineno),
-                #   Call lookup method
-                ArtificialInstr("CALL_METHOD", 2, lineno=instr.lineno),
-                # Determine argument address
-                ArtificialInstr("ROT_TWO", lineno=instr.lineno),
-                ArtificialInstr("LOAD_ATTR", arg=instr.arg, lineno=instr.lineno),
-                ArtificialInstr(
-                    "LOAD_GLOBAL", builtins.id.__name__, lineno=instr.lineno
-                ),
-                ArtificialInstr("ROT_TWO", lineno=instr.lineno),
-                ArtificialInstr("CALL_FUNCTION", 1, lineno=instr.lineno),
-                # Determine argument type
-                ArtificialInstr("ROT_THREE", lineno=instr.lineno),
-                ArtificialInstr("ROT_THREE", lineno=instr.lineno),
-                ArtificialInstr("LOAD_ATTR", arg=instr.arg, lineno=instr.lineno),
-                ArtificialInstr(
-                    "LOAD_GLOBAL", builtins.type.__name__, lineno=instr.lineno
-                ),
-                ArtificialInstr("ROT_TWO", lineno=instr.lineno),
-                ArtificialInstr("CALL_FUNCTION", 1, lineno=instr.lineno),
-                # Call tracing method
-                ArtificialInstr("CALL_METHOD", 10, lineno=instr.lineno),
-                ArtificialInstr("POP_TOP", lineno=instr.lineno),
-            ]
-        )
+        new_block_instructions.extend([
+            # TOS is object ref -> duplicate for determination of source address,
+            # argument address and argument_type
+            ArtificialInstr("DUP_TOP", lineno=instr.lineno),
+            ArtificialInstr("DUP_TOP", lineno=instr.lineno),
+            # Determine source address
+            #   Load lookup method
+            ArtificialInstr(
+                "LOAD_CONST",
+                self._tracer.__class__,  # type: ignore[arg-type]
+                lineno=instr.lineno,
+            ),
+            ArtificialInstr(
+                "LOAD_METHOD",
+                # references method in the ExecutionTracer by name
+                # to avoid circular import
+                "attribute_lookup",
+                lineno=instr.lineno,
+            ),
+            ArtificialInstr("ROT_THREE", lineno=instr.lineno),
+            ArtificialInstr("ROT_THREE", lineno=instr.lineno),
+            #   Load attribute name (second argument)
+            ArtificialInstr("LOAD_CONST", instr.arg, lineno=instr.lineno),
+            #   Call lookup method
+            ArtificialInstr("CALL_METHOD", 2, lineno=instr.lineno),
+            # Determine argument address
+            ArtificialInstr("ROT_TWO", lineno=instr.lineno),
+            ArtificialInstr("LOAD_ATTR", arg=instr.arg, lineno=instr.lineno),
+            ArtificialInstr("LOAD_GLOBAL", builtins.id.__name__, lineno=instr.lineno),
+            ArtificialInstr("ROT_TWO", lineno=instr.lineno),
+            ArtificialInstr("CALL_FUNCTION", 1, lineno=instr.lineno),
+            # Determine argument type
+            ArtificialInstr("ROT_THREE", lineno=instr.lineno),
+            ArtificialInstr("ROT_THREE", lineno=instr.lineno),
+            ArtificialInstr("LOAD_ATTR", arg=instr.arg, lineno=instr.lineno),
+            ArtificialInstr("LOAD_GLOBAL", builtins.type.__name__, lineno=instr.lineno),
+            ArtificialInstr("ROT_TWO", lineno=instr.lineno),
+            ArtificialInstr("CALL_FUNCTION", 1, lineno=instr.lineno),
+            # Call tracing method
+            ArtificialInstr("CALL_METHOD", 10, lineno=instr.lineno),
+            ArtificialInstr("POP_TOP", lineno=instr.lineno),
+        ])
 
         if instr.opcode in {
             op.LOAD_ATTR,
@@ -1230,86 +1193,76 @@ class CheckedCoverageInstrumentation(InstrumentationAdapter):
         file_name: str,
     ) -> None:
         if instr.opcode == op.STORE_SUBSCR:
-            new_block_instructions.extend(
-                [
-                    # Execute actual store instruction
-                    ArtificialInstr("ROT_TWO", lineno=instr.lineno),
-                    ArtificialInstr("DUP_TOP", lineno=instr.lineno),
-                    ArtificialInstr("ROT_FOUR", lineno=instr.lineno),
-                    ArtificialInstr("ROT_TWO", lineno=instr.lineno),
-                    instr,
-                ]
-            )
+            new_block_instructions.extend([
+                # Execute actual store instruction
+                ArtificialInstr("ROT_TWO", lineno=instr.lineno),
+                ArtificialInstr("DUP_TOP", lineno=instr.lineno),
+                ArtificialInstr("ROT_FOUR", lineno=instr.lineno),
+                ArtificialInstr("ROT_TWO", lineno=instr.lineno),
+                instr,
+            ])
         elif instr.opcode == op.DELETE_SUBSCR:
-            new_block_instructions.extend(
-                [
-                    # Execute delete instruction
-                    ArtificialInstr("ROT_TWO", lineno=instr.lineno),
-                    ArtificialInstr("DUP_TOP", lineno=instr.lineno),
-                    ArtificialInstr("ROT_THREE", lineno=instr.lineno),
-                    ArtificialInstr("ROT_THREE", lineno=instr.lineno),
-                    instr,
-                ]
-            )
+            new_block_instructions.extend([
+                # Execute delete instruction
+                ArtificialInstr("ROT_TWO", lineno=instr.lineno),
+                ArtificialInstr("DUP_TOP", lineno=instr.lineno),
+                ArtificialInstr("ROT_THREE", lineno=instr.lineno),
+                ArtificialInstr("ROT_THREE", lineno=instr.lineno),
+                instr,
+            ])
         elif instr.opcode == op.BINARY_SUBSCR:
-            new_block_instructions.extend(
-                [
-                    # Execute access afterwards, prepare stack
-                    ArtificialInstr("DUP_TOP_TWO", lineno=instr.lineno),
-                    ArtificialInstr("POP_TOP", lineno=instr.lineno),
-                ]
-            )
+            new_block_instructions.extend([
+                # Execute access afterwards, prepare stack
+                ArtificialInstr("DUP_TOP_TWO", lineno=instr.lineno),
+                ArtificialInstr("POP_TOP", lineno=instr.lineno),
+            ])
 
-        new_block_instructions.extend(
-            [
-                # Load tracing method
-                ArtificialInstr(
-                    "LOAD_CONST",
-                    self._tracer,  # type: ignore[arg-type]
-                    lineno=instr.lineno,
-                ),
-                ArtificialInstr(
-                    "LOAD_METHOD",
-                    # references method in the ExecutionTracer by name
-                    # to avoid circular import
-                    "track_attribute_access",
-                    lineno=instr.lineno,
-                ),
-                # A method occupies two slots on top of the stack
-                # -> move third up and keep order of upper two
-                ArtificialInstr("ROT_THREE", lineno=instr.lineno),
-                ArtificialInstr("ROT_THREE", lineno=instr.lineno),
-            ]
-        )
+        new_block_instructions.extend([
+            # Load tracing method
+            ArtificialInstr(
+                "LOAD_CONST",
+                self._tracer,  # type: ignore[arg-type]
+                lineno=instr.lineno,
+            ),
+            ArtificialInstr(
+                "LOAD_METHOD",
+                # references method in the ExecutionTracer by name
+                # to avoid circular import
+                "track_attribute_access",
+                lineno=instr.lineno,
+            ),
+            # A method occupies two slots on top of the stack
+            # -> move third up and keep order of upper two
+            ArtificialInstr("ROT_THREE", lineno=instr.lineno),
+            ArtificialInstr("ROT_THREE", lineno=instr.lineno),
+        ])
 
         # Load arguments
         new_block_instructions.extend(
-            self._load_args_with_prop(
-                code_object_id, node_id, offset, "None", instr, file_name
-            )
+            self._load_args_with_prop(code_object_id, node_id, offset, "None", instr, file_name)
         )
 
-        new_block_instructions.extend(
-            [
-                # Source object address
-                ArtificialInstr(
-                    "LOAD_GLOBAL", builtins.id.__name__, lineno=instr.lineno
-                ),
-                ArtificialInstr("ROT_TWO", lineno=instr.lineno),
-                ArtificialInstr("CALL_FUNCTION", 1, lineno=instr.lineno),
-                # No arg address
-                ArtificialInstr(
-                    "LOAD_CONST", None, lineno=instr.lineno  # type: ignore[arg-type]
-                ),
-                # No arg type
-                ArtificialInstr(
-                    "LOAD_CONST", None, lineno=instr.lineno  # type: ignore[arg-type]
-                ),
-                # Call tracing method
-                ArtificialInstr("CALL_METHOD", 10, lineno=instr.lineno),
-                ArtificialInstr("POP_TOP", lineno=instr.lineno),
-            ]
-        )
+        new_block_instructions.extend([
+            # Source object address
+            ArtificialInstr("LOAD_GLOBAL", builtins.id.__name__, lineno=instr.lineno),
+            ArtificialInstr("ROT_TWO", lineno=instr.lineno),
+            ArtificialInstr("CALL_FUNCTION", 1, lineno=instr.lineno),
+            # No arg address
+            ArtificialInstr(
+                "LOAD_CONST",
+                None,
+                lineno=instr.lineno,  # type: ignore[arg-type]
+            ),
+            # No arg type
+            ArtificialInstr(
+                "LOAD_CONST",
+                None,
+                lineno=instr.lineno,  # type: ignore[arg-type]
+            ),
+            # Call tracing method
+            ArtificialInstr("CALL_METHOD", 10, lineno=instr.lineno),
+            ArtificialInstr("POP_TOP", lineno=instr.lineno),
+        ])
 
         if instr.opcode == op.BINARY_SUBSCR:
             new_block_instructions.append(instr)
@@ -1327,50 +1280,38 @@ class CheckedCoverageInstrumentation(InstrumentationAdapter):
             # Original instruction at before instrumentation
             new_block_instructions.append(instr)
 
-        new_block_instructions.extend(
-            [
-                # Load tracing method
-                ArtificialInstr(
-                    "LOAD_CONST",
-                    self._tracer,  # type: ignore[arg-type]
-                    lineno=instr.lineno,
-                ),
-                ArtificialInstr(
-                    "LOAD_METHOD",
-                    # references method in the ExecutionTracer by name
-                    # to avoid circular import
-                    "track_memory_access",
-                    lineno=instr.lineno,
-                ),
-            ]
-        )
+        new_block_instructions.extend([
+            # Load tracing method
+            ArtificialInstr(
+                "LOAD_CONST",
+                self._tracer,  # type: ignore[arg-type]
+                lineno=instr.lineno,
+            ),
+            ArtificialInstr(
+                "LOAD_METHOD",
+                # references method in the ExecutionTracer by name
+                # to avoid circular import
+                "track_memory_access",
+                lineno=instr.lineno,
+            ),
+        ])
 
         # Load arguments
-        new_block_instructions.extend(
-            self._load_args(
-                code_object_id, node_id, offset, instr.arg, instr, file_name
-            )
-        )
+        new_block_instructions.extend(self._load_args(code_object_id, node_id, offset, instr.arg, instr, file_name))
 
-        new_block_instructions.extend(
-            [
-                # Argument address
-                ArtificialInstr(
-                    "LOAD_GLOBAL", builtins.id.__name__, lineno=instr.lineno
-                ),
-                ArtificialInstr("LOAD_NAME", instr.arg, lineno=instr.lineno),
-                ArtificialInstr("CALL_FUNCTION", 1, lineno=instr.lineno),
-                # Argument type
-                ArtificialInstr(
-                    "LOAD_GLOBAL", builtins.type.__name__, lineno=instr.lineno
-                ),
-                ArtificialInstr("LOAD_NAME", instr.arg, lineno=instr.lineno),
-                ArtificialInstr("CALL_FUNCTION", 1, lineno=instr.lineno),
-                # Call tracing method
-                ArtificialInstr("CALL_METHOD", 9, lineno=instr.lineno),
-                ArtificialInstr("POP_TOP", lineno=instr.lineno),
-            ]
-        )
+        new_block_instructions.extend([
+            # Argument address
+            ArtificialInstr("LOAD_GLOBAL", builtins.id.__name__, lineno=instr.lineno),
+            ArtificialInstr("LOAD_NAME", instr.arg, lineno=instr.lineno),
+            ArtificialInstr("CALL_FUNCTION", 1, lineno=instr.lineno),
+            # Argument type
+            ArtificialInstr("LOAD_GLOBAL", builtins.type.__name__, lineno=instr.lineno),
+            ArtificialInstr("LOAD_NAME", instr.arg, lineno=instr.lineno),
+            ArtificialInstr("CALL_FUNCTION", 1, lineno=instr.lineno),
+            # Call tracing method
+            ArtificialInstr("CALL_METHOD", 9, lineno=instr.lineno),
+            ArtificialInstr("POP_TOP", lineno=instr.lineno),
+        ])
         if instr.opcode == op.DELETE_NAME:
             # Original instruction after instrumentation
             # (otherwise we can not read it anymore)
@@ -1385,57 +1326,47 @@ class CheckedCoverageInstrumentation(InstrumentationAdapter):
         offset: int,
         file_name: str,
     ) -> None:
-        new_block_instructions.extend(
-            [
-                # Execute actual instruction and duplicate module reference on TOS
-                instr,
-                ArtificialInstr("DUP_TOP"),
-                # Load tracing method
-                ArtificialInstr(
-                    "LOAD_CONST",
-                    self._tracer,  # type: ignore[arg-type]
-                    lineno=instr.lineno,
-                ),
-                ArtificialInstr(
-                    "LOAD_METHOD",
-                    # references method in the ExecutionTracer by name
-                    # to avoid circular import
-                    "track_memory_access",
-                    lineno=instr.lineno,
-                ),
-                ArtificialInstr("ROT_THREE", lineno=instr.lineno),
-                ArtificialInstr("ROT_THREE", lineno=instr.lineno),
-            ]
-        )
+        new_block_instructions.extend([
+            # Execute actual instruction and duplicate module reference on TOS
+            instr,
+            ArtificialInstr("DUP_TOP"),
+            # Load tracing method
+            ArtificialInstr(
+                "LOAD_CONST",
+                self._tracer,  # type: ignore[arg-type]
+                lineno=instr.lineno,
+            ),
+            ArtificialInstr(
+                "LOAD_METHOD",
+                # references method in the ExecutionTracer by name
+                # to avoid circular import
+                "track_memory_access",
+                lineno=instr.lineno,
+            ),
+            ArtificialInstr("ROT_THREE", lineno=instr.lineno),
+            ArtificialInstr("ROT_THREE", lineno=instr.lineno),
+        ])
 
         # Load arguments
         new_block_instructions.extend(
-            self._load_args_with_prop(
-                code_object_id, node_id, offset, instr.arg, instr, file_name
-            )
+            self._load_args_with_prop(code_object_id, node_id, offset, instr.arg, instr, file_name)
         )
 
-        new_block_instructions.extend(
-            [
-                ArtificialInstr("DUP_TOP", lineno=instr.lineno),
-                # Argument address
-                ArtificialInstr(
-                    "LOAD_GLOBAL", builtins.id.__name__, lineno=instr.lineno
-                ),
-                ArtificialInstr("ROT_TWO", lineno=instr.lineno),
-                ArtificialInstr("CALL_FUNCTION", 1, lineno=instr.lineno),
-                # Argument type
-                ArtificialInstr("ROT_TWO", lineno=instr.lineno),
-                ArtificialInstr(
-                    "LOAD_GLOBAL", builtins.type.__name__, lineno=instr.lineno
-                ),
-                ArtificialInstr("ROT_TWO", lineno=instr.lineno),
-                ArtificialInstr("CALL_FUNCTION", 1, lineno=instr.lineno),
-                # Call tracing method
-                ArtificialInstr("CALL_METHOD", 9, lineno=instr.lineno),
-                ArtificialInstr("POP_TOP", lineno=instr.lineno),
-            ]
-        )
+        new_block_instructions.extend([
+            ArtificialInstr("DUP_TOP", lineno=instr.lineno),
+            # Argument address
+            ArtificialInstr("LOAD_GLOBAL", builtins.id.__name__, lineno=instr.lineno),
+            ArtificialInstr("ROT_TWO", lineno=instr.lineno),
+            ArtificialInstr("CALL_FUNCTION", 1, lineno=instr.lineno),
+            # Argument type
+            ArtificialInstr("ROT_TWO", lineno=instr.lineno),
+            ArtificialInstr("LOAD_GLOBAL", builtins.type.__name__, lineno=instr.lineno),
+            ArtificialInstr("ROT_TWO", lineno=instr.lineno),
+            ArtificialInstr("CALL_FUNCTION", 1, lineno=instr.lineno),
+            # Call tracing method
+            ArtificialInstr("CALL_METHOD", 9, lineno=instr.lineno),
+            ArtificialInstr("POP_TOP", lineno=instr.lineno),
+        ])
 
     def _instrument_global_access(  # noqa: PLR0917
         self,
@@ -1450,50 +1381,38 @@ class CheckedCoverageInstrumentation(InstrumentationAdapter):
             # Original instruction before instrumentation
             new_block_instructions.append(instr)
 
-        new_block_instructions.extend(
-            [
-                # Load tracing method
-                ArtificialInstr(
-                    "LOAD_CONST",
-                    self._tracer,  # type: ignore[arg-type]
-                    lineno=instr.lineno,
-                ),
-                ArtificialInstr(
-                    "LOAD_METHOD",
-                    # references method in the ExecutionTracer by name
-                    # to avoid circular import
-                    "track_memory_access",
-                    lineno=instr.lineno,
-                ),
-            ]
-        )
+        new_block_instructions.extend([
+            # Load tracing method
+            ArtificialInstr(
+                "LOAD_CONST",
+                self._tracer,  # type: ignore[arg-type]
+                lineno=instr.lineno,
+            ),
+            ArtificialInstr(
+                "LOAD_METHOD",
+                # references method in the ExecutionTracer by name
+                # to avoid circular import
+                "track_memory_access",
+                lineno=instr.lineno,
+            ),
+        ])
 
         # Load arguments
-        new_block_instructions.extend(
-            self._load_args(
-                code_object_id, node_id, offset, instr.arg, instr, file_name
-            )
-        )
+        new_block_instructions.extend(self._load_args(code_object_id, node_id, offset, instr.arg, instr, file_name))
 
-        new_block_instructions.extend(
-            [
-                # Argument address
-                ArtificialInstr(
-                    "LOAD_GLOBAL", builtins.id.__name__, lineno=instr.lineno
-                ),
-                ArtificialInstr("LOAD_GLOBAL", instr.arg, lineno=instr.lineno),
-                ArtificialInstr("CALL_FUNCTION", 1, lineno=instr.lineno),
-                # Argument type
-                ArtificialInstr(
-                    "LOAD_GLOBAL", builtins.type.__name__, lineno=instr.lineno
-                ),
-                ArtificialInstr("LOAD_GLOBAL", instr.arg, lineno=instr.lineno),
-                ArtificialInstr("CALL_FUNCTION", 1, lineno=instr.lineno),
-                # Call tracing method
-                ArtificialInstr("CALL_METHOD", 9, lineno=instr.lineno),
-                ArtificialInstr("POP_TOP", lineno=instr.lineno),
-            ]
-        )
+        new_block_instructions.extend([
+            # Argument address
+            ArtificialInstr("LOAD_GLOBAL", builtins.id.__name__, lineno=instr.lineno),
+            ArtificialInstr("LOAD_GLOBAL", instr.arg, lineno=instr.lineno),
+            ArtificialInstr("CALL_FUNCTION", 1, lineno=instr.lineno),
+            # Argument type
+            ArtificialInstr("LOAD_GLOBAL", builtins.type.__name__, lineno=instr.lineno),
+            ArtificialInstr("LOAD_GLOBAL", instr.arg, lineno=instr.lineno),
+            ArtificialInstr("CALL_FUNCTION", 1, lineno=instr.lineno),
+            # Call tracing method
+            ArtificialInstr("CALL_METHOD", 9, lineno=instr.lineno),
+            ArtificialInstr("POP_TOP", lineno=instr.lineno),
+        ])
 
         if instr.opcode == op.DELETE_GLOBAL:
             # Original instruction after instrumentation
@@ -1511,9 +1430,7 @@ class CheckedCoverageInstrumentation(InstrumentationAdapter):
     ) -> None:
         # Load instruction
         if instr.opcode == op.LOAD_CLASSDEREF:
-            load_instr = ArtificialInstr(
-                "LOAD_CLASSDEREF", instr.arg, lineno=instr.lineno
-            )
+            load_instr = ArtificialInstr("LOAD_CLASSDEREF", instr.arg, lineno=instr.lineno)
         else:
             load_instr = ArtificialInstr("LOAD_DEREF", instr.arg, lineno=instr.lineno)
 
@@ -1521,23 +1438,21 @@ class CheckedCoverageInstrumentation(InstrumentationAdapter):
             # Original instruction before instrumentation
             new_block_instructions.append(instr)
 
-        new_block_instructions.extend(
-            [
-                # Load tracing method
-                ArtificialInstr(
-                    "LOAD_CONST",
-                    self._tracer,  # type: ignore[arg-type]
-                    lineno=instr.lineno,
-                ),
-                ArtificialInstr(
-                    "LOAD_METHOD",
-                    # references method in the ExecutionTracer by name
-                    # to avoid circular import
-                    "track_memory_access",
-                    lineno=instr.lineno,
-                ),
-            ]
-        )
+        new_block_instructions.extend([
+            # Load tracing method
+            ArtificialInstr(
+                "LOAD_CONST",
+                self._tracer,  # type: ignore[arg-type]
+                lineno=instr.lineno,
+            ),
+            ArtificialInstr(
+                "LOAD_METHOD",
+                # references method in the ExecutionTracer by name
+                # to avoid circular import
+                "track_memory_access",
+                lineno=instr.lineno,
+            ),
+        ])
 
         # Load arguments
         new_block_instructions.extend(
@@ -1551,25 +1466,19 @@ class CheckedCoverageInstrumentation(InstrumentationAdapter):
             )
         )
 
-        new_block_instructions.extend(
-            [
-                # Argument address
-                ArtificialInstr(
-                    "LOAD_GLOBAL", builtins.id.__name__, lineno=instr.lineno
-                ),
-                load_instr,
-                ArtificialInstr("CALL_FUNCTION", 1, lineno=instr.lineno),
-                # Argument type
-                ArtificialInstr(
-                    "LOAD_GLOBAL", builtins.type.__name__, lineno=instr.lineno
-                ),
-                load_instr,
-                ArtificialInstr("CALL_FUNCTION", 1, lineno=instr.lineno),
-                # Call tracing method
-                ArtificialInstr("CALL_METHOD", 9, lineno=instr.lineno),
-                ArtificialInstr("POP_TOP", lineno=instr.lineno),
-            ]
-        )
+        new_block_instructions.extend([
+            # Argument address
+            ArtificialInstr("LOAD_GLOBAL", builtins.id.__name__, lineno=instr.lineno),
+            load_instr,
+            ArtificialInstr("CALL_FUNCTION", 1, lineno=instr.lineno),
+            # Argument type
+            ArtificialInstr("LOAD_GLOBAL", builtins.type.__name__, lineno=instr.lineno),
+            load_instr,
+            ArtificialInstr("CALL_FUNCTION", 1, lineno=instr.lineno),
+            # Call tracing method
+            ArtificialInstr("CALL_METHOD", 9, lineno=instr.lineno),
+            ArtificialInstr("POP_TOP", lineno=instr.lineno),
+        ])
 
         if instr.opcode == op.DELETE_DEREF:
             # Original instruction after instrumentation
@@ -1586,19 +1495,17 @@ class CheckedCoverageInstrumentation(InstrumentationAdapter):
         cfg: CFG,
         file_name: str,
     ) -> None:
-        new_block_instructions.extend(
-            [
-                # Load tracing method
-                ArtificialInstr(
-                    "LOAD_CONST",
-                    self._tracer,  # type: ignore[arg-type]
-                    lineno=instr.lineno,
-                ),
-                # references method in the ExecutionTracer by name
-                # to avoid circular import
-                ArtificialInstr("LOAD_METHOD", "track_jump", lineno=instr.lineno),
-            ]
-        )
+        new_block_instructions.extend([
+            # Load tracing method
+            ArtificialInstr(
+                "LOAD_CONST",
+                self._tracer,  # type: ignore[arg-type]
+                lineno=instr.lineno,
+            ),
+            # references method in the ExecutionTracer by name
+            # to avoid circular import
+            ArtificialInstr("LOAD_METHOD", "track_jump", lineno=instr.lineno),
+        ])
 
         # Load arguments
         new_block_instructions.extend(
@@ -1612,13 +1519,11 @@ class CheckedCoverageInstrumentation(InstrumentationAdapter):
             )
         )
 
-        new_block_instructions.extend(
-            [
-                # Call tracing method
-                ArtificialInstr("CALL_METHOD", 7, lineno=instr.lineno),
-                ArtificialInstr("POP_TOP", lineno=instr.lineno),
-            ]
-        )
+        new_block_instructions.extend([
+            # Call tracing method
+            ArtificialInstr("CALL_METHOD", 7, lineno=instr.lineno),
+            ArtificialInstr("POP_TOP", lineno=instr.lineno),
+        ])
 
         new_block_instructions.append(instr)
 
@@ -1638,32 +1543,26 @@ class CheckedCoverageInstrumentation(InstrumentationAdapter):
             argument = None
 
         # Call tracing method
-        new_block_instructions.extend(
-            [
-                # Load tracing method
-                ArtificialInstr(
-                    "LOAD_CONST",
-                    self._tracer,  # type: ignore[arg-type]
-                    lineno=instr.lineno,
-                ),
-                # references method in the ExecutionTracer by name
-                # to avoid circular import
-                ArtificialInstr("LOAD_METHOD", "track_call", lineno=instr.lineno),
-            ]
-        )
+        new_block_instructions.extend([
+            # Load tracing method
+            ArtificialInstr(
+                "LOAD_CONST",
+                self._tracer,  # type: ignore[arg-type]
+                lineno=instr.lineno,
+            ),
+            # references method in the ExecutionTracer by name
+            # to avoid circular import
+            ArtificialInstr("LOAD_METHOD", "track_call", lineno=instr.lineno),
+        ])
 
         # Load arguments
-        new_block_instructions.extend(
-            self._load_args(code_object_id, node_id, offset, argument, instr, file_name)
-        )
+        new_block_instructions.extend(self._load_args(code_object_id, node_id, offset, argument, instr, file_name))
 
-        new_block_instructions.extend(
-            [
-                # Call tracing method
-                ArtificialInstr("CALL_METHOD", 7, lineno=instr.lineno),
-                ArtificialInstr("POP_TOP", lineno=instr.lineno),
-            ]
-        )
+        new_block_instructions.extend([
+            # Call tracing method
+            ArtificialInstr("CALL_METHOD", 7, lineno=instr.lineno),
+            ArtificialInstr("POP_TOP", lineno=instr.lineno),
+        ])
 
         new_block_instructions.append(instr)
 
@@ -1676,43 +1575,41 @@ class CheckedCoverageInstrumentation(InstrumentationAdapter):
         offset: int,
         file_name: str,
     ) -> None:
-        new_block_instructions.extend(
-            [
-                # Load tracing method
-                ArtificialInstr(
-                    "LOAD_CONST",
-                    self._tracer,  # type: ignore[arg-type]
-                    lineno=instr.lineno,
-                ),
-                ArtificialInstr(
-                    "LOAD_METHOD",
-                    # references method in the ExecutionTracer by name
-                    # to avoid circular import
-                    "track_return",
-                    lineno=instr.lineno,
-                ),
-                # Load arguments
-                # Current module
-                ArtificialInstr("LOAD_CONST", file_name, lineno=instr.lineno),
-                # Code object id
-                ArtificialInstr("LOAD_CONST", code_object_id, lineno=instr.lineno),
-                # Basic block id
-                ArtificialInstr("LOAD_CONST", node_id, lineno=instr.lineno),
-                # Instruction opcode
-                ArtificialInstr("LOAD_CONST", instr.opcode, lineno=instr.lineno),
-                # Line number of access
-                ArtificialInstr(
-                    "LOAD_CONST",
-                    instr.lineno,  # type: ignore[arg-type]
-                    lineno=instr.lineno,
-                ),
-                # Instruction number of access
-                ArtificialInstr("LOAD_CONST", offset, lineno=instr.lineno),
-                # Call tracing method
-                ArtificialInstr("CALL_METHOD", 6, lineno=instr.lineno),
-                ArtificialInstr("POP_TOP", lineno=instr.lineno),
-            ]
-        )
+        new_block_instructions.extend([
+            # Load tracing method
+            ArtificialInstr(
+                "LOAD_CONST",
+                self._tracer,  # type: ignore[arg-type]
+                lineno=instr.lineno,
+            ),
+            ArtificialInstr(
+                "LOAD_METHOD",
+                # references method in the ExecutionTracer by name
+                # to avoid circular import
+                "track_return",
+                lineno=instr.lineno,
+            ),
+            # Load arguments
+            # Current module
+            ArtificialInstr("LOAD_CONST", file_name, lineno=instr.lineno),
+            # Code object id
+            ArtificialInstr("LOAD_CONST", code_object_id, lineno=instr.lineno),
+            # Basic block id
+            ArtificialInstr("LOAD_CONST", node_id, lineno=instr.lineno),
+            # Instruction opcode
+            ArtificialInstr("LOAD_CONST", instr.opcode, lineno=instr.lineno),
+            # Line number of access
+            ArtificialInstr(
+                "LOAD_CONST",
+                instr.lineno,  # type: ignore[arg-type]
+                lineno=instr.lineno,
+            ),
+            # Instruction number of access
+            ArtificialInstr("LOAD_CONST", offset, lineno=instr.lineno),
+            # Call tracing method
+            ArtificialInstr("CALL_METHOD", 6, lineno=instr.lineno),
+            ArtificialInstr("POP_TOP", lineno=instr.lineno),
+        ])
 
         # Original instruction after instrumentation
         # (otherwise we do not reach instrumented code)
@@ -1859,7 +1756,8 @@ class DynamicSeedingInstrumentation(InstrumentationAdapter):
             and maybe_string_func.arg in DynamicConstantProvider.STRING_FUNCTION_LOOKUP
         ):
             self._instrument_string_func(
-                basic_block, maybe_string_func.arg  # type: ignore[arg-type]
+                basic_block,
+                maybe_string_func.arg,  # type: ignore[arg-type]
             )
         if (
             isinstance(maybe_string_func_with_arg, Instr)
@@ -1867,7 +1765,8 @@ class DynamicSeedingInstrumentation(InstrumentationAdapter):
             and maybe_string_func_with_arg.arg in {"startswith", "endswith"}
         ):
             self._instrument_string_func(
-                basic_block, maybe_string_func_with_arg.arg  # type: ignore[arg-type]
+                basic_block,
+                maybe_string_func_with_arg.arg,  # type: ignore[arg-type]
             )
 
     def _instrument_startswith_function(self, block: BasicBlock) -> None:
@@ -1933,9 +1832,7 @@ class DynamicSeedingInstrumentation(InstrumentationAdapter):
         ]
         self._logger.info("Instrumented endswith function")
 
-    def _instrument_string_function_without_arg(
-        self, block: BasicBlock, function_name: str
-    ) -> None:
+    def _instrument_string_function_without_arg(self, block: BasicBlock, function_name: str) -> None:
         """Instruments the isalnum function in bytecode.
 
         Args:

@@ -10,6 +10,7 @@
 #  SPDX-License-Identifier: MIT
 #
 """Provides an interface for a stopping condition of the algorithm."""
+
 from __future__ import annotations
 
 import time
@@ -97,9 +98,7 @@ class StoppingCondition(so.SearchObserver, ExecutionObserver, ABC):
             test_case: Not used
         """
 
-    def after_test_case_execution_inside_thread(
-        self, test_case: tc.TestCase, result: ExecutionResult
-    ):
+    def after_test_case_execution_inside_thread(self, test_case: tc.TestCase, result: ExecutionResult):
         """Not used.
 
         Args:
@@ -107,9 +106,7 @@ class StoppingCondition(so.SearchObserver, ExecutionObserver, ABC):
             result: Not used
         """
 
-    def after_test_case_execution_outside_thread(
-        self, test_case: tc.TestCase, result: ExecutionResult
-    ):
+    def after_test_case_execution_outside_thread(self, test_case: tc.TestCase, result: ExecutionResult):
         """Not used.
 
         Args:
@@ -201,9 +198,7 @@ class MaxCoverageStoppingCondition(StoppingCondition):
         self.__current_coverage = int(best.get_coverage() * 100)
 
     def __str__(self) -> str:
-        return (
-            f"Achieved coverage: {self.__current_coverage / self.__max_coverage:.6f}%"
-        )
+        return f"Achieved coverage: {self.__current_coverage / self.__max_coverage:.6f}%"
 
 
 class CoveragePlateauStoppingCondition(StoppingCondition):
@@ -286,10 +281,7 @@ class MinimumCoveragePlateauStoppingCondition(StoppingCondition):
         return self.__minimum_coverage
 
     def is_fulfilled(self) -> bool:  # noqa: D102
-        return (
-            self.__iterations >= self.__plateau_iterations
-            and self.__last_coverage >= self.__minimum_coverage
-        )
+        return self.__iterations >= self.__plateau_iterations and self.__last_coverage >= self.__minimum_coverage
 
     def reset(self) -> None:  # noqa: D102
         self.__last_coverage = 0

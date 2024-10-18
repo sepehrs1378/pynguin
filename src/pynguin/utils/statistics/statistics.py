@@ -5,6 +5,7 @@
 #  SPDX-License-Identifier: MIT
 #
 """Provides tracking of statistics for various variables and types."""
+
 from __future__ import annotations
 
 import json
@@ -112,31 +113,23 @@ class _StatisticsTracker:
         """
         self._search_statistics.update_output_variable(variable)
 
-    def set_output_variable_for_runtime_variable(
-        self, variable: RuntimeVariable, value: Any
-    ) -> None:
+    def set_output_variable_for_runtime_variable(self, variable: RuntimeVariable, value: Any) -> None:
         """Sets an output variable to a value directly.
 
         Args:
             variable: The variable to be set
             value: the value to be set
         """
-        self._search_statistics.set_output_variable_for_runtime_variable(
-            variable, value
-        )
+        self._search_statistics.set_output_variable_for_runtime_variable(variable, value)
 
-    def update_output_variable_for_runtime_variable(
-        self, variable: RuntimeVariable, value: Any
-    ) -> None:
+    def update_output_variable_for_runtime_variable(self, variable: RuntimeVariable, value: Any) -> None:
         """Updates an output variable with a value directly.
 
         Args:
             variable: The variable to update
             value: The value to add
         """
-        self._search_statistics.update_output_variable_for_runtime_variable(
-            variable, value
-        )
+        self._search_statistics.update_output_variable_for_runtime_variable(variable, value)
 
     @property
     def output_variables(self) -> dict[str, sb.OutputVariable]:
@@ -168,18 +161,12 @@ class _SearchStatistics:
     _logger = logging.getLogger(__name__)
 
     def __init__(self):
-        self._backend: None | (sb.AbstractStatisticsBackend) = (
-            self._initialise_backend()
-        )
+        self._backend: None | (sb.AbstractStatisticsBackend) = self._initialise_backend()
         self._output_variables: dict[str, sb.OutputVariable] = {}
         self._variable_factories: dict[str, ovf.ChromosomeOutputVariableFactory] = {}
-        self._sequence_output_variable_factories: dict[
-            str, ovf.SequenceOutputVariableFactory
-        ] = {}
+        self._sequence_output_variable_factories: dict[str, ovf.SequenceOutputVariableFactory] = {}
         self._init_factories()
-        self.set_output_variable_for_runtime_variable(
-            RuntimeVariable.RandomSeed, config.configuration.seeding.seed
-        )
+        self.set_output_variable_for_runtime_variable(RuntimeVariable.RandomSeed, config.configuration.seeding.seed)
         self._fill_sequence_output_variable_factories()
         self._start_time = time.time_ns()
         self.set_sequence_output_variable_start_time(self._start_time)
@@ -195,36 +182,26 @@ class _SearchStatistics:
         return None
 
     def _init_factories(self) -> None:
-        self._variable_factories[RuntimeVariable.Length.name] = (
-            self._ChromosomeLengthOutputVariableFactory()
-        )
-        self._variable_factories[RuntimeVariable.Size.name] = (
-            self._ChromosomeSizeOutputVariableFactory()
-        )
-        self._variable_factories[RuntimeVariable.Coverage.name] = (
-            self._ChromosomeCoverageOutputVariableFactory()
-        )
-        self._variable_factories[RuntimeVariable.Fitness.name] = (
-            self._ChromosomeFitnessOutputVariableFactory()
-        )
+        self._variable_factories[RuntimeVariable.Length.name] = self._ChromosomeLengthOutputVariableFactory()
+        self._variable_factories[RuntimeVariable.Size.name] = self._ChromosomeSizeOutputVariableFactory()
+        self._variable_factories[RuntimeVariable.Coverage.name] = self._ChromosomeCoverageOutputVariableFactory()
+        self._variable_factories[RuntimeVariable.Fitness.name] = self._ChromosomeFitnessOutputVariableFactory()
 
     def _fill_sequence_output_variable_factories(self) -> None:
-        self._sequence_output_variable_factories[
-            RuntimeVariable.CoverageTimeline.name
-        ] = self._CoverageSequenceOutputVariableFactory()
+        self._sequence_output_variable_factories[RuntimeVariable.CoverageTimeline.name] = (
+            self._CoverageSequenceOutputVariableFactory()
+        )
         self._sequence_output_variable_factories[RuntimeVariable.SizeTimeline.name] = (
             self._SizeSequenceOutputVariableFactory()
         )
-        self._sequence_output_variable_factories[
-            RuntimeVariable.LengthTimeline.name
-        ] = self._LengthSequenceOutputVariableFactory()
-        self._sequence_output_variable_factories[
-            RuntimeVariable.FitnessTimeline.name
-        ] = self._FitnessSequenceOutputVariableFactory()
-        self._sequence_output_variable_factories[
-            RuntimeVariable.TotalExceptionsTimeline.name
-        ] = ovf.DirectSequenceOutputVariableFactory.get_integer(
-            RuntimeVariable.TotalExceptionsTimeline
+        self._sequence_output_variable_factories[RuntimeVariable.LengthTimeline.name] = (
+            self._LengthSequenceOutputVariableFactory()
+        )
+        self._sequence_output_variable_factories[RuntimeVariable.FitnessTimeline.name] = (
+            self._FitnessSequenceOutputVariableFactory()
+        )
+        self._sequence_output_variable_factories[RuntimeVariable.TotalExceptionsTimeline.name] = (
+            ovf.DirectSequenceOutputVariableFactory.get_integer(RuntimeVariable.TotalExceptionsTimeline)
         )
 
     def set_sequence_output_variable_start_time(self, start_time: int) -> None:
@@ -283,9 +260,7 @@ class _SearchStatistics:
         assert isinstance(var, ovf.DirectSequenceOutputVariableFactory)
         var.update_value(variable.value)
 
-    def set_output_variable_for_runtime_variable(
-        self, variable: RuntimeVariable, value: Any
-    ) -> None:
+    def set_output_variable_for_runtime_variable(self, variable: RuntimeVariable, value: Any) -> None:
         """Sets an output variable to a value directly.
 
         Args:
@@ -294,9 +269,7 @@ class _SearchStatistics:
         """
         self.set_output_variable(sb.OutputVariable(name=variable.name, value=value))
 
-    def update_output_variable_for_runtime_variable(
-        self, variable: RuntimeVariable, value: Any
-    ) -> None:
+    def update_output_variable_for_runtime_variable(self, variable: RuntimeVariable, value: Any) -> None:
         """Updates an output variable with a new value.
 
         Args:
@@ -314,23 +287,17 @@ class _SearchStatistics:
         """
         return self._output_variables
 
-    def _get_output_variables(
-        self, individual, *, skip_missing: bool = True
-    ) -> dict[str, sb.OutputVariable]:
+    def _get_output_variables(self, individual, *, skip_missing: bool = True) -> dict[str, sb.OutputVariable]:
         output_variables_map: dict[str, sb.OutputVariable] = {}
 
         for variable in config.configuration.statistics_output.output_variables:
             variable_name = variable.name
             if variable_name in self._output_variables:
                 # Values directly sent
-                output_variables_map[variable_name] = self._output_variables[
-                    variable_name
-                ]
+                output_variables_map[variable_name] = self._output_variables[variable_name]
             elif variable_name in self._variable_factories:
                 # Values extracted from the individual
-                output_variables_map[variable_name] = self._variable_factories[
-                    variable_name
-                ].get_variable(individual)
+                output_variables_map[variable_name] = self._variable_factories[variable_name].get_variable(individual)
             elif variable_name in self._sequence_output_variable_factories:
                 # Time related values, which will be expanded in a list of values
                 # through time
@@ -338,25 +305,17 @@ class _SearchStatistics:
                     "Tracking sequential variables is only possible when using "
                     "maximum search time as a stopping condition"
                 )
-                for var in self._sequence_output_variable_factories[
-                    variable_name
-                ].get_output_variables():
+                for var in self._sequence_output_variable_factories[variable_name].get_output_variables():
                     output_variables_map[var.name] = var
 
                 # For every time-series variable, we compute the area under curve, too
-                auc_variable = self._sequence_output_variable_factories[
-                    variable_name
-                ].area_under_curve_output_variable
+                auc_variable = self._sequence_output_variable_factories[variable_name].area_under_curve_output_variable
                 output_variables_map[auc_variable.name] = auc_variable
             elif skip_missing:
                 # if variable does not exist, return an empty value instead
-                output_variables_map[variable_name] = sb.OutputVariable(
-                    name=variable_name, value=""
-                )
+                output_variables_map[variable_name] = sb.OutputVariable(name=variable_name, value="")
             else:
-                self._logger.error(
-                    "No obtained value for output variable %s", variable_name
-                )
+                self._logger.error("No obtained value for output variable %s", variable_name)
                 return {}
 
         return output_variables_map
@@ -380,23 +339,15 @@ class _SearchStatistics:
         )
 
         if not self._best_individual:
-            self._logger.error(
-                "No statistics has been saved because Pynguin failed to generate any "
-                "test case"
-            )
+            self._logger.error("No statistics has been saved because Pynguin failed to generate any " "test case")
             return False
 
         individual = self._best_individual
         output_variables_map = self._get_output_variables(individual)
         self._backend.write_data(output_variables_map)
 
-        if (
-            config.configuration.statistics_output.statistics_backend
-            == config.StatisticsBackend.CSV
-        ):
-            report_dir = Path(
-                config.configuration.statistics_output.report_dir
-            ).resolve()
+        if config.configuration.statistics_output.statistics_backend == config.StatisticsBackend.CSV:
+            report_dir = Path(config.configuration.statistics_output.report_dir).resolve()
             if "SignatureInfos" in output_variables_map:
                 obj = json.loads(output_variables_map["SignatureInfos"].value)
                 output_file = report_dir / "signature-infos.json"
@@ -434,9 +385,7 @@ class _SearchStatistics:
         def get_data(self, individual: chrom.Chromosome) -> float:
             return individual.get_fitness()
 
-    class _CoverageSequenceOutputVariableFactory(
-        ovf.DirectSequenceOutputVariableFactory
-    ):
+    class _CoverageSequenceOutputVariableFactory(ovf.DirectSequenceOutputVariableFactory):
         def __init__(self) -> None:
             super().__init__(RuntimeVariable.CoverageTimeline, 0.0)
 
@@ -457,9 +406,7 @@ class _SearchStatistics:
         def get_value(self, individual: chrom.Chromosome) -> int:
             return individual.length()
 
-    class _FitnessSequenceOutputVariableFactory(
-        ovf.DirectSequenceOutputVariableFactory
-    ):
+    class _FitnessSequenceOutputVariableFactory(ovf.DirectSequenceOutputVariableFactory):
         def __init__(self) -> None:
             super().__init__(RuntimeVariable.FitnessTimeline, 0.0)
 
@@ -475,13 +422,9 @@ search_statistics = statistics_tracker.search_statistics
 set_sequence_start_time = statistics_tracker.set_sequence_start_time
 current_individual = statistics_tracker.current_individual
 set_output_variable = statistics_tracker.set_output_variable
-set_output_variable_for_runtime_variable = (
-    statistics_tracker.set_output_variable_for_runtime_variable
-)
+set_output_variable_for_runtime_variable = statistics_tracker.set_output_variable_for_runtime_variable
 update_output_variable = search_statistics.update_output_variable
-update_output_variable_for_runtime_variable = (
-    search_statistics.update_output_variable_for_runtime_variable
-)
+update_output_variable_for_runtime_variable = search_statistics.update_output_variable_for_runtime_variable
 output_variables = statistics_tracker.output_variables
 write_statistics = statistics_tracker.write_statistics
 reset = statistics_tracker.reset

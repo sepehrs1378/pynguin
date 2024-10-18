@@ -5,6 +5,7 @@
 #  SPDX-License-Identifier: MIT
 #
 """Provides analyses for the subject module, based on the module and its AST."""
+
 from __future__ import annotations
 
 import abc
@@ -91,91 +92,89 @@ LOGGER = logging.getLogger(__name__)
 # The modules that are listed here are not prohibited from execution, but Pynguin will
 # not consider any classes or functions from these modules for generating inputs to
 # other routines
-MODULE_BLACKLIST = frozenset(
-    (
-        "__future__",
-        "_frozen_importlib",
-        "_thread",
-        "abc",
-        "argparse",
-        "asyncio",
-        "atexit",
-        "builtins",
-        "cmd",
-        "code",
-        "codeop",
-        "collections.abc",
-        "compileall",
-        "concurrent",
-        "concurrent.futures",
-        "configparser",
-        "contextlib",
-        "contextvars",
-        "copy",
-        "copyreg",
-        "csv",
-        "ctypes",
-        "dbm",
-        "dis",
-        "filecmp",
-        "fileinput",
-        "fnmatch",
-        "functools",
-        "gc",
-        "getopt",
-        "getpass",
-        "glob",
-        "importlib",
-        "io",
-        "itertools",
-        "linecache",
-        "logging",
-        "logging.config",
-        "logging.handlers",
-        "marshal",
-        "mmap",
-        "multiprocessing",
-        "multiprocessing.shared_memory",
-        "netrc",
-        "operator",
-        "os",
-        "os.path",
-        "pathlib",
-        "pickle",
-        "pickletools",
-        "plistlib",
-        "py_compile",
-        "queue",
-        "random",
-        "reprlib",
-        "sched",
-        "secrets",
-        "select",
-        "selectors",
-        "shelve",
-        "shutil",
-        "signal",
-        "six",  # Not from STDLIB
-        "socket",
-        "sre_compile",
-        "sre_parse",
-        "ssl",
-        "stat",
-        "subprocess",
-        "sys",
-        "tarfile",
-        "tempfile",
-        "threading",
-        "timeit",
-        "trace",
-        "traceback",
-        "tracemalloc",
-        "types",
-        "typing",
-        "warnings",
-        "weakref",
-    )
-)
+MODULE_BLACKLIST = frozenset((
+    "__future__",
+    "_frozen_importlib",
+    "_thread",
+    "abc",
+    "argparse",
+    "asyncio",
+    "atexit",
+    "builtins",
+    "cmd",
+    "code",
+    "codeop",
+    "collections.abc",
+    "compileall",
+    "concurrent",
+    "concurrent.futures",
+    "configparser",
+    "contextlib",
+    "contextvars",
+    "copy",
+    "copyreg",
+    "csv",
+    "ctypes",
+    "dbm",
+    "dis",
+    "filecmp",
+    "fileinput",
+    "fnmatch",
+    "functools",
+    "gc",
+    "getopt",
+    "getpass",
+    "glob",
+    "importlib",
+    "io",
+    "itertools",
+    "linecache",
+    "logging",
+    "logging.config",
+    "logging.handlers",
+    "marshal",
+    "mmap",
+    "multiprocessing",
+    "multiprocessing.shared_memory",
+    "netrc",
+    "operator",
+    "os",
+    "os.path",
+    "pathlib",
+    "pickle",
+    "pickletools",
+    "plistlib",
+    "py_compile",
+    "queue",
+    "random",
+    "reprlib",
+    "sched",
+    "secrets",
+    "select",
+    "selectors",
+    "shelve",
+    "shutil",
+    "signal",
+    "six",  # Not from STDLIB
+    "socket",
+    "sre_compile",
+    "sre_parse",
+    "ssl",
+    "stat",
+    "subprocess",
+    "sys",
+    "tarfile",
+    "tempfile",
+    "threading",
+    "timeit",
+    "trace",
+    "traceback",
+    "tracemalloc",
+    "types",
+    "typing",
+    "warnings",
+    "weakref",
+))
 
 # Blacklist for methods.
 METHOD_BLACKLIST = frozenset(("time.sleep",))
@@ -196,9 +195,7 @@ def _is_blacklisted(element: Any) -> bool:
     if inspect.ismodule(element):
         return element.__name__ in module_blacklist
     if inspect.isclass(element):
-        if element.__module__ == "builtins" and (
-            element in PRIMITIVES or element in COLLECTIONS
-        ):
+        if element.__module__ == "builtins" and (element in PRIMITIVES or element in COLLECTIONS):
             # Allow some builtin types
             return False
         return element.__module__ in module_blacklist
@@ -207,12 +204,10 @@ def _is_blacklisted(element: Any) -> bool:
         # set of tests ('test'). We don't want to include those functions.
         return (
             element.__module__ in module_blacklist
-            or element.__qualname__.startswith(
-                (
-                    "main",
-                    "test",
-                )
-            )
+            or element.__qualname__.startswith((
+                "main",
+                "test",
+            ))
             or f"{element.__module__}.{element.__qualname__}" in method_blacklist
         )
     # Something that is not supported yet.
@@ -333,9 +328,7 @@ class TestCluster(abc.ABC):
         """
 
     @abc.abstractmethod
-    def add_accessible_object_under_test(
-        self, objc: GenericAccessibleObject, data: _CallableData
-    ) -> None:
+    def add_accessible_object_under_test(self, objc: GenericAccessibleObject, data: _CallableData) -> None:
         """Add accessible object to the objects under test.
 
         Args:
@@ -375,9 +368,7 @@ class TestCluster(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_generators_for(
-        self, typ: ProperType
-    ) -> tuple[OrderedSet[GenericAccessibleObject], bool]:
+    def get_generators_for(self, typ: ProperType) -> tuple[OrderedSet[GenericAccessibleObject], bool]:
         """Retrieve all known generators for the given type.
 
         Args:
@@ -458,9 +449,7 @@ class TestCluster(abc.ABC):
         """
 
     @abc.abstractmethod
-    def track_statistics_values(
-        self, tracking_fun: Callable[[RuntimeVariable, Any], None]
-    ) -> None:
+    def track_statistics_values(self, tracking_fun: Callable[[RuntimeVariable, Any], None]) -> None:
         """Track statistics values from the test cluster and its items.
 
         Args:
@@ -468,9 +457,7 @@ class TestCluster(abc.ABC):
         """
 
     @abc.abstractmethod
-    def update_return_type(
-        self, accessible: GenericCallableAccessibleObject, new_type: ProperType
-    ) -> None:
+    def update_return_type(self, accessible: GenericCallableAccessibleObject, new_type: ProperType) -> None:
         """Update the return for the given accessible to the new seen type.
 
         Args:
@@ -505,9 +492,7 @@ class SignatureInfo:
 
     # Similar to above, but with guessed parameters types.
     # Contains multiples type guesses.
-    guessed_parameter_types: dict[str, list[str]] = dataclasses.field(
-        default_factory=dict
-    )
+    guessed_parameter_types: dict[str, list[str]] = dataclasses.field(default_factory=dict)
 
     # Needed to compute top-n accuracy in the evaluation.
     # Elements are of form (A,B); A is a guess, B is an annotated type.
@@ -531,9 +516,7 @@ class TypeGuessingStats:
     number_of_constructors: int = 0
 
     # Maps names of callables to a signature info object.
-    signature_infos: dict[str, SignatureInfo] = dataclasses.field(
-        default_factory=lambda: defaultdict(SignatureInfo)
-    )
+    signature_infos: dict[str, SignatureInfo] = dataclasses.field(default_factory=lambda: defaultdict(SignatureInfo))
 
 
 def _serialize_helper(obj):
@@ -562,20 +545,12 @@ class ModuleTestCluster(TestCluster):  # noqa: PLR0904
     def __init__(self, linenos: int) -> None:  # noqa: D107
         self.__type_system = TypeSystem()
         self.__linenos = linenos
-        self.__generators: dict[ProperType, OrderedSet[GenericAccessibleObject]] = (
-            defaultdict(OrderedSet)
-        )
+        self.__generators: dict[ProperType, OrderedSet[GenericAccessibleObject]] = defaultdict(OrderedSet)
 
         # Modifier belong to a certain class, not type.
-        self.__modifiers: dict[TypeInfo, OrderedSet[GenericAccessibleObject]] = (
-            defaultdict(OrderedSet)
-        )
-        self.__accessible_objects_under_test: OrderedSet[GenericAccessibleObject] = (
-            OrderedSet()
-        )
-        self.__function_data_for_accessibles: dict[
-            GenericAccessibleObject, _CallableData
-        ] = {}
+        self.__modifiers: dict[TypeInfo, OrderedSet[GenericAccessibleObject]] = defaultdict(OrderedSet)
+        self.__accessible_objects_under_test: OrderedSet[GenericAccessibleObject] = OrderedSet()
+        self.__function_data_for_accessibles: dict[GenericAccessibleObject, _CallableData] = {}
 
         # Keep track of all callables, this is only for statistics purposes.
         self.__callables: OrderedSet[GenericCallableAccessibleObject] = OrderedSet()
@@ -610,9 +585,7 @@ class ModuleTestCluster(TestCluster):  # noqa: PLR0904
             self.__generators.pop(accessible.generated_type())
 
     @staticmethod
-    def _add_or_make_union(
-        old_type: ProperType, new_type: ProperType, max_size: int = 5
-    ) -> UnionType:
+    def _add_or_make_union(old_type: ProperType, new_type: ProperType, max_size: int = 5) -> UnionType:
         if isinstance(old_type, UnionType):
             items = old_type.items
             if len(items) >= max_size or new_type in items:
@@ -669,9 +642,7 @@ class ModuleTestCluster(TestCluster):  # noqa: PLR0904
             self.__callables.add(generator)
 
         generated_type = generator.generated_type()
-        if isinstance(generated_type, NoneType) or generated_type.accept(
-            is_primitive_type
-        ):
+        if isinstance(generated_type, NoneType) or generated_type.accept(is_primitive_type):
             return
         self.__generators[generated_type].add(generator)
 
@@ -734,13 +705,9 @@ class ModuleTestCluster(TestCluster):  # noqa: PLR0904
 
         def visit_any_type(self, left: AnyType) -> OrderedSet[GenericAccessibleObject]:
             # If it's Any just take everything.
-            return OrderedSet(
-                itertools.chain.from_iterable(self.cluster.modifiers.values())
-            )
+            return OrderedSet(itertools.chain.from_iterable(self.cluster.modifiers.values()))
 
-        def visit_none_type(
-            self, left: NoneType
-        ) -> OrderedSet[GenericAccessibleObject]:
+        def visit_none_type(self, left: NoneType) -> OrderedSet[GenericAccessibleObject]:
             return OrderedSet()
 
         def visit_instance(self, left: Instance) -> OrderedSet[GenericAccessibleObject]:
@@ -749,22 +716,16 @@ class ModuleTestCluster(TestCluster):  # noqa: PLR0904
                 result.update(self.cluster.modifiers[type_info])
             return result
 
-        def visit_tuple_type(
-            self, left: TupleType
-        ) -> OrderedSet[GenericAccessibleObject]:
+        def visit_tuple_type(self, left: TupleType) -> OrderedSet[GenericAccessibleObject]:
             return OrderedSet()
 
-        def visit_union_type(
-            self, left: UnionType
-        ) -> OrderedSet[GenericAccessibleObject]:
+        def visit_union_type(self, left: UnionType) -> OrderedSet[GenericAccessibleObject]:
             result: OrderedSet[GenericAccessibleObject] = OrderedSet()
             for element in left.items:
                 result.update(element.accept(self))  # type: ignore[arg-type]
             return result
 
-        def visit_unsupported_type(
-            self, left: Unsupported
-        ) -> OrderedSet[GenericAccessibleObject]:
+        def visit_unsupported_type(self, left: Unsupported) -> OrderedSet[GenericAccessibleObject]:
             raise NotImplementedError("This type shall not be used during runtime")
 
     def get_modifiers_for(  # noqa: D102
@@ -818,13 +779,9 @@ class ModuleTestCluster(TestCluster):  # noqa: PLR0904
             RuntimeVariable.AccessibleObjectsUnderTest,
             self.num_accessible_objects_under_test(),
         )
-        tracking_fun(
-            RuntimeVariable.GeneratableTypes, len(self.get_all_generatable_types())
-        )
+        tracking_fun(RuntimeVariable.GeneratableTypes, len(self.get_all_generatable_types()))
 
-        cyclomatic_complexities = self.__compute_cyclomatic_complexities(
-            self.function_data_for_accessibles.values()
-        )
+        cyclomatic_complexities = self.__compute_cyclomatic_complexities(self.function_data_for_accessibles.values())
         if cyclomatic_complexities is not None:
             tracking_fun(RuntimeVariable.McCabeAST, json.dumps(cyclomatic_complexities))
             tracking_fun(RuntimeVariable.LineNos, self.__linenos)
@@ -837,11 +794,7 @@ class ModuleTestCluster(TestCluster):  # noqa: PLR0904
         # complexity is 1, the value None symbolises a callable that had no AST present,
         # either because there is none or because it is an implicitly added function,
         # such as a default constructor or the constructor of a base class.
-        return [
-            item.cyclomatic_complexity
-            for item in callable_data
-            if item.cyclomatic_complexity is not None
-        ]
+        return [item.cyclomatic_complexity for item in callable_data if item.cyclomatic_complexity is not None]
 
 
 class FilteredModuleTestCluster(TestCluster):  # noqa: PLR0904
@@ -909,22 +862,16 @@ class FilteredModuleTestCluster(TestCluster):  # noqa: PLR0904
     ) -> None:
         self.__delegate = delegate
         self.__subject_properties = subject_properties
-        self.__code_object_id_to_accessible_objects: dict[
-            int, GenericCallableAccessibleObject
-        ] = {
+        self.__code_object_id_to_accessible_objects: dict[int, GenericCallableAccessibleObject] = {
             json.loads(acc.callable.__code__.co_consts[0])[CODE_OBJECT_ID_KEY]: acc
             for acc in delegate.accessible_objects_under_test
-            if isinstance(acc, GenericCallableAccessibleObject)
-            and hasattr(acc.callable, "__code__")
+            if isinstance(acc, GenericCallableAccessibleObject) and hasattr(acc.callable, "__code__")
         }
         # Checking for __code__ is necessary, because the __init__ of a class that
         # does not define __init__ points to some internal CPython stuff.
 
-        self.__accessible_to_targets: dict[
-            GenericCallableAccessibleObject, OrderedSet
-        ] = {
-            acc: OrderedSet()
-            for acc in self.__code_object_id_to_accessible_objects.values()
+        self.__accessible_to_targets: dict[GenericCallableAccessibleObject, OrderedSet] = {
+            acc: OrderedSet() for acc in self.__code_object_id_to_accessible_objects.values()
         }
         for target in targets:
             if (acc := self.__get_accessible_object_for_target(target)) is not None:
@@ -939,15 +886,9 @@ class FilteredModuleTestCluster(TestCluster):  # noqa: PLR0904
     ) -> GenericCallableAccessibleObject | None:
         code_object_id: int | None = target.code_object_id
         while code_object_id is not None:
-            if (
-                acc := self.__code_object_id_to_accessible_objects.get(
-                    code_object_id, None
-                )
-            ) is not None:
+            if (acc := self.__code_object_id_to_accessible_objects.get(code_object_id, None)) is not None:
                 return acc
-            code_object_id = self.__subject_properties.existing_code_objects[
-                code_object_id
-            ].parent_code_object_id
+            code_object_id = self.__subject_properties.existing_code_objects[code_object_id].parent_code_object_id
         return None
 
     def on_target_covered(self, target: ff.TestCaseFitnessFunction) -> None:
@@ -964,8 +905,7 @@ class FilteredModuleTestCluster(TestCluster):  # noqa: PLR0904
             if len(targets_for_acc) == 0:
                 self.__accessible_to_targets.pop(acc)
                 LOGGER.debug(
-                    "Removed %s from test cluster because all targets within it have "
-                    "been covered.",
+                    "Removed %s from test cluster because all targets within it have " "been covered.",
                     acc,
                 )
 
@@ -1083,9 +1023,7 @@ def __analyse_function(
     description = get_function_description(func_ast)
     raised_exceptions = description.raises if description is not None else set()
     cyclomatic_complexity = __get_mccabe_complexity(func_ast)
-    generic_function = GenericFunction(
-        func, inferred_signature, raised_exceptions, func_name
-    )
+    generic_function = GenericFunction(func, inferred_signature, raised_exceptions, func_name)
     function_data = _CallableData(
         accessible=generic_function,
         tree=func_ast,
@@ -1134,9 +1072,7 @@ def __analyse_class(
             ),
             raised_exceptions,
         )
-        generic.inferred_signature.return_type = (
-            test_cluster.type_system.convert_type_hint(type_info.raw_type)
-        )
+        generic.inferred_signature.return_type = test_cluster.type_system.convert_type_hint(type_info.raw_type)
 
     method_data = _CallableData(
         accessible=generic,
@@ -1144,20 +1080,14 @@ def __analyse_class(
         description=description,
         cyclomatic_complexity=cyclomatic_complexity,
     )
-    if not (
-        type_info.is_abstract
-        or type_info.raw_type in COLLECTIONS
-        or type_info.raw_type in PRIMITIVES
-    ):
+    if not (type_info.is_abstract or type_info.raw_type in COLLECTIONS or type_info.raw_type in PRIMITIVES):
         # Don't add constructors for abstract classes and for builtins. We generate
         # the latter ourselves.
         test_cluster.add_generator(generic)
         if add_to_test:
             test_cluster.add_accessible_object_under_test(generic, method_data)
 
-    for method_name, method in inspect.getmembers(
-        type_info.raw_type, inspect.isfunction
-    ):
+    for method_name, method in inspect.getmembers(type_info.raw_type, inspect.isfunction):
         __analyse_method(
             type_info=type_info,
             method_name=method_name,
@@ -1201,12 +1131,7 @@ def __analyse_method(
     *,
     type_info: TypeInfo,
     method_name: str,
-    method: (
-        FunctionType
-        | BuiltinFunctionType
-        | WrapperDescriptorType
-        | MethodDescriptorType
-    ),
+    method: (FunctionType | BuiltinFunctionType | WrapperDescriptorType | MethodDescriptorType),
     type_inference_strategy: TypeInferenceStrategy,
     class_tree: astroid.ClassDef | None,
     test_cluster: ModuleTestCluster,
@@ -1236,9 +1161,7 @@ def __analyse_method(
     description = get_function_description(method_ast)
     raised_exceptions = description.raises if description is not None else set()
     cyclomatic_complexity = __get_mccabe_complexity(method_ast)
-    generic_method = GenericMethod(
-        type_info, method, inferred_signature, raised_exceptions, method_name
-    )
+    generic_method = GenericMethod(type_info, method, inferred_signature, raised_exceptions, method_name)
     method_data = _CallableData(
         accessible=generic_method,
         tree=method_ast,
@@ -1366,9 +1289,7 @@ def __analyse_included_classes(
         try:
             results = parse_results[current.__module__]
         except ModuleNotFoundError as error:
-            if getattr(current, "__file__", None) is None or Path(
-                current.__file__
-            ).suffix in {".so", ".pyd"}:
+            if getattr(current, "__file__", None) is None or Path(current.__file__).suffix in {".so", ".pyd"}:
                 LOGGER.info("C-extension module not found: %s", current.__module__)
                 continue
             raise error
@@ -1390,9 +1311,7 @@ def __analyse_included_classes(
                     base = base.__origin__  # noqa: PLW2901
 
                 base_info = test_cluster.type_system.to_type_info(base)
-                test_cluster.type_system.add_subclass_edge(
-                    super_class=base_info, sub_class=type_info
-                )
+                test_cluster.type_system.add_subclass_edge(super_class=base_info, sub_class=type_info)
                 work_list.append(base)
 
 

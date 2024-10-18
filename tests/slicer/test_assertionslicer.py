@@ -45,7 +45,9 @@ def full_cover_plus_three_test():
     """
     cluster = generate_test_cluster("tests.fixtures.linecoverage.plus")
     transformer = AstToTestCaseTransformer(
-        cluster, False, EmptyConstantProvider()  # noqa: FBT003
+        cluster,
+        False,
+        EmptyConstantProvider(),  # noqa: FBT003
     )
     transformer.visit(
         ast.parse(
@@ -103,7 +105,9 @@ def full_cover_plus_four_test():
     """
     cluster = generate_test_cluster("tests.fixtures.linecoverage.plus")
     transformer = AstToTestCaseTransformer(
-        cluster, False, EmptyConstantProvider()  # noqa: FBT003
+        cluster,
+        False,
+        EmptyConstantProvider(),  # noqa: FBT003
     )
     transformer.visit(
         ast.parse(
@@ -151,7 +155,9 @@ def full_cover_plus_four_test():
 def partial_cover_use_bool_as_int():
     cluster = generate_test_cluster("tests.fixtures.linecoverage.plus")
     transformer = AstToTestCaseTransformer(
-        cluster, False, EmptyConstantProvider()  # noqa: FBT003
+        cluster,
+        False,
+        EmptyConstantProvider(),  # noqa: FBT003
     )
     transformer.visit(
         ast.parse(
@@ -209,9 +215,7 @@ def test_case_1():
             0,
         )
     )
-    tc_1.statements[2].add_assertion(
-        ass.ObjectAssertion(tc_1.statements[2].ret_val, 1004)
-    )
+    tc_1.statements[2].add_assertion(ass.ObjectAssertion(tc_1.statements[2].ret_val, 1004))
 
     test_suite = tsc.TestSuiteChromosome()
     test_suite.add_test_case_chromosome(tcc.TestCaseChromosome(tc_0))
@@ -220,9 +224,7 @@ def test_case_1():
 
 
 @pytest.fixture()
-def full_cover_plus_testsuite(
-    full_cover_plus_three_test, full_cover_plus_four_test
-) -> tsc.TestSuiteChromosome:
+def full_cover_plus_testsuite(full_cover_plus_three_test, full_cover_plus_four_test) -> tsc.TestSuiteChromosome:
     test_case_1 = tcc.TestCaseChromosome(full_cover_plus_three_test)
     test_case_2 = tcc.TestCaseChromosome(full_cover_plus_four_test)
     test_suite = tsc.TestSuiteChromosome()
@@ -265,13 +267,9 @@ def no_cover_plus_testsuite(default_test_case) -> tsc.TestSuiteChromosome:
         ("tests.fixtures.linecoverage.list", "list_test_with_len_assertion", 1),
     ],
 )
-def test_assertion_detection_on_test_case(
-    module_name, test_case_name, expected_assertions, request
-):
+def test_assertion_detection_on_test_case(module_name, test_case_name, expected_assertions, request):
     test_case = request.getfixturevalue(test_case_name)
-    config.configuration.statistics_output.coverage_metrics = [
-        config.CoverageMetric.CHECKED
-    ]
+    config.configuration.statistics_output.coverage_metrics = [config.CoverageMetric.CHECKED]
 
     tracer = ExecutionTracer()
     tracer.current_thread_identifier = threading.current_thread().ident
@@ -307,13 +305,9 @@ def test_assertion_detection_on_test_case(
         ),
     ],
 )
-def test_slicing_after_test_execution(
-    module_name, test_case_name, expected_lines, request
-):
+def test_slicing_after_test_execution(module_name, test_case_name, expected_lines, request):
     test_case = request.getfixturevalue(test_case_name)
-    config.configuration.statistics_output.coverage_metrics = [
-        config.CoverageMetric.CHECKED
-    ]
+    config.configuration.statistics_output.coverage_metrics = [config.CoverageMetric.CHECKED]
 
     tracer = ExecutionTracer()
     tracer.current_thread_identifier = threading.current_thread().ident
@@ -328,18 +322,12 @@ def test_slicing_after_test_execution(
         assert result.execution_trace.executed_assertions
 
         instructions_in_slice = []
-        assertion_slicer = AssertionSlicer(
-            tracer.get_subject_properties().existing_code_objects
-        )
+        assertion_slicer = AssertionSlicer(tracer.get_subject_properties().existing_code_objects)
         for assertion in result.execution_trace.executed_assertions:
-            instructions_in_slice.extend(
-                assertion_slicer.slice_assertion(assertion, result.execution_trace)
-            )
+            instructions_in_slice.extend(assertion_slicer.slice_assertion(assertion, result.execution_trace))
         assert instructions_in_slice
 
-        checked_lines = DynamicSlicer.map_instructions_to_lines(
-            instructions_in_slice, tracer.get_subject_properties()
-        )
+        checked_lines = DynamicSlicer.map_instructions_to_lines(instructions_in_slice, tracer.get_subject_properties())
         assert checked_lines
         assert checked_lines == expected_lines
 
@@ -371,9 +359,7 @@ def test_slicing_after_test_execution(
         ),
     ],
 )
-def test_testsuite_assertion_checked_coverage_calculation(
-    module_name, test_suite_name, expected_coverage, request
-):
+def test_testsuite_assertion_checked_coverage_calculation(module_name, test_suite_name, expected_coverage, request):
     test_suite = request.getfixturevalue(test_suite_name)
     config.configuration.statistics_output.coverage_metrics = [
         config.CoverageMetric.CHECKED,
@@ -389,6 +375,4 @@ def test_testsuite_assertion_checked_coverage_calculation(
         executor = TestCaseExecutor(tracer)
         executor.add_observer(AssertionExecutionObserver(tracer))
         ff = TestSuiteAssertionCheckedCoverageFunction(executor)
-        assert ff.compute_coverage(test_suite) == pytest.approx(
-            expected_coverage, 0.1, 0.1
-        )
+        assert ff.compute_coverage(test_suite) == pytest.approx(expected_coverage, 0.1, 0.1)

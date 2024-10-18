@@ -20,9 +20,7 @@ from pynguin.utils.namingscope import NamingScope
 
 
 @pytest.fixture()
-def assertion_to_ast_ref() -> (
-    tuple[ata.PyTestAssertionToAstVisitor, vr.VariableReference]
-):
+def assertion_to_ast_ref() -> tuple[ata.PyTestAssertionToAstVisitor, vr.VariableReference]:
     scope = NamingScope()
     module_aliases = NamingScope(prefix="module")
     var = vr.VariableReference(MagicMock(), None)
@@ -31,18 +29,14 @@ def assertion_to_ast_ref() -> (
             scope,
             module_aliases,
             set(),
-            statement_node=au.create_ast_assign(
-                au.create_ast_name(scope.get_name(var)), au.create_ast_constant(5)
-            ),
+            statement_node=au.create_ast_assign(au.create_ast_name(scope.get_name(var)), au.create_ast_constant(5)),
         ),
         var,
     )
 
 
 def __create_source_from_ast(module_body: list[ast.stmt]) -> str:
-    return ast.unparse(
-        ast.fix_missing_locations(ast.Module(body=module_body, type_ignores=[]))
-    )
+    return ast.unparse(ast.fix_missing_locations(ast.Module(body=module_body, type_ignores=[])))
 
 
 def test_type_name(assertion_to_ast_ref):
@@ -108,11 +102,6 @@ def test_collection_length(assertion_to_ast_ref, length, output):
 
 def test_raises_exception(assertion_to_ast_ref):
     assertion_to_ast, _ref = assertion_to_ast_ref
-    assertion = ass.ExceptionAssertion(
-        module="builtins", exception_type_name="AssertionError"
-    )
+    assertion = ass.ExceptionAssertion(module="builtins", exception_type_name="AssertionError")
     assertion.accept(assertion_to_ast)
-    assert (
-        __create_source_from_ast(assertion_to_ast.nodes)
-        == "with pytest.raises(AssertionError):\n    var_0 = 5"
-    )
+    assert __create_source_from_ast(assertion_to_ast.nodes) == "with pytest.raises(AssertionError):\n    var_0 = 5"

@@ -5,6 +5,7 @@
 #  SPDX-License-Identifier: MIT
 #
 """Provides a default implementation of a test case."""
+
 from __future__ import annotations
 
 import logging
@@ -117,9 +118,7 @@ class DefaultTestCase(tc.TestCase):
         for idx in range(var.get_statement_position(), -1, -1):
             new_stmts: OrderedSet[stmt.Statement] = OrderedSet()
             for statement in dependent_stmts:
-                if (
-                    ret_val := self.get_statement(idx).ret_val
-                ) is not None and statement.references(ret_val):
+                if (ret_val := self.get_statement(idx).ret_val) is not None and statement.references(ret_val):
                     new_stmts.add(self.get_statement(idx))
                     dependencies.add(ret_val)
                     break
@@ -167,8 +166,6 @@ class DefaultTestCase(tc.TestCase):
 
     def __hash__(self) -> int:
         memo: dict[vr.VariableReference, int] = {
-            statement.ret_val: idx
-            for idx, statement in enumerate(self._statements)
-            if statement.ret_val is not None
+            statement.ret_val: idx for idx, statement in enumerate(self._statements) if statement.ret_val is not None
         }
         return hash(tuple(s.structural_hash(memo) for s in self._statements))

@@ -153,9 +153,7 @@ class EmptyConstantProvider(ConstantProvider):
 class DelegatingConstantProvider(ConstantProvider, ABC):
     """Either provides values from its own pool or delegates to another provider."""
 
-    def __init__(
-        self, pool: ConstantPool, delegate: ConstantProvider, probability: float
-    ):
+    def __init__(self, pool: ConstantPool, delegate: ConstantProvider, probability: float):
         """Create a new provider.
 
         Args:
@@ -169,10 +167,7 @@ class DelegatingConstantProvider(ConstantProvider, ABC):
         self._probability = probability
 
     def get_constant_for(self, tp_: type[T]) -> T | None:  # noqa: D102
-        if (
-            self._pool.has_constant_for(tp_)
-            and randomness.next_float() < self._probability
-        ):
+        if self._pool.has_constant_for(tp_) and randomness.next_float() < self._probability:
             return self._pool.get_constant_for(tp_)
         return self._delegate.get_constant_for(tp_)
 
@@ -197,9 +192,7 @@ class DynamicConstantProvider(DelegatingConstantProvider):
             max_constant_length: The maximum length of strings to store.
         """
         super().__init__(pool, delegate, probability)
-        assert (
-            max_constant_length > 0
-        ), "Length limit for constant pool elements must be positive."
+        assert max_constant_length > 0, "Length limit for constant pool elements must be positive."
         self._max_constant_length = max_constant_length
 
     # A map containing the names of all string functions which are instrumented.
@@ -212,13 +205,9 @@ class DynamicConstantProvider(DelegatingConstantProvider):
         "isdecimal": lambda value: "non_decimal" if value.isdecimal() else "0123456789",
         "isalpha": lambda value: f"{value}1" if value.isalpha() else "isalpha",
         "isdigit": lambda value: f"{value}_" if value.isdigit() else "0",
-        "isidentifier": lambda value: (
-            f"{value}!" if value.isidentifier() else "is_Identifier"
-        ),
+        "isidentifier": lambda value: (f"{value}!" if value.isidentifier() else "is_Identifier"),
         "isnumeric": lambda value: f"{value}A" if value.isnumeric() else "012345",
-        "isprintable": lambda value: (
-            f"{value}{os.linesep}" if value.isprintable() else "is_printable"
-        ),
+        "isprintable": lambda value: (f"{value}{os.linesep}" if value.isprintable() else "is_printable"),
         "isspace": lambda value: f"{value}a" if value.isspace() else "   ",
         "istitle": lambda value: f"{value} AAA" if value.istitle() else "Is Title",
     }
@@ -232,10 +221,7 @@ class DynamicConstantProvider(DelegatingConstantProvider):
         # Might be a proxy.
         value = unwrap(value)
         if type(value) in typing.get_args(ConstantTypes):
-            if (
-                isinstance(value, str | bytes)
-                and len(value) > self._max_constant_length
-            ):
+            if isinstance(value, str | bytes) and len(value) > self._max_constant_length:
                 return
             self._pool.add_constant(value)
 
@@ -328,9 +314,7 @@ class _ConstantCollector(ast.NodeVisitor):
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef):  # noqa: N802
         return self._visit_doc_string(node)
 
-    def _visit_doc_string(
-        self, node: ast.AsyncFunctionDef | ast.FunctionDef | ast.ClassDef | ast.Module
-    ):
+    def _visit_doc_string(self, node: ast.AsyncFunctionDef | ast.FunctionDef | ast.ClassDef | ast.Module):
         if docstring := ast.get_docstring(node):
             self._string_expressions.add(docstring)
         return self.generic_visit(node)

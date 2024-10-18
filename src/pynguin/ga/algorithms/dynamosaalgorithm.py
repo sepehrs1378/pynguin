@@ -4,6 +4,7 @@
 #
 #  SPDX-License-Identifier: MIT
 """Provides the DynaMOSA test-generation strategy."""
+
 from __future__ import annotations
 
 import logging
@@ -51,41 +52,29 @@ class DynaMOSAAlgorithm(AbstractMOSAAlgorithm):
             self.executor.tracer.get_subject_properties(),
         )
         self._number_of_goals = len(self._test_case_fitness_functions)
-        stat.set_output_variable_for_runtime_variable(
-            RuntimeVariable.Goals, self._number_of_goals
-        )
+        stat.set_output_variable_for_runtime_variable(RuntimeVariable.Goals, self._number_of_goals)
 
         self._population = self._get_random_population()
         self._goals_manager.update(self._population)
 
         # Calculate dominance ranks and crowding distance
-        fronts = self._ranking_function.compute_ranking_assignment(
-            self._population, self._goals_manager.current_goals
-        )
+        fronts = self._ranking_function.compute_ranking_assignment(self._population, self._goals_manager.current_goals)
         for i in range(fronts.get_number_of_sub_fronts()):
-            fast_epsilon_dominance_assignment(
-                fronts.get_sub_front(i), self._goals_manager.current_goals
-            )
+            fast_epsilon_dominance_assignment(fronts.get_sub_front(i), self._goals_manager.current_goals)
 
-        self.before_first_search_iteration(
-            self.create_test_suite(self._archive.solutions)
-        )
+        self.before_first_search_iteration(self.create_test_suite(self._archive.solutions))
         while self.resources_left() and len(self._archive.uncovered_goals) > 0:
             self.evolve()
             self.after_search_iteration(self.create_test_suite(self._archive.solutions))
 
         self.after_search_finish()
         return self.create_test_suite(
-            self._archive.solutions
-            if len(self._archive.solutions) > 0
-            else self._get_best_individuals()
+            self._archive.solutions if len(self._archive.solutions) > 0 else self._get_best_individuals()
         )
 
     def evolve(self) -> None:
         """Runs one evolution step."""
-        offspring_population: list[tcc.TestCaseChromosome] = (
-            self._breed_next_generation()
-        )
+        offspring_population: list[tcc.TestCaseChromosome] = self._breed_next_generation()
 
         # Create union of parents and offspring
         union: list[tcc.TestCaseChromosome] = []
@@ -95,9 +84,7 @@ class DynaMOSAAlgorithm(AbstractMOSAAlgorithm):
         # Ranking the union
         self._logger.debug("Union Size = %d", len(union))
         # Ranking the union using the best rank algorithm
-        fronts = self._ranking_function.compute_ranking_assignment(
-            union, self._goals_manager.current_goals
-        )
+        fronts = self._ranking_function.compute_ranking_assignment(union, self._goals_manager.current_goals)
 
         # Form the next population using “preference sorting and non-dominated
         # sorting” on the updated set of goals
@@ -144,16 +131,12 @@ class _GoalsManager:
         subject_properties: SubjectProperties,
     ) -> None:
         self._archive = archive
-        branch_fitness_functions: OrderedSet[bg.BranchCoverageTestFitness] = (
-            OrderedSet()
-        )
+        branch_fitness_functions: OrderedSet[bg.BranchCoverageTestFitness] = OrderedSet()
         for fit in fitness_functions:
             assert isinstance(fit, bg.BranchCoverageTestFitness)
             branch_fitness_functions.add(fit)
         self._graph = _BranchFitnessGraph(branch_fitness_functions, subject_properties)
-        self._current_goals: OrderedSet[bg.BranchCoverageTestFitness] = (
-            self._graph.root_branches
-        )
+        self._current_goals: OrderedSet[bg.BranchCoverageTestFitness] = self._graph.root_branches
         self._archive.add_goals(self._current_goals)  # type: ignore[arg-type]
 
     @property
@@ -227,20 +210,12 @@ class _BranchFitnessGraph:
                 continue
             assert fitness.goal.is_branch
             branch_goal = cast(bg.BranchGoal, fitness.goal)
-            predicate_meta_data = subject_properties.existing_predicates[
-                branch_goal.predicate_id
-            ]
-            code_object_meta_data = subject_properties.existing_code_objects[
-                predicate_meta_data.code_object_id
-            ]
-            if code_object_meta_data.cdg.is_control_dependent_on_root(
-                predicate_meta_data.node
-            ):
+            predicate_meta_data = subject_properties.existing_predicates[branch_goal.predicate_id]
+            code_object_meta_data = subject_properties.existing_code_objects[predicate_meta_data.code_object_id]
+            if code_object_meta_data.cdg.is_control_dependent_on_root(predicate_meta_data.node):
                 self._root_branches.add(fitness)
 
-            dependencies = code_object_meta_data.cdg.get_control_dependencies(
-                predicate_meta_data.node
-            )
+            dependencies = code_object_meta_data.cdg.get_control_dependencies(predicate_meta_data.node)
             for dependency in dependencies:
                 goal = bg.BranchGoal(
                     predicate_meta_data.code_object_id,

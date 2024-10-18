@@ -18,23 +18,17 @@ from pynguin.testcase.execution import ExecutionTracer
 
 
 def test_create_mutants():
-    mutant_generator = mu.FirstOrderMutator(
-        [*mo.standard_operators, *mo.experimental_operators]
-    )
+    mutant_generator = mu.FirstOrderMutator([*mo.standard_operators, *mo.experimental_operators])
 
     module = importlib.import_module("tests.fixtures.examples.triangle")
     module_source_code = inspect.getsource(module)
 
     module_ast = ParentNodeTransformer.create_ast(module_source_code)
     mutation_tracer = ExecutionTracer()
-    mutation_controller = ag.InstrumentedMutationController(
-        mutant_generator, module_ast, module, mutation_tracer
-    )
+    mutation_controller = ag.InstrumentedMutationController(mutant_generator, module_ast, module, mutation_tracer)
     config.configuration.seeding.seed = 42
 
-    mutation_controller.tracer.current_thread_identifier = (
-        threading.current_thread().ident
-    )
+    mutation_controller.tracer.current_thread_identifier = threading.current_thread().ident
     mutations = tuple(mutation_controller.create_mutants())
     mutant_count = mutation_controller.mutant_count()
     assert len(mutations) == 14

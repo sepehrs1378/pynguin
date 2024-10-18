@@ -33,18 +33,14 @@ from pynguin.utils.exceptions import ConfigurationException
 
 @pytest.fixture()
 def algorithm_factory() -> gaf.TestSuiteGenerationAlgorithmFactory:
-    return gaf.TestSuiteGenerationAlgorithmFactory(
-        MagicMock(TestCaseExecutor), MagicMock(ModuleTestCluster)
-    )
+    return gaf.TestSuiteGenerationAlgorithmFactory(MagicMock(TestCaseExecutor), MagicMock(ModuleTestCluster))
 
 
 @pytest.mark.parametrize(
     "algorithm, cls",
     [
         pytest.param(config.Algorithm.MOSA, MOSAAlgorithm),
-        pytest.param(
-            config.Algorithm.RANDOM_TEST_SUITE_SEARCH, RandomTestSuiteSearchAlgorithm
-        ),
+        pytest.param(config.Algorithm.RANDOM_TEST_SUITE_SEARCH, RandomTestSuiteSearchAlgorithm),
         pytest.param(config.Algorithm.RANDOM, RandomAlgorithm),
         pytest.param(config.Algorithm.WHOLE_SUITE, WholeSuiteAlgorithm),
     ],
@@ -81,10 +77,7 @@ def test_stopping_condition(condition, cls, algorithm_factory):
 def test_stopping_condition_not_set(algorithm_factory):
     strategy = algorithm_factory.get_search_algorithm()
     assert isinstance(strategy.stopping_conditions[0], MaxSearchTimeStoppingCondition)
-    assert (
-        strategy.stopping_conditions[0].limit()
-        == gaf.GenerationAlgorithmFactory._DEFAULT_MAX_SEARCH_TIME
-    )
+    assert strategy.stopping_conditions[0].limit() == gaf.GenerationAlgorithmFactory._DEFAULT_MAX_SEARCH_TIME
 
 
 def test_unknown_strategy(algorithm_factory):

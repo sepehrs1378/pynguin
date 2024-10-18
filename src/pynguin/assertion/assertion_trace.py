@@ -5,6 +5,7 @@
 #  SPDX-License-Identifier: MIT
 #
 """Provides an output trace."""
+
 from __future__ import annotations
 
 import dataclasses
@@ -85,13 +86,9 @@ class AssertionVerificationTrace:
     """Trace for assertion verification."""
 
     # Assertion that did not hold
-    failed: dict[int, OrderedSet[int]] = dataclasses.field(
-        default_factory=lambda: defaultdict(OrderedSet)
-    )
+    failed: dict[int, OrderedSet[int]] = dataclasses.field(default_factory=lambda: defaultdict(OrderedSet))
     # Assertion whose execution raised an error
-    error: dict[int, OrderedSet[int]] = dataclasses.field(
-        default_factory=lambda: defaultdict(OrderedSet)
-    )
+    error: dict[int, OrderedSet[int]] = dataclasses.field(default_factory=lambda: defaultdict(OrderedSet))
 
     def merge(self, other: AssertionVerificationTrace) -> None:
         """Merge another trace into this trace.

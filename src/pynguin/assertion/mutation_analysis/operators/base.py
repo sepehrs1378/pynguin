@@ -9,6 +9,7 @@
 Based on https://github.com/se2p/mutpy-pynguin/blob/main/mutpy/operators/base.py
 and integrated in Pynguin.
 """
+
 from __future__ import annotations
 
 import abc
@@ -105,9 +106,7 @@ class Mutation:
             ValueError: If the visitor is not found in the operator.
         """
         if self.visitor_name not in dir(self.operator):
-            raise ValueError(
-                f"Visitor {self.visitor_name} not found in operator {self.operator}"
-            )
+            raise ValueError(f"Visitor {self.visitor_name} not found in operator {self.operator}")
 
 
 def copy_node(node: T) -> T:
@@ -160,9 +159,7 @@ class MutationOperator:
             mutated_node,
             visitor_name,
         ) in operator.visit(node):
-            yield Mutation(
-                current_node, replacement_node, cls, visitor_name
-            ), mutated_node
+            yield Mutation(current_node, replacement_node, cls, visitor_name), mutated_node
 
     def __init__(
         self,
@@ -178,9 +175,7 @@ class MutationOperator:
         self.module = module
         self.only_mutation = only_mutation
 
-    def visit(
-        self, node: T
-    ) -> Generator[tuple[ast.AST, ast.AST, ast.AST, str], None, None]:
+    def visit(self, node: T) -> Generator[tuple[ast.AST, ast.AST, ast.AST, str], None, None]:
         """Visit a node.
 
         This method will temporarily modify the node provided and yield itself modified
@@ -195,11 +190,7 @@ class MutationOperator:
         """
         node_children = node.children  # type: ignore[attr-defined]
 
-        if (
-            self.only_mutation
-            and self.only_mutation.node != node
-            and self.only_mutation.node not in node_children
-        ):
+        if self.only_mutation and self.only_mutation.node != node and self.only_mutation.node not in node_children:
             return
 
         fix_lineno(node)
@@ -207,10 +198,7 @@ class MutationOperator:
         for visitor in self._find_visitors(node):
             if (
                 self.only_mutation is None
-                or (
-                    self.only_mutation.node == node
-                    and self.only_mutation.visitor_name == visitor.__name__
-                )
+                or (self.only_mutation.node == node and self.only_mutation.visitor_name == visitor.__name__)
             ) and (mutated_node := visitor(node)) is not None:
                 fix_node_internals(node, mutated_node)
                 ast.fix_missing_locations(mutated_node)
@@ -219,9 +207,7 @@ class MutationOperator:
 
         yield from self._generic_visit(node)
 
-    def _generic_visit(
-        self, node: ast.AST
-    ) -> Generator[tuple[ast.AST, ast.AST, ast.AST, str], None, None]:
+    def _generic_visit(self, node: ast.AST) -> Generator[tuple[ast.AST, ast.AST, ast.AST, str], None, None]:
         for field, old_value in ast.iter_fields(node):
             generator: Iterable[tuple[ast.AST, ast.AST, str]]
             if isinstance(old_value, list):
@@ -234,9 +220,7 @@ class MutationOperator:
             for current_node, replacement_node, visitor_name in generator:
                 yield current_node, replacement_node, node, visitor_name
 
-    def _generic_visit_list(
-        self, old_value: list
-    ) -> Generator[tuple[ast.AST, ast.AST, str], None, None]:
+    def _generic_visit_list(self, old_value: list) -> Generator[tuple[ast.AST, ast.AST, str], None, None]:
         for position, value in enumerate(old_value.copy()):
             if isinstance(value, ast.AST):
                 for (
@@ -253,9 +237,7 @@ class MutationOperator:
     def _generic_visit_real_node(
         self, node: ast.AST, field: str, old_value: ast.AST
     ) -> Generator[tuple[ast.AST, ast.AST, str], None, None]:
-        for current_node, replacement_node, mutated_node, visitor_name in self.visit(
-            old_value
-        ):
+        for current_node, replacement_node, mutated_node, visitor_name in self.visit(old_value):
             setattr(node, field, mutated_node)
             yield current_node, replacement_node, visitor_name
 
@@ -267,8 +249,7 @@ class MutationOperator:
         return [
             visitor
             for attr in dir(self)
-            if method_prefix_pattern.match(attr) is not None
-            and callable(visitor := getattr(self, attr))
+            if method_prefix_pattern.match(attr) is not None and callable(visitor := getattr(self, attr))
         ]
 
 

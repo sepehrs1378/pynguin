@@ -59,9 +59,7 @@ def test_test_case_assertion_minimization(default_test_case):
     ass_min = pp.AssertionMinimization()
     statement = stmt.IntPrimitiveStatement(default_test_case)
 
-    assertion_1 = MagicMock(
-        checked_instructions=[MagicMock(lineno=1), MagicMock(lineno=2)]
-    )
+    assertion_1 = MagicMock(checked_instructions=[MagicMock(lineno=1), MagicMock(lineno=2)])
     assertion_2 = MagicMock(checked_instructions=[MagicMock(lineno=1)])
 
     statement.add_assertion(assertion_1)
@@ -82,12 +80,8 @@ def test_test_case_assertion_minimization_does_not_remove_exception_assertion(
     ass_min = pp.AssertionMinimization()
     statement = stmt.IntPrimitiveStatement(default_test_case)
 
-    assertion_1 = MagicMock(
-        checked_instructions=[MagicMock(lineno=1), MagicMock(lineno=2)]
-    )
-    assertion_2 = MagicMock(
-        spec=ExceptionAssertion, checked_instructions=[MagicMock(lineno=1)]
-    )
+    assertion_1 = MagicMock(checked_instructions=[MagicMock(lineno=1), MagicMock(lineno=2)])
+    assertion_2 = MagicMock(spec=ExceptionAssertion, checked_instructions=[MagicMock(lineno=1)])
 
     statement.add_assertion(assertion_1)
     statement.add_assertion(assertion_2)
@@ -154,15 +148,11 @@ def test_remove_integration(constructor_mock):
     test_case.add_statement(stmt.FloatPrimitiveStatement(test_case))
     int0 = stmt.IntPrimitiveStatement(test_case)
     test_case.add_statement(int0)
-    list0 = stmt.ListStatement(
-        test_case, cluster.type_system.convert_type_hint(list[int]), [int0.ret_val]
-    )
+    list0 = stmt.ListStatement(test_case, cluster.type_system.convert_type_hint(list[int]), [int0.ret_val])
     test_case.add_statement(list0)
     float0 = stmt.FloatPrimitiveStatement(test_case)
     test_case.add_statement(float0)
-    ctor0 = stmt.ConstructorStatement(
-        test_case, constructor_mock, {"foo": float0.ret_val, "bar": list0.ret_val}
-    )
+    ctor0 = stmt.ConstructorStatement(test_case, constructor_mock, {"foo": float0.ret_val, "bar": list0.ret_val})
     test_case.add_statement(ctor0)
     assert test_case.size() == 6
     visitor = pp.UnusedStatementsTestCaseVisitor()

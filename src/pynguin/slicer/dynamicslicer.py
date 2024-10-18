@@ -8,6 +8,7 @@
 # Idea and structure are taken from the pyChecco project, see:
 # https://github.com/ipsw1/pychecco
 """Provides classes and logic for dynamic slicing."""
+
 from __future__ import annotations
 
 import logging
@@ -199,23 +200,17 @@ class DynamicSlicer:
                 slc.trace_position -= 1
 
             # Stack housekeeping
-            prev_import_back_call = self._stack_housekeeping(
-                last_state, last_unique_instr, slc
-            )
+            prev_import_back_call = self._stack_housekeeping(last_state, last_unique_instr, slc)
 
             # Control dependency
-            control_dependency = self.check_control_dependency(
-                slc.context, last_unique_instr, slc.code_object_id
-            )
+            control_dependency = self.check_control_dependency(slc.context, last_unique_instr, slc.code_object_id)
 
             # Data dependencies
             # Explicit data dependency
             (
                 exp_data_dep,
                 slc.new_attribute_object_uses,
-            ) = self.check_explicit_data_dependency(
-                slc.context, last_unique_instr, last_traced_instr
-            )
+            ) = self.check_explicit_data_dependency(slc.context, last_unique_instr, last_traced_instr)
 
             # Dependency via method call
             if last_state.call and slc.code_object_dependent:
@@ -227,12 +222,8 @@ class DynamicSlicer:
                     # if one of the instructions executed by the import is included
                     # (because IMPORT_NAME is traced afterwards).
                     slc.context.instr_in_slice.append(prev_import_back_call)
-                    num_import_pops = StackEffect.stack_effect(
-                        prev_import_back_call.opcode, arg=None, jump=False
-                    )[0]
-                    slc.trace_stack.update_pop_operations(
-                        num_import_pops, prev_import_back_call, in_slice=True
-                    )
+                    num_import_pops = StackEffect.stack_effect(prev_import_back_call.opcode, arg=None, jump=False)[0]
+                    slc.trace_stack.update_pop_operations(num_import_pops, prev_import_back_call, in_slice=True)
             # Implicit data dependency (over stack)
             if slc.stack_simulation:
                 stack_dep, include_use = slc.trace_stack.update_push_operations(
@@ -282,9 +273,7 @@ class DynamicSlicer:
         self._update_stack_effects(last_state, last_unique_instr, slc)
         return prev_import_back_call
 
-    def _trace_housekeeping(
-        self, criterion_in_slice, include_use, last_traced_instr, last_unique_instr, slc
-    ):
+    def _trace_housekeeping(self, criterion_in_slice, include_use, last_traced_instr, last_unique_instr, slc):
         # Add instruction to slice
         if criterion_in_slice:
             slc.context.instr_in_slice.append(last_unique_instr)
@@ -293,14 +282,10 @@ class DynamicSlicer:
             self.add_uses(slc.context, last_traced_instr)
         # Add control dependencies (for S_C)
         if criterion_in_slice:
-            self.add_control_dependencies(
-                slc.context, last_unique_instr, slc.code_object_id
-            )
+            self.add_control_dependencies(slc.context, last_unique_instr, slc.code_object_id)
         # Add current instruction to the stack
         if slc.stack_simulation:
-            slc.trace_stack.update_pop_operations(
-                slc.pops, last_unique_instr, in_slice=criterion_in_slice
-            )
+            slc.trace_stack.update_pop_operations(slc.pops, last_unique_instr, in_slice=criterion_in_slice)
 
     @staticmethod
     def _update_stack_effects(last_state, last_unique_instr, slc):
@@ -340,9 +325,7 @@ class DynamicSlicer:
         last_ex_instruction = slicing_criterion.unique_instr
         code_object_id = last_ex_instruction.code_object_id
         basic_block_id = last_ex_instruction.node_id
-        curr_instr = self._locate_unique_in_bytecode(
-            last_ex_instruction, code_object_id, basic_block_id
-        )
+        curr_instr = self._locate_unique_in_bytecode(last_ex_instruction, code_object_id, basic_block_id)
         execution_flow_builder = ExecutionFlowBuilder(trace, self._known_code_objects)
         pops, pushes, trace_stack = self._init_stack(
             last_ex_instruction,
@@ -384,9 +367,7 @@ class DynamicSlicer:
         self.add_control_dependencies(context, last_ex_instruction, code_object_id)
         return context
 
-    def _locate_unique_in_bytecode(
-        self, instr: UniqueInstruction, code_object_id: int, basic_block_id: int
-    ) -> Instr:
+    def _locate_unique_in_bytecode(self, instr: UniqueInstruction, code_object_id: int, basic_block_id: int) -> Instr:
         # Get relevant basic block
         basic_block = None
         bb_offset = -1
@@ -504,9 +485,7 @@ class DynamicSlicer:
                 context.instr_ctrl_deps.add(unique_instr)
 
     @staticmethod
-    def get_node(
-        node_id: int, graph: ControlDependenceGraph | CFG
-    ) -> ProgramGraphNode | None:
+    def get_node(node_id: int, graph: ControlDependenceGraph | CFG) -> ProgramGraphNode | None:
         """Iterate through all nodes of the graph and return the node with the given id.
 
         Args:
@@ -557,9 +536,7 @@ class DynamicSlicer:
             if traced_instr.arg_address and traced_instr.object_creation:
                 attribute_uses = set()
                 for use in context.attr_uses:
-                    if use.startswith(hex(traced_instr.arg_address)) and len(use) > len(
-                        hex(traced_instr.arg_address)
-                    ):
+                    if use.startswith(hex(traced_instr.arg_address)) and len(use) > len(hex(traced_instr.arg_address)):
                         complete_cover = True
                         attribute_uses.add(use)
                         attribute_creation_uses.add("_".join(use.split("_")[1:]))
@@ -614,10 +591,7 @@ class DynamicSlicer:
             if (
                 traced_instr.code_object_id in self._known_code_objects
                 and self._known_code_objects[traced_instr.code_object_id] is not None
-                and self._known_code_objects[
-                    traced_instr.code_object_id
-                ].code_object.co_name
-                == "<module>"
+                and self._known_code_objects[traced_instr.code_object_id].code_object.co_name == "<module>"
             ):
                 complete_cover = self._check_scope_for_def(
                     context.var_uses_global,
@@ -692,9 +666,7 @@ class DynamicSlicer:
 
         return complete_cover
 
-    def add_uses(
-        self, context: SlicingContext, traced_instr: ExecutedInstruction
-    ) -> None:
+    def add_uses(self, context: SlicingContext, traced_instr: ExecutedInstruction) -> None:
         """Add all uses found in the executed instruction into the slicing context.
 
         Args:
@@ -713,24 +685,17 @@ class DynamicSlicer:
             context.var_uses_addresses.add(hex(traced_instr.arg_address))
         # Add local variables
         if traced_instr.opcode == op.LOAD_FAST:
-            context.var_uses_local.add(
-                (traced_instr.argument, traced_instr.code_object_id)
-            )
+            context.var_uses_local.add((traced_instr.argument, traced_instr.code_object_id))
         # Add global variables (with *_NAME instructions)
         elif traced_instr.opcode == op.LOAD_NAME:
             if (
                 traced_instr.code_object_id in self._known_code_objects
                 and self._known_code_objects[traced_instr.code_object_id] is not None
-                and self._known_code_objects[
-                    traced_instr.code_object_id
-                ].code_object.co_name
-                == "<module>"
+                and self._known_code_objects[traced_instr.code_object_id].code_object.co_name == "<module>"
             ):
                 context.var_uses_global.add((traced_instr.argument, traced_instr.file))
             else:
-                context.var_uses_local.add(
-                    (traced_instr.argument, traced_instr.code_object_id)
-                )
+                context.var_uses_local.add((traced_instr.argument, traced_instr.code_object_id))
         # Add global variables
         elif traced_instr.opcode == op.LOAD_GLOBAL:
             context.var_uses_global.add((traced_instr.argument, traced_instr.file))
@@ -750,9 +715,7 @@ class DynamicSlicer:
 
                 assert current_code_meta.parent_code_object_id is not None
                 current_code_object_id = current_code_meta.parent_code_object_id
-            context.var_uses_nonlocal.add(
-                (traced_instr.argument, tuple(variable_scope))
-            )
+            context.var_uses_nonlocal.add((traced_instr.argument, tuple(variable_scope)))
         else:
             # There should be no other possible instructions
             raise ValueError("Instruction opcode can not be analyzed for definitions.")
@@ -772,9 +735,7 @@ class DynamicSlicer:
             context.var_uses_addresses.add(hex(traced_instr.src_address))
 
     @staticmethod
-    def get_line_id_by_instruction(
-        instruction: UniqueInstruction, subject_properties: SubjectProperties
-    ) -> int:
+    def get_line_id_by_instruction(instruction: UniqueInstruction, subject_properties: SubjectProperties) -> int:
         """Get the line id of the line an instruction belongs to.
 
         Args:
@@ -788,10 +749,7 @@ class DynamicSlicer:
             ValueError: If the line of the instruction is not part of the known data.
         """
         for line_id, line_meta in subject_properties.existing_lines.items():
-            if (
-                line_meta.file_name == instruction.file
-                and line_meta.line_number == instruction.lineno
-            ):
+            if line_meta.file_name == instruction.file and line_meta.line_number == instruction.lineno:
                 return line_id
         raise ValueError("The instruction's line is not registered in the known data")
 
@@ -818,11 +776,7 @@ class DynamicSlicer:
             if instruction.lineno == curr_line:  # only add new lines
                 continue
             curr_line = instruction.lineno  # type: ignore[assignment]
-            line_ids.add(
-                DynamicSlicer.get_line_id_by_instruction(
-                    instruction, subject_properties
-                )
-            )
+            line_ids.add(DynamicSlicer.get_line_id_by_instruction(instruction, subject_properties))
         return line_ids
 
 
@@ -877,9 +831,7 @@ class AssertionSlicer:
 
         return SlicingCriterion(unique_instr, assertion.trace_position - 1)
 
-    def slice_assertion(
-        self, assertion: ExecutedAssertion, trace: ExecutionTrace
-    ) -> list[UniqueInstruction]:
+    def slice_assertion(self, assertion: ExecutedAssertion, trace: ExecutionTrace) -> list[UniqueInstruction]:
         """Calculate the dynamic slice for an assertion inside a test case.
 
         Args:

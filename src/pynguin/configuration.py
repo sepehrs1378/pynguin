@@ -5,6 +5,7 @@
 #  SPDX-License-Identifier: MIT
 #
 """Provides a configuration interface for the test generator."""
+
 import dataclasses
 import enum
 import time
@@ -594,34 +595,22 @@ class Configuration:
     algorithm: Algorithm = Algorithm.DYNAMOSA
     """The algorithm that shall be used for generation."""
 
-    statistics_output: StatisticsOutputConfiguration = dataclasses.field(
-        default_factory=StatisticsOutputConfiguration
-    )
+    statistics_output: StatisticsOutputConfiguration = dataclasses.field(default_factory=StatisticsOutputConfiguration)
     """Statistic Output configuration."""
 
-    stopping: StoppingConfiguration = dataclasses.field(
-        default_factory=StoppingConfiguration
-    )
+    stopping: StoppingConfiguration = dataclasses.field(default_factory=StoppingConfiguration)
     """Stopping configuration."""
 
-    seeding: SeedingConfiguration = dataclasses.field(
-        default_factory=SeedingConfiguration
-    )
+    seeding: SeedingConfiguration = dataclasses.field(default_factory=SeedingConfiguration)
     """Seeding configuration."""
 
-    type_inference: TypeInferenceConfiguration = dataclasses.field(
-        default_factory=TypeInferenceConfiguration
-    )
+    type_inference: TypeInferenceConfiguration = dataclasses.field(default_factory=TypeInferenceConfiguration)
     """Type inference configuration."""
 
-    test_creation: TestCreationConfiguration = dataclasses.field(
-        default_factory=TestCreationConfiguration
-    )
+    test_creation: TestCreationConfiguration = dataclasses.field(default_factory=TestCreationConfiguration)
     """Test creation configuration."""
 
-    search_algorithm: SearchAlgorithmConfiguration = dataclasses.field(
-        default_factory=SearchAlgorithmConfiguration
-    )
+    search_algorithm: SearchAlgorithmConfiguration = dataclasses.field(default_factory=SearchAlgorithmConfiguration)
     """Search algorithm configuration."""
 
     mio: MIOConfiguration = dataclasses.field(default_factory=MIOConfiguration)

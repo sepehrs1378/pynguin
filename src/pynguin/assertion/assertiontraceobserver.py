@@ -5,6 +5,7 @@
 #  SPDX-License-Identifier: MIT
 #
 """Provides an abstract observer that can be used to generate assertions."""
+
 import ast
 import copy
 import logging
@@ -99,9 +100,7 @@ class AssertionTraceObserver(ex.ExecutionObserver):
     ):
         result.assertion_trace = self.get_trace()
 
-    def after_test_case_execution_outside_thread(
-        self, test_case: tc.TestCase, result: ex.ExecutionResult
-    ):
+    def after_test_case_execution_outside_thread(self, test_case: tc.TestCase, result: ex.ExecutionResult):
         """Not used.
 
         Args:
@@ -126,10 +125,7 @@ class AssertionTraceObserver(ex.ExecutionObserver):
             if is_primitive_type(type(exec_ctx.get_reference_value(statement.ret_val))):
                 # Primitives won't change, so we only check them once.
                 self._check_reference(exec_ctx, statement.ret_val, position, trace)
-            elif (
-                type(exec_ctx.get_reference_value(statement.ret_val)).__module__
-                != "builtins"
-            ):
+            elif type(exec_ctx.get_reference_value(statement.ret_val)).__module__ != "builtins":
                 # Everything else is continually checked, unless it is from builtins.
                 self._assertion_local_state.watch_list.append(statement.ret_val)
 
@@ -159,15 +155,8 @@ class AssertionTraceObserver(ex.ExecutionObserver):
                 )
 
         # Check fields of classes whose constructors were used.
-        for seen_type in [
-            type(exec_ctx.get_reference_value(ref))
-            for ref in self._assertion_local_state.watch_list
-        ]:
-            if (
-                is_primitive_type(seen_type)
-                or is_collection_type(seen_type)
-                or is_ignorable_type(seen_type)
-            ):
+        for seen_type in [type(exec_ctx.get_reference_value(ref)) for ref in self._assertion_local_state.watch_list]:
+            if is_primitive_type(seen_type) or is_collection_type(seen_type) or is_ignorable_type(seen_type):
                 continue
 
             if not hasattr(seen_type, "__dict__"):
@@ -226,9 +215,7 @@ class AssertionTraceObserver(ex.ExecutionObserver):
             if isinstance(value, Sized):
                 try:
                     length = len(value)
-                    trace.add_entry(
-                        position, ass.CollectionLengthAssertion(ref, length)
-                    )
+                    trace.add_entry(position, ass.CollectionLengthAssertion(ref, length))
                     return
                 except BaseException as err:  # noqa: BLE001
                     # Could not get len, so continue down.
@@ -253,10 +240,7 @@ class AssertionTraceObserver(ex.ExecutionObserver):
     @staticmethod
     def _should_ignore(field, attr_value):
         return (
-            field.startswith("_")
-            or field.endswith("__")
-            or callable(attr_value)
-            or isinstance(attr_value, ModuleType)
+            field.startswith("_") or field.endswith("__") or callable(attr_value) or isinstance(attr_value, ModuleType)
         )
 
 
@@ -285,9 +269,7 @@ class AssertionVerificationObserver(ex.ExecutionObserver):
     ) -> None:
         result.assertion_verification_trace = self.state.trace
 
-    def after_test_case_execution_outside_thread(
-        self, test_case: tc.TestCase, result: ex.ExecutionResult
-    ) -> None:
+    def after_test_case_execution_outside_thread(self, test_case: tc.TestCase, result: ex.ExecutionResult) -> None:
         """Not used.
 
         Args:
@@ -323,9 +305,7 @@ class AssertionVerificationObserver(ex.ExecutionObserver):
             # Other assertions are executed after the statement.
             for idx, assertion in enumerate(statement.assertions):
                 exc = executor.execute_ast(
-                    exec_ctx.wrap_node_in_module(
-                        exec_ctx.node_for_assertion(assertion, ast.stmt())
-                    ),
+                    exec_ctx.wrap_node_in_module(exec_ctx.node_for_assertion(assertion, ast.stmt())),
                     exec_ctx,
                 )
                 if exc is None:

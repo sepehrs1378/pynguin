@@ -5,6 +5,7 @@
 #  SPDX-License-Identifier: MIT
 #
 """Provides archives to store found solutions."""
+
 from __future__ import annotations
 
 import logging
@@ -33,9 +34,7 @@ class Archive(ABC):
     _logger = logging.getLogger(__name__)
 
     def __init__(self):  # noqa: D107
-        self._on_target_covered_callbacks: list[
-            Callable[[ff.TestCaseFitnessFunction], None]
-        ] = []
+        self._on_target_covered_callbacks: list[Callable[[ff.TestCaseFitnessFunction], None]] = []
 
     @abstractmethod
     def update(self, solutions: Iterable[tcc.TestCaseChromosome]) -> bool:
@@ -66,9 +65,7 @@ class Archive(ABC):
             The best solutions in the archive
         """
 
-    def add_on_target_covered(
-        self, callback: Callable[[ff.TestCaseFitnessFunction], None]
-    ) -> None:
+    def add_on_target_covered(self, callback: Callable[[ff.TestCaseFitnessFunction], None]) -> None:
         """Register a callback for whenever a new target is covered for the first time.
 
         Args:
@@ -188,8 +185,7 @@ class CoverageArchive(Archive):
 
     def _all_covered(self) -> bool:
         return all(
-            chromosome.get_is_covered(fitness_function)
-            for fitness_function, chromosome in self._covered.items()
+            chromosome.get_is_covered(fitness_function) for fitness_function, chromosome in self._covered.items()
         )
 
 
@@ -225,15 +221,9 @@ class MIOPopulation:
     @property
     def is_covered(self) -> bool:
         """Is the corresponding target covered."""
-        return (
-            len(self._solutions) == 1
-            and self._capacity == 1
-            and self._solutions[0].h == 1.0
-        )
+        return len(self._solutions) == 1 and self._capacity == 1 and self._solutions[0].h == 1.0
 
-    def add_solution(
-        self, h: float, test_case_chromosome: tcc.TestCaseChromosome
-    ) -> bool:
+    def add_solution(self, h: float, test_case_chromosome: tcc.TestCaseChromosome) -> bool:
         """Add the given solution."""
         assert 0.0 <= h <= 1.0
         if h == 0.0:
@@ -253,9 +243,7 @@ class MIOPopulation:
             # Yes. Has the target been fully covered by a previous solution?
             if self.is_covered:
                 current_solution = self._solutions[0]
-                if self._is_pair_better_than_current(
-                    current_solution, candidate_solution
-                ):
+                if self._is_pair_better_than_current(current_solution, candidate_solution):
                     added = True
                     self._solutions[0] = candidate_solution
             else:
@@ -276,9 +264,7 @@ class MIOPopulation:
                 self._solutions.append(candidate_solution)
             else:
                 worst_solution = self._solutions[-1]
-                if self._is_pair_better_than_current(
-                    worst_solution, candidate_solution
-                ):
+                if self._is_pair_better_than_current(worst_solution, candidate_solution):
                     added = True
                     self._solutions[-1] = candidate_solution
             self._sort_solutions()
@@ -319,21 +305,15 @@ class MIOPopulation:
         self._solutions.sort(key=lambda c: c.h, reverse=True)
 
     @staticmethod
-    def _is_pair_better_than_current(
-        current: MIOPopulationPair, candidate: MIOPopulationPair
-    ):
+    def _is_pair_better_than_current(current: MIOPopulationPair, candidate: MIOPopulationPair):
         if current.h > candidate.h:
             return False
         if current.h < candidate.h:
             return True
-        return MIOPopulation._is_better_than_current(
-            current.test_case_chromosome, candidate.test_case_chromosome
-        )
+        return MIOPopulation._is_better_than_current(current.test_case_chromosome, candidate.test_case_chromosome)
 
     @staticmethod
-    def _is_better_than_current(
-        current: tcc.TestCaseChromosome, candidate: tcc.TestCaseChromosome
-    ) -> bool:
+    def _is_better_than_current(current: tcc.TestCaseChromosome, candidate: tcc.TestCaseChromosome) -> bool:
         current_result = current.get_last_execution_result()
         candidate_result = candidate.get_last_execution_result()
         if current_result is not None and (  # noqa: SIM102
@@ -380,9 +360,7 @@ class MIOArchive(Archive):
                     assert chop_position is not None
                     solution_clone.test_case.chop(chop_position)
                 covered_before = self._archive[target].is_covered
-                updated |= self._archive[target].add_solution(
-                    1.0 - ff.normalise(fitness_value), solution_clone
-                )
+                updated |= self._archive[target].add_solution(1.0 - ff.normalise(fitness_value), solution_clone)
                 # The goal was covered with this solution
                 # TODO(fk) replace with goal.is_covered?
                 if not covered_before and self._archive[target].is_covered:
@@ -397,20 +375,12 @@ class MIOArchive(Archive):
         # targets there is not any solution yet, then choose one of the covered targets
         # at random. Thereafter, choose one solution randomly from the list of solutions
         # of the chosen target.
-        targets_with_solutions = [
-            func
-            for func, population in self._archive.items()
-            if population.num_solutions > 0
-        ]
+        targets_with_solutions = [func for func, population in self._archive.items() if population.num_solutions > 0]
         if len(targets_with_solutions) == 0:
             # There is not at least one target with at least one solution
             return None
 
-        potential_targets = [
-            func
-            for func in targets_with_solutions
-            if not self._archive[func].is_covered
-        ]
+        potential_targets = [func for func in targets_with_solutions if not self._archive[func].is_covered]
         if len(potential_targets) == 0:
             potential_targets = targets_with_solutions
 
@@ -446,6 +416,4 @@ class MIOArchive(Archive):
     @property
     def num_covered_targets(self) -> int:
         """The amount of targets that are covered."""
-        return len(
-            [1 for population in self._archive.values() if population.is_covered]
-        )
+        return len([1 for population in self._archive.values() if population.is_covered])

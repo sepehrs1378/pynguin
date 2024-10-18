@@ -5,6 +5,7 @@
 #  SPDX-License-Identifier: MIT
 #
 """Provide abstract selection function."""
+
 from __future__ import annotations
 
 from abc import abstractmethod
@@ -87,12 +88,7 @@ class RankSelection(SelectionFunction[T]):
         random_value = randomness.next_float()
         bias = config.configuration.search_algorithm.rank_bias
         return int(
-            len(population)
-            * (
-                (bias - sqrt(bias**2 - (4.0 * (bias - 1.0) * random_value)))
-                / 2.0
-                / (bias - 1.0)
-            )
+            len(population) * ((bias - sqrt(bias**2 - (4.0 * (bias - 1.0) * random_value))) / 2.0 / (bias - 1.0))
         )
 
 
@@ -105,15 +101,12 @@ class TournamentSelection(SelectionFunction[T]):
 
         tournament_round = 0
 
-        while (
-            tournament_round < config.configuration.search_algorithm.tournament_size - 1
-        ):
+        while tournament_round < config.configuration.search_algorithm.tournament_size - 1:
             new_num = randomness.next_int(lower_bound=0, upper_bound=len(population))
             selected = population[new_num]
 
             if (
-                self._maximize
-                and selected.get_fitness() > population[winner].get_fitness()
+                self._maximize and selected.get_fitness() > population[winner].get_fitness()
             ) or selected.get_fitness() < population[winner].get_fitness():
                 winner = new_num
 

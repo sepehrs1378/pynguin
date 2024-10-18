@@ -67,9 +67,7 @@ POP_JUMP_IF_FALSE ProgramGraphNode";
     assert cfg.entry_node.is_artificial
     assert len(cfg.exit_nodes) == 1
     # Stupid string encoding >:[
-    assert bytes(dot_representation, "utf-8").decode("unicode_escape") == bytes(
-        graph, "utf-8"
-    ).decode("unicode_escape")
+    assert bytes(dot_representation, "utf-8").decode("unicode_escape") == bytes(graph, "utf-8").decode("unicode_escape")
 
 
 def test_integration_reverse_cfg(conditional_jump_example_bytecode):
@@ -127,9 +125,7 @@ RETURN_VALUE";
     assert cfg.diameter == 6
     assert cfg.entry_node.is_artificial
     assert len(cfg.exit_nodes) == 1
-    assert bytes(dot_representation, "utf-8").decode("unicode_escape") == bytes(
-        graph, "utf-8"
-    ).decode("unicode_escape")
+    assert bytes(dot_representation, "utf-8").decode("unicode_escape") == bytes(graph, "utf-8").decode("unicode_escape")
 
 
 def control_flow_labelling(foo):  # pragma: no cover
@@ -298,9 +294,7 @@ POP_JUMP_IF_FALSE ProgramGraphNode";
 )
 def test_all_control_flow(expected):
     cfg = CFG.from_bytecode(Bytecode.from_code(control_flow_labelling.__code__))
-    assert bytes(cfg.dot, "utf-8").decode("unicode_escape") == bytes(
-        expected, "utf-8"
-    ).decode("unicode_escape")
+    assert bytes(cfg.dot, "utf-8").decode("unicode_escape") == bytes(expected, "utf-8").decode("unicode_escape")
 
 
 def test_integration_copy_cfg(conditional_jump_example_bytecode):

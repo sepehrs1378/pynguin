@@ -45,15 +45,11 @@ def test_primitive_statement_value(statement_type, default_test_case, value):
         (stmt.ComplexPrimitiveStatement, 4 + 3j),
     ],
 )
-def test_primitive_statement_value_from_seeding(
-    statement_type, default_test_case, value
-):
+def test_primitive_statement_value_from_seeding(statement_type, default_test_case, value):
     config.configuration.seeding.seeded_primitives_reuse_probability = 1.0
     pool = ConstantPool()
     pool.add_constant(value)
-    provider = DelegatingConstantProvider(
-        pool=pool, delegate=EmptyConstantProvider(), probability=1.0
-    )
+    provider = DelegatingConstantProvider(pool=pool, delegate=EmptyConstantProvider(), probability=1.0)
     statement = statement_type(default_test_case, constant_provider=provider)
     assert statement.value == value
 
@@ -87,9 +83,7 @@ def test_primitive_statement_value_none(statement_type, default_test_case):
         (stmt.ClassPrimitiveStatement, 0, 1),
     ],
 )
-def test_primitive_statement_set_value(
-    statement_type, default_test_case, value, new_value
-):
+def test_primitive_statement_set_value(statement_type, default_test_case, value, new_value):
     statement = statement_type(default_test_case, value)
     statement.value = new_value
     assert statement.value == new_value
@@ -177,9 +171,7 @@ def test_primitive_statement_clone(statement_type, default_test_case, value):
         ),
     ],
 )
-def test_primitive_statement_accept(
-    statement_type, default_test_case, value, visitor_method
-):
+def test_primitive_statement_accept(statement_type, default_test_case, value, visitor_method):
     stmt = statement_type(default_test_case, value)
     visitor = MagicMock()
     stmt.accept(visitor)
@@ -215,9 +207,7 @@ def test_primitive_statement_equals_same(statement_type, default_test_case, valu
         (stmt.ClassPrimitiveStatement, 0),
     ],
 )
-def test_primitive_statement_equals_other_type(
-    statement_type, default_test_case, value
-):
+def test_primitive_statement_equals_other_type(statement_type, default_test_case, value):
     statement = statement_type(default_test_case, value)
     assert not statement.structural_eq(default_test_case, {})
 
@@ -432,9 +422,7 @@ def test_int_primitive_statement_delta(default_test_case):
         (stmt.ComplexPrimitiveStatement, 1.5 + 1j, False, 1.5 + 6j),
     ],
 )
-def test_float_complex_primitive_statement_delta_max(
-    default_test_case, stmt_type, value, real_or_imag, expected
-):
+def test_float_complex_primitive_statement_delta_max(default_test_case, stmt_type, value, real_or_imag, expected):
     config.configuration.test_creation.max_delta = 10
     statement = stmt_type(default_test_case, value)
     with mock.patch("pynguin.utils.randomness.next_gaussian") as gauss_mock:
@@ -456,9 +444,7 @@ def test_float_complex_primitive_statement_delta_max(
         (stmt.ComplexPrimitiveStatement, 1.5 + 1j, False, 1.5 + 1.5j),
     ],
 )
-def test_float_complex_primitive_statement_delta_gauss(
-    default_test_case, stmt_type, value, real_or_imag, expected
-):
+def test_float_complex_primitive_statement_delta_gauss(default_test_case, stmt_type, value, real_or_imag, expected):
     config.configuration.test_creation.max_delta = 10
     statement = stmt_type(default_test_case, value)
     with mock.patch("pynguin.utils.randomness.next_gaussian") as gauss_mock:
@@ -480,9 +466,7 @@ def test_float_complex_primitive_statement_delta_gauss(
         (stmt.ComplexPrimitiveStatement, 1.2345 + 1.2345j, False, 1.2345 + 1.23j),
     ],
 )
-def test_float_complex_primitive_statement_delta_round(
-    default_test_case, stmt_type, value, real_or_imag, expected
-):
+def test_float_complex_primitive_statement_delta_round(default_test_case, stmt_type, value, real_or_imag, expected):
     statement = stmt_type(default_test_case, value)
     with mock.patch("pynguin.utils.randomness.next_int") as int_mock:
         int_mock.return_value = 2
@@ -632,9 +616,7 @@ def test_enum_statement_hash(test_case_mock):
     enum_ = MagicMock(names=["FOO"])
     statement = stmt.EnumPrimitiveStatement(test_case_mock, enum_)
     statement2 = stmt.EnumPrimitiveStatement(test_case_mock, enum_)
-    assert statement.structural_hash(
-        {statement.ret_val: 0}
-    ) == statement2.structural_hash({statement2.ret_val: 0})
+    assert statement.structural_hash({statement.ret_val: 0}) == statement2.structural_hash({statement2.ret_val: 0})
 
 
 def test_enum_statement_accept(test_case_mock):

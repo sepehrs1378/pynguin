@@ -62,9 +62,7 @@ def test_integrate_mosa(module_name: str, algorithm):
 
         executor = TestCaseExecutor(tracer)
         cluster = generate_test_cluster(module_name)
-        algorithm = gaf.TestSuiteGenerationAlgorithmFactory(
-            executor, cluster
-        ).get_search_algorithm()
+        algorithm = gaf.TestSuiteGenerationAlgorithmFactory(executor, cluster).get_search_algorithm()
         algorithm._logger = logger
         test_cases = algorithm.generate_tests()
         best_individuals = algorithm._get_best_individuals()

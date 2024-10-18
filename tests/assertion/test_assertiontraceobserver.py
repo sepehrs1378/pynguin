@@ -17,9 +17,7 @@ from pynguin.testcase.statement import Statement
 
 
 class FooObserver(ato.AssertionTraceObserver):
-    def before_statement_execution(
-        self, statement: Statement, node: ast.stmt, exec_ctx: ExecutionContext
-    ) -> ast.stmt:
+    def before_statement_execution(self, statement: Statement, node: ast.stmt, exec_ctx: ExecutionContext) -> ast.stmt:
         return node  # pragma: no cover
 
     def after_statement_execution(

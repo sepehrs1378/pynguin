@@ -5,6 +5,7 @@
 #  SPDX-License-Identifier: MIT
 #
 """Provides a factory to create test case chromosomes."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -52,17 +53,13 @@ class TestCaseChromosomeFactory(cf.ChromosomeFactory[tcc.TestCaseChromosome]):
 
     def get_chromosome(self) -> tcc.TestCaseChromosome:  # noqa: D102
         test_case = self._test_case_factory.get_test_case()
-        chrom = tcc.TestCaseChromosome(
-            test_case=test_case, test_factory=self._test_factory
-        )
+        chrom = tcc.TestCaseChromosome(test_case=test_case, test_factory=self._test_factory)
         for func in self._fitness_functions:
             chrom.add_fitness_function(func)
         return chrom
 
 
-class ArchiveReuseTestCaseChromosomeFactory(
-    cf.ChromosomeFactory[tcc.TestCaseChromosome]
-):
+class ArchiveReuseTestCaseChromosomeFactory(cf.ChromosomeFactory[tcc.TestCaseChromosome]):
     """Provides test case chromosomes from an archive with some probability.
 
     Otherwise, delegates to wrapped chromosome factory.
@@ -78,11 +75,7 @@ class ArchiveReuseTestCaseChromosomeFactory(
 
     def get_chromosome(self) -> tcc.TestCaseChromosome:  # noqa: D102
         pick_from = self._archive.solutions
-        if (
-            len(pick_from) > 0
-            and randomness.next_float()
-            <= config.configuration.seeding.seed_from_archive_probability
-        ):
+        if len(pick_from) > 0 and randomness.next_float() <= config.configuration.seeding.seed_from_archive_probability:
             selected = randomness.choice(pick_from).clone()
             for _ in range(config.configuration.seeding.seed_from_archive_mutations):
                 selected.mutate()

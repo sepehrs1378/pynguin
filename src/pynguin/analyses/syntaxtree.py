@@ -10,6 +10,7 @@ The implementation of this module contains some code adopted from the ``darglint
 library (https://github.com/terrencepreilly/darglint), which was released by Terrence
 Reilly under MIT license.
 """
+
 from __future__ import annotations
 
 import ast
@@ -67,9 +68,7 @@ class _FunctionScopedVisitorMixin(ast.NodeVisitor):
     ) -> ast.AST:
         if not self.in_function:
             self.in_function = True
-            return getattr(super(), "visit_AsyncFunctionDef", super().generic_visit)(
-                node
-            )
+            return getattr(super(), "visit_AsyncFunctionDef", super().generic_visit)(node)
         return ast.Pass()
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.AST:  # noqa: N802
@@ -137,8 +136,7 @@ class _Context:
                 return names
             else:
                 _LOGGER.error(
-                    "While getting ast.Attribute representation a node had an "
-                    "unexpected type %s",
+                    "While getting ast.Attribute representation a node had an " "unexpected type %s",
                     curr.__class__.__name__,
                 )
                 curr = None
@@ -220,9 +218,7 @@ class _Context:
                     else:
                         values.add(value)
                 return values
-            _LOGGER.warning(
-                "Unexpectedly had no exception name raised and no exception in context."
-            )
+            _LOGGER.warning("Unexpectedly had no exception name raised and no exception in context.")
 
         if isinstance(name, str):
             self.exceptions.add(name)
@@ -488,9 +484,7 @@ def astroid_to_ast(astroid_in: AstroidFunctionDef) -> ASTFunctionDef:
     return ast.parse(to_code(astroid_in)).body[0]  # type: ignore[return-value]
 
 
-def get_function_node_from_ast(
-    tree: astroid.Module | astroid.ClassDef | None, name: str
-) -> AstroidFunctionDef | None:
+def get_function_node_from_ast(tree: astroid.Module | astroid.ClassDef | None, name: str) -> AstroidFunctionDef | None:
     """Get the AST Node that represents the function with the given name.
 
     Args:
@@ -510,9 +504,7 @@ def get_function_node_from_ast(
     return None
 
 
-def get_class_node_from_ast(
-    tree: astroid.Module | None, name: str
-) -> astroid.ClassDef | None:
+def get_class_node_from_ast(tree: astroid.Module | None, name: str) -> astroid.ClassDef | None:
     """Get the AST Node that represents the class with the given name.
 
     Args:

@@ -69,20 +69,13 @@ class PyTestChromosomeToAstVisitor(cv.ChromosomeVisitor):
             exec_result=chromosome.get_last_execution_result(),
         )
         chromosome.test_case.accept(visitor)
-        self._conversion_results.append(
-            _AstConversionResult(visitor.test_case_ast, visitor.is_failing_test)
-        )
+        self._conversion_results.append(_AstConversionResult(visitor.test_case_ast, visitor.is_failing_test))
 
     @staticmethod
-    def __create_ast_imports(
-        module_aliases: ns.NamingScope, common_modules: set[str] | None = None
-    ) -> list[ast.stmt]:
+    def __create_ast_imports(module_aliases: ns.NamingScope, common_modules: set[str] | None = None) -> list[ast.stmt]:
         imports: list[ast.stmt] = []
         if common_modules is not None:
-            imports.extend(
-                ast.Import(names=[ast.alias(name=module, asname=None)])
-                for module in common_modules
-            )
+            imports.extend(ast.Import(names=[ast.alias(name=module, asname=None)]) for module in common_modules)
         for module_name, alias in module_aliases:
             imports.append(
                 ast.Import(
@@ -97,9 +90,7 @@ class PyTestChromosomeToAstVisitor(cv.ChromosomeVisitor):
         return imports
 
     @staticmethod
-    def __create_functions(
-        results: list[_AstConversionResult], *, with_self_arg: bool
-    ) -> list[ast.stmt]:
+    def __create_functions(results: list[_AstConversionResult], *, with_self_arg: bool) -> list[ast.stmt]:
         functions: list[ast.stmt] = []
         for i, result in enumerate(results):
             nodes = result.test_case_ast_stmts
@@ -135,9 +126,7 @@ class PyTestChromosomeToAstVisitor(cv.ChromosomeVisitor):
                 kw_defaults=[],
             ),
             body=nodes,
-            decorator_list=PyTestChromosomeToAstVisitor.__create_decorator_list(
-                is_failing
-            ),
+            decorator_list=PyTestChromosomeToAstVisitor.__create_decorator_list(is_failing),
             returns=None,
         )
 
@@ -156,9 +145,7 @@ class PyTestChromosomeToAstVisitor(cv.ChromosomeVisitor):
                         ctx=ast.Load(),
                     ),
                     args=[],
-                    keywords=[
-                        ast.keyword(arg="strict", value=ast.Constant(value=True))
-                    ],
+                    keywords=[ast.keyword(arg="strict", value=ast.Constant(value=True))],
                 )
             ]
         return []
@@ -169,12 +156,8 @@ class PyTestChromosomeToAstVisitor(cv.ChromosomeVisitor):
         Returns:
             An ast module containing all visited test cases.
         """
-        import_nodes = PyTestChromosomeToAstVisitor.__create_ast_imports(
-            self._module_aliases, self._common_modules
-        )
-        functions = self.__create_functions(
-            self._conversion_results, with_self_arg=False
-        )
+        import_nodes = PyTestChromosomeToAstVisitor.__create_ast_imports(self._module_aliases, self._common_modules)
+        functions = self.__create_functions(self._conversion_results, with_self_arg=False)
         return ast.Module(body=import_nodes + functions, type_ignores=[])
 
 
@@ -184,9 +167,7 @@ _PYNGUIN_FILE_HEADER = (
 )
 
 
-def save_module_to_file(
-    module: ast.Module, target: Path, *, format_with_black: bool = True
-) -> None:
+def save_module_to_file(module: ast.Module, target: Path, *, format_with_black: bool = True) -> None:
     """Saves an AST module to a file.
 
     Args:
