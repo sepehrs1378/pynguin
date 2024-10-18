@@ -10,6 +10,7 @@
 #  SPDX-License-Identifier: MIT
 #
 """Provides a data class to track the control-flow distances."""
+
 from __future__ import annotations
 
 from functools import total_ordering
@@ -61,8 +62,7 @@ class ControlFlowDistance:
     def __lt__(self, other: ControlFlowDistance) -> bool:
         if not isinstance(other, ControlFlowDistance):
             raise TypeError(
-                "'<' not supported between instances of "
-                "'ControlFlowDistance' and '%s'",
+                "'<' not supported between instances of " "'ControlFlowDistance' and '%s'",
                 type(other),
             )
         return (self._approach_level, self._branch_distance) < (
@@ -111,15 +111,11 @@ class ControlFlowDistance:
         return self._approach_level + ff.normalise(self._branch_distance)
 
     def __str__(self) -> str:
-        return (
-            f"approach = {self._approach_level}, branch distance ="
-            f" {self._branch_distance}"
-        )
+        return f"approach = {self._approach_level}, branch distance =" f" {self._branch_distance}"
 
     def __repr__(self) -> str:
         return (
-            f"ControlFlowDistance(approach_level={self._approach_level}, "
-            f"branch_distance={self._branch_distance})"
+            f"ControlFlowDistance(approach_level={self._approach_level}, " f"branch_distance={self._branch_distance})"
         )
 
 
@@ -165,18 +161,12 @@ def get_non_root_control_flow_distance(
         The control flow distance.
     """
     trace = result.execution_trace
-    code_object_id = (
-        tracer.get_subject_properties().existing_predicates[predicate_id].code_object_id
-    )
+    code_object_id = tracer.get_subject_properties().existing_predicates[predicate_id].code_object_id
 
     distance = ControlFlowDistance()
     # Code Object was not executed, simply use diameter as upper bound.
     if code_object_id not in trace.executed_code_objects:
-        distance.approach_level = (
-            tracer.get_subject_properties()
-            .existing_code_objects[code_object_id]
-            .cfg.diameter
-        )
+        distance.approach_level = tracer.get_subject_properties().existing_code_objects[code_object_id].cfg.diameter
         return distance
 
     # Predicate was executed, simply use distance of correct branch.
@@ -192,26 +182,17 @@ def get_non_root_control_flow_distance(
     target_node = _get_node_with_predicate_id(cdg, predicate_id)
 
     # Choose diameter as upper bound
-    distance.approach_level = (
-        tracer.get_subject_properties()
-        .existing_code_objects[code_object_id]
-        .cfg.diameter
-    )
+    distance.approach_level = tracer.get_subject_properties().existing_code_objects[code_object_id].cfg.diameter
 
     # We check for the closest predicate that was executed and compute the approach
     # level as the length of the path from such a predicate node to the desired
     # predicate node.
     for node in [
-        node
-        for node in cdg.nodes
-        if node.predicate_id is not None
-        and node.predicate_id in trace.executed_predicates
+        node for node in cdg.nodes if node.predicate_id is not None and node.predicate_id in trace.executed_predicates
     ]:
         try:
             candidate = ControlFlowDistance()
-            candidate.approach_level = nx.shortest_path_length(
-                cdg.graph, node, target_node
-            )
+            candidate.approach_level = nx.shortest_path_length(cdg.graph, node, target_node)
             # Predicate was executed but did not lead to execution of desired predicate
             # So the remaining branch distance to the true or false branch is
             # the desired distance, right?
@@ -228,9 +209,7 @@ def get_non_root_control_flow_distance(
     return distance
 
 
-def _get_node_with_predicate_id(
-    cdg: ControlDependenceGraph, predicate_id: int
-) -> ProgramGraphNode:
+def _get_node_with_predicate_id(cdg: ControlDependenceGraph, predicate_id: int) -> ProgramGraphNode:
     cdg_nodes = [node for node in cdg.nodes if node.predicate_id == predicate_id]
     assert len(cdg_nodes) == 1
     return cdg_nodes.pop()

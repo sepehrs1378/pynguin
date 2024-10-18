@@ -5,6 +5,7 @@
 #  SPDX-License-Identifier: MIT
 #
 """Provides an abstract base class for a test generation algorithm."""
+
 from __future__ import annotations
 
 import time
@@ -54,15 +55,9 @@ class GenerationAlgorithm(Generic[A]):  # noqa: PLR0904
         self._stopping_conditions: list[StoppingCondition]
         self._crossover_function: CrossOverFunction
         self._ranking_function: RankingFunction
-        self._test_case_fitness_functions: OrderedSet[ff.TestCaseFitnessFunction] = (
-            OrderedSet()
-        )
-        self._test_suite_fitness_functions: OrderedSet[ff.TestSuiteFitnessFunction] = (
-            OrderedSet()
-        )
-        self._test_suite_coverage_functions: OrderedSet[
-            ff.TestSuiteCoverageFunction
-        ] = OrderedSet()
+        self._test_case_fitness_functions: OrderedSet[ff.TestCaseFitnessFunction] = OrderedSet()
+        self._test_suite_fitness_functions: OrderedSet[ff.TestSuiteFitnessFunction] = OrderedSet()
+        self._test_suite_coverage_functions: OrderedSet[ff.TestSuiteCoverageFunction] = OrderedSet()
         self._branch_goal_pool: bg.BranchGoalPool
         self._search_observers: list[so.SearchObserver] = []
 
@@ -244,9 +239,7 @@ class GenerationAlgorithm(Generic[A]):  # noqa: PLR0904
     ) -> None:
         self._test_suite_coverage_functions = test_suite_coverage_functions
 
-    def create_test_suite(
-        self, population: Iterable[tcc.TestCaseChromosome]
-    ) -> tsc.TestSuiteChromosome:
+    def create_test_suite(self, population: Iterable[tcc.TestCaseChromosome]) -> tsc.TestSuiteChromosome:
         """Wraps a population of test-case chromosomes in a test-suite chromosome.
 
         This will add the test suite fitness functions and coverage functions to

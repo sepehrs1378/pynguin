@@ -55,9 +55,7 @@ class UsageTraceNode:
     type_checks: OrderedSet[type] = dataclasses.field(default_factory=OrderedSet)
 
     # Maps argument positions to their types.
-    arg_types: dict[int, OrderedSet[type]] = dataclasses.field(
-        default_factory=lambda: defaultdict(OrderedSet)
-    )
+    arg_types: dict[int, OrderedSet[type]] = dataclasses.field(default_factory=lambda: defaultdict(OrderedSet))
 
     def __post_init__(self):
         """Initialize the attribute with a specific dictionary."""
@@ -87,9 +85,7 @@ class UsageTraceNode:
         Returns:
             A nicely formatted string
         """
-        tree = LeftAligned(
-            draw=BoxStyle(gfx=BOX_LIGHT, label_space=0, label_format="[{}]", indent=0)
-        )
+        tree = LeftAligned(draw=BoxStyle(gfx=BOX_LIGHT, label_space=0, label_format="[{}]", indent=0))
         return tree({self._format_str(): self._format_children()})
 
     def __len__(self) -> int:
@@ -106,23 +102,14 @@ class UsageTraceNode:
     def _format_str(self):
         output = f"'{self.name}'"
         if len(self.type_checks) > 0:
-            output += (
-                ", type_checks: {"
-                + ", ".join([check.__name__ for check in self.type_checks])
-                + "}"
-            )
+            output += ", type_checks: {" + ", ".join([check.__name__ for check in self.type_checks]) + "}"
         if len(self.arg_types) > 0:
             output += (
                 ", arg_types: {"
-                + ", ".join(
-                    [
-                        str(idx)
-                        + ": {"
-                        + ", ".join([tp.__name__ for tp in types])
-                        + "}"
-                        for idx, types in self.arg_types.items()
-                    ]
-                )
+                + ", ".join([
+                    str(idx) + ": {" + ", ".join([tp.__name__ for tp in types]) + "}"
+                    for idx, types in self.arg_types.items()
+                ])
                 + "}"
             )
         return output
@@ -600,7 +587,8 @@ class ObjectProxy(metaclass=_ObjectProxyMetaType):  # noqa: PLR0904
     @proxify(log_arg_types=True)
     def __itruediv__(self, other):  # type:ignore[misc]
         self.__wrapped__ = operator.itruediv(
-            self.__wrapped__, other  # type: ignore[has-type]
+            self.__wrapped__,
+            other,  # type: ignore[has-type]
         )
         return self
 
@@ -751,10 +739,7 @@ def shim_isinstance():
             if types is ObjectProxy or orig_isinstance(types, ObjectProxy):
                 return orig_isinstance(inst, types)
             if orig_isinstance(types, tuple):
-                if any(
-                    typ is ObjectProxy or orig_isinstance(typ, ObjectProxy)
-                    for typ in types
-                ):
+                if any(typ is ObjectProxy or orig_isinstance(typ, ObjectProxy) for typ in types):
                     return orig_isinstance(inst, types)
                 UsageTraceNode.from_proxy(inst).type_checks.update(types)
             else:

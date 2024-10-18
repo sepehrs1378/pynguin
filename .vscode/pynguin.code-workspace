@@ -1,0 +1,44 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		}
+	],
+	"settings": {
+		"files.exclude": {
+			".mypy_cache/**": true,
+			".pytest_cache": true,
+			".run": true,
+			".ruff_cache": true,
+			".github": true,
+			".reuse": true,
+		}
+	},
+	"launch": {
+		"version": "0.2.0",
+		"configurations": [
+			{
+				"name": "Debug Pynguin",
+				"type": "debugpy",
+				"request": "launch",
+				"env": {
+					"PYNGUIN_DANGER_AWARE": "1",
+					"PYTHONPATH": "./src"
+				},
+				"program": "./src/pynguin/__main__.py",
+				"args": [
+					"--project-path",
+					"code_to_test/modules",
+					"--output-path",
+					"code_to_test/output",
+					"--module-name",
+					"a",
+					"-v",
+					"--algorithm",
+					"RANDOM_TEST_SUITE_SEARCH"
+				],
+				"justMyCode": false,
+			}
+		]
+	}
+}

@@ -32,14 +32,7 @@ from pynguin.ga.generationalgorithmfactory import TestSuiteGenerationAlgorithmFa
 
 @pytest.fixture()
 def seed_modules_path():
-    return (
-        Path(__file__).parent
-        / ".."
-        / "fixtures"
-        / "seeding"
-        / "initialpopulationseeding"
-        / "seedmodules"
-    )
+    return Path(__file__).parent / ".." / "fixtures" / "seeding" / "initialpopulationseeding" / "seedmodules"
 
 
 @pytest.fixture()
@@ -49,9 +42,7 @@ def triangle_test_cluster() -> ModuleTestCluster:
 
 @pytest.fixture()
 def dummy_test_cluster() -> ModuleTestCluster:
-    return generate_test_cluster(
-        "tests.fixtures.seeding.initialpopulationseeding.dummycontainer"
-    )
+    return generate_test_cluster("tests.fixtures.seeding.initialpopulationseeding.dummycontainer")
 
 
 @pytest.fixture()
@@ -71,9 +62,7 @@ def test_get_testcases(constant_provider, seed_modules_path, triangle_test_clust
     assert len(provider) == 2
 
 
-def test_get_seeded_testcase(
-    constant_provider, seed_modules_path, triangle_test_cluster
-):
+def test_get_seeded_testcase(constant_provider, seed_modules_path, triangle_test_cluster):
     config.configuration.module_name = "triangle"
     provider = seeding.InitialPopulationProvider(
         triangle_test_cluster,
@@ -176,9 +165,7 @@ def test_create_assertion(  # noqa: PLR0917
         pytest.param("wrongassignseed"),
     ],
 )
-def test_not_working_cases(
-    constant_provider, seed_modules_path, dummy_test_cluster, module_name
-):
+def test_not_working_cases(constant_provider, seed_modules_path, dummy_test_cluster, module_name):
     config.configuration.module_name = module_name
     provider = seeding.InitialPopulationProvider(
         dummy_test_cluster,
@@ -191,14 +178,10 @@ def test_not_working_cases(
 
 
 @mock.patch("pynguin.utils.randomness.choice")
-def test_seeded_test_case_factory_no_delegation(
-    rand_mock, constant_provider, seed_modules_path, dummy_test_cluster
-):
+def test_seeded_test_case_factory_no_delegation(rand_mock, constant_provider, seed_modules_path, dummy_test_cluster):
     rand_mock.side_effect = operator.itemgetter(2)
     test_factory = tf.TestFactory(dummy_test_cluster, constant_provider)
-    provider = seeding.InitialPopulationProvider(
-        dummy_test_cluster, test_factory, constant_provider
-    )
+    provider = seeding.InitialPopulationProvider(dummy_test_cluster, test_factory, constant_provider)
     config.configuration.module_name = "primitiveseed"
     config.configuration.seeding.initial_population_seeding = True
     config.configuration.seeding.initial_population_data = seed_modules_path
@@ -212,14 +195,10 @@ def test_seeded_test_case_factory_no_delegation(
 
 
 @mock.patch("pynguin.utils.randomness.choice")
-def test_seeded_test_case_factory_with_delegation(
-    rand_mock, constant_provider, seed_modules_path, dummy_test_cluster
-):
+def test_seeded_test_case_factory_with_delegation(rand_mock, constant_provider, seed_modules_path, dummy_test_cluster):
     rand_mock.side_effect = operator.itemgetter(2)  # pragma: no cover
     test_factory = tf.TestFactory(dummy_test_cluster, constant_provider)
-    provider = seeding.InitialPopulationProvider(
-        dummy_test_cluster, test_factory, constant_provider
-    )
+    provider = seeding.InitialPopulationProvider(dummy_test_cluster, test_factory, constant_provider)
     config.configuration.module_name = "primitiveseed"
     config.configuration.seeding.initial_population_seeding = True
     config.configuration.seeding.initial_population_data = seed_modules_path
@@ -240,17 +219,11 @@ def test_seeded_test_case_factory_with_delegation(
     ],
 )
 @mock.patch("pynguin.testcase.execution.TestCaseExecutor")
-def test_algorithm_generation_factory(
-    mock_class, constant_provider, dummy_test_cluster, enabled, fac_type
-):
+def test_algorithm_generation_factory(mock_class, constant_provider, dummy_test_cluster, enabled, fac_type):
     config.configuration.seeding.initial_population_seeding = enabled
     config.configuration.algorithm = config.Algorithm.MIO
-    tsfactory = TestSuiteGenerationAlgorithmFactory(
-        mock_class.return_value, dummy_test_cluster, constant_provider
-    )
-    with mock.patch(
-        "pynguin.analyses.seeding.InitialPopulationProvider.__len__"
-    ) as len_mock:
+    tsfactory = TestSuiteGenerationAlgorithmFactory(mock_class.return_value, dummy_test_cluster, constant_provider)
+    with mock.patch("pynguin.analyses.seeding.InitialPopulationProvider.__len__") as len_mock:
         len_mock.return_value = 1
         chromosome_factory = tsfactory._get_chromosome_factory(
             MagicMock(test_case_fitness_functions=[], test_suite_fitness_functions=[])
@@ -260,13 +233,9 @@ def test_algorithm_generation_factory(
 
 
 @mock.patch("ast.parse")
-def test_module_not_readable(
-    parse_mock, constant_provider, seed_modules_path, dummy_test_cluster
-):
+def test_module_not_readable(parse_mock, constant_provider, seed_modules_path, dummy_test_cluster):
     test_factory = tf.TestFactory(dummy_test_cluster, constant_provider)
-    provider = seeding.InitialPopulationProvider(
-        dummy_test_cluster, test_factory, constant_provider
-    )
+    provider = seeding.InitialPopulationProvider(dummy_test_cluster, test_factory, constant_provider)
     parse_mock.side_effect = BaseException
     provider.collect_testcases(seed_modules_path)
 
@@ -274,14 +243,10 @@ def test_module_not_readable(
 
 
 @mock.patch("pynguin.ga.testcasechromosome.TestCaseChromosome.mutate")
-def test_initial_mutation(
-    mutate_mock, constant_provider, seed_modules_path, dummy_test_cluster
-):
+def test_initial_mutation(mutate_mock, constant_provider, seed_modules_path, dummy_test_cluster):
     config.configuration.seeding.initial_population_mutations = 2
     config.configuration.module_name = "primitiveseed"
     test_factory = tf.TestFactory(dummy_test_cluster, constant_provider)
-    provider = seeding.InitialPopulationProvider(
-        dummy_test_cluster, test_factory, constant_provider
-    )
+    provider = seeding.InitialPopulationProvider(dummy_test_cluster, test_factory, constant_provider)
     provider.collect_testcases(seed_modules_path)
     mutate_mock.assert_called()

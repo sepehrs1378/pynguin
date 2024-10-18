@@ -5,6 +5,7 @@
 #  SPDX-License-Identifier: MIT
 #
 """Provides some observers for statistics."""
+
 from __future__ import annotations
 
 import time
@@ -40,9 +41,7 @@ class IterationObserver(so.SearchObserver):
         self._iterations += 1
 
     def after_search_finish(self) -> None:  # noqa: D102
-        stat.track_output_variable(
-            RuntimeVariable.AlgorithmIterations, self._iterations
-        )
+        stat.track_output_variable(RuntimeVariable.AlgorithmIterations, self._iterations)
 
 
 class SequenceStartTimeObserver(so.SearchObserver):
@@ -66,9 +65,7 @@ class SequenceStartTimeObserver(so.SearchObserver):
         pass
 
     def after_search_finish(self) -> None:  # noqa: D102
-        stat.track_output_variable(
-            RuntimeVariable.SearchTime, time.time_ns() - self._search_start_time_ns
-        )
+        stat.track_output_variable(RuntimeVariable.SearchTime, time.time_ns() - self._search_start_time_ns)
 
 
 class BestIndividualObserver(so.SearchObserver):

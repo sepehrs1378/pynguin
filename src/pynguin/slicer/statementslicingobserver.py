@@ -5,6 +5,7 @@
 #  SPDX-License-Identifier: MIT
 #
 """Provides an observer that can be used to calculate the checked lines of a test."""
+
 import ast
 import logging
 import threading
@@ -72,9 +73,7 @@ class StatementSlicingObserver(ex.ExecutionObserver):
             last_traced_instr = trace.executed_instructions[-2]
             assert last_traced_instr.opcode == op.STORE_NAME
 
-            code_object = self._tracer.get_subject_properties().existing_code_objects[
-                last_traced_instr.code_object_id
-            ]
+            code_object = self._tracer.get_subject_properties().existing_code_objects[last_traced_instr.code_object_id]
             slicing_instruction = UniqueInstruction(
                 file=last_traced_instr.file,
                 name=last_traced_instr.name,
@@ -89,9 +88,7 @@ class StatementSlicingObserver(ex.ExecutionObserver):
                 slicing_instruction,
                 len(trace.executed_instructions) - self._STORE_INSTRUCTION_OFFSET,
             )
-            self._slicing_local_state.slicing_criteria[statement.get_position()] = (
-                slicing_criterion
-            )
+            self._slicing_local_state.slicing_criteria[statement.get_position()] = slicing_criterion
 
     def after_test_case_execution_inside_thread(  # noqa: D102
         self, test_case: tc.TestCase, result: ex.ExecutionResult
@@ -104,9 +101,7 @@ class StatementSlicingObserver(ex.ExecutionObserver):
         )
         result.execution_trace.checked_lines.update(checked_lines)
 
-    def after_test_case_execution_outside_thread(
-        self, test_case: tc.TestCase, result: ex.ExecutionResult
-    ) -> None:
+    def after_test_case_execution_outside_thread(self, test_case: tc.TestCase, result: ex.ExecutionResult) -> None:
         """Not used.
 
         Args:

@@ -7,6 +7,7 @@
 # Idea and structure are taken from the pyChecco project, see:
 # https://github.com/ipsw1/pychecco
 """Provides classes to simulate the stack during dynamic slicing."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -94,9 +95,7 @@ class TraceStack:
             # A non-dummy frame can only have one block_stack at the end of execution
             assert len(frame.block_stacks) == 1, "More than one block on a popped stack"
 
-    def update_push_operations(
-        self, num_pushes: int, *, returned: bool
-    ) -> tuple[bool, bool]:
+    def update_push_operations(self, num_pushes: int, *, returned: bool) -> tuple[bool, bool]:
         """Simulate the push operations on the stack.
 
         Returns whether implicit dependencies occur or uses are included.
@@ -140,10 +139,7 @@ class TraceStack:
                 # attribute should be included. However, the use data for these will
                 # not be searched for, since this would widen the scope of the search
                 # for complete objects rather than only for the attribute thereof.
-                if (
-                    tos_instr.opcode in {op.STORE_ATTR, op.STORE_SUBSCR}
-                    and len(curr_block_stack) > 0
-                ):
+                if tos_instr.opcode in {op.STORE_ATTR, op.STORE_SUBSCR} and len(curr_block_stack) > 0:
                     tos1_instr = curr_block_stack.peek()
                     if tos1_instr and tos1_instr.opcode == tos_instr.opcode:
                         include_use = False
@@ -152,9 +148,7 @@ class TraceStack:
 
         return imp_dependency, include_use
 
-    def update_pop_operations(
-        self, num_pops: int, unique_instr: UniqueInstruction, *, in_slice: bool
-    ) -> None:
+    def update_pop_operations(self, num_pops: int, unique_instr: UniqueInstruction, *, in_slice: bool) -> None:
         """Pushes a given number of instructions onto the stack.
 
         Additionally, updates the 'in_slice' attribute of the instruction.

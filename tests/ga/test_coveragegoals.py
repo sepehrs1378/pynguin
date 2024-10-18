@@ -164,9 +164,7 @@ def test_goal(executor_mock):
     assert func.goal == goal
 
 
-def test_compute_fitness_values_mocked(
-    subject_properties_mock, executor_mock, trace_mock
-):
+def test_compute_fitness_values_mocked(subject_properties_mock, executor_mock, trace_mock):
     tracer = MagicMock()
     tracer.get_subject_properties.return_value = subject_properties_mock
     executor_mock.tracer.return_value = tracer
@@ -199,9 +197,7 @@ def test_compute_fitness_values_no_branches():
         for goal in goals:
             chromosome.add_fitness_function(goal)
             goals_dict[
-                tracer.get_subject_properties()
-                .existing_code_objects[goal._goal.code_object_id]
-                .code_object.co_name
+                tracer.get_subject_properties().existing_code_objects[goal._goal.code_object_id].code_object.co_name
             ] = goal
         fitness = chromosome.get_fitness()
         assert fitness == 1
@@ -262,7 +258,9 @@ def test_compute_fitness_values_branches(test_case, expected_fitness, module_nam
         cluster = generate_test_cluster(module_name)
 
         transformer = AstToTestCaseTransformer(
-            cluster, False, EmptyConstantProvider()  # noqa: FBT003
+            cluster,
+            False,
+            EmptyConstantProvider(),  # noqa: FBT003
         )
         transformer.visit(ast.parse(test_case))
         test_case = transformer.testcases[0]
@@ -280,7 +278,9 @@ def _get_test_for_no_branches_fixture(module_name) -> tcc.TestCaseChromosome:
     cluster = generate_test_cluster(module_name)
 
     transformer = AstToTestCaseTransformer(
-        cluster, False, EmptyConstantProvider()  # noqa: FBT003
+        cluster,
+        False,
+        EmptyConstantProvider(),  # noqa: FBT003
     )
     transformer.visit(
         ast.parse(
@@ -321,9 +321,7 @@ def test_statement_coverage_goal_creation(executor_mock):
     assert len(goals) == 8
 
 
-def test_compute_fitness_values_statement_coverage_non_empty_file_empty_test(
-    executor_mock, trace_mock
-):
+def test_compute_fitness_values_statement_coverage_non_empty_file_empty_test(executor_mock, trace_mock):
     """Create an empty test for a non-empty file.
 
     Results a fitness of 8, for every missing goal.
@@ -369,9 +367,7 @@ def test_compute_fitness_values_statement_coverage_non_empty_file(
         chromosome = tcc.TestCaseChromosome(test_case=test_case)
         _add_plus_line_fitness_functions_to_chromosome(chromosome, executor_mock)
 
-        with mock.patch.object(
-            bg.LineCoverageTestFitness, "_run_test_case_chromosome"
-        ) as run_suite_mock:
+        with mock.patch.object(bg.LineCoverageTestFitness, "_run_test_case_chromosome") as run_suite_mock:
             result = ExecutionResult()
             trace_mock.covered_line_ids = {0, 1, 5, 6, 7}
             result.execution_trace = trace_mock
@@ -385,17 +381,13 @@ def _add_plus_line_fitness_functions_to_chromosome(chromosome, executor_mock):
     lines = [8, 9, 11, 12, 13, 15, 16, 17]
     for line_id in range(len(lines)):
         line_goal = bg.LineCoverageGoal(0, line_id)
-        chromosome.add_fitness_function(
-            bg.LineCoverageTestFitness(executor_mock, line_goal)
-        )
+        chromosome.add_fitness_function(bg.LineCoverageTestFitness(executor_mock, line_goal))
 
 
 def _get_lines_data_for_plus_module():
     file_name = "../fixtures/linecoverage/plus.py"
     lines = [8, 9, 11, 12, 13, 15, 16, 17]
-    return {
-        line_id: LineMetaData(0, file_name, line) for line_id, line in enumerate(lines)
-    }
+    return {line_id: LineMetaData(0, file_name, line) for line_id, line in enumerate(lines)}
 
 
 def _get_empty_test() -> tcc.TestCaseChromosome:

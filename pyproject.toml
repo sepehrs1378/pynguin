@@ -83,27 +83,27 @@ pytest-sugar = "^1.0.0"
 [tool.poetry.scripts]
 pynguin = "pynguin.cli:main"
 
-[tool.black]
-line-length = 88
-target_version = ['py310']
-include = '\.pyi?$'
-exclude = '''
+# [tool.black]
+# line-length = 88
+# target_version = ['py310']
+# include = '\.pyi?$'
+# exclude = '''
 
-(
-  /(
-      \.eggs          # exclude a few common directories in the
-    | \.git           # root of the project
-    | \.pytest_cache
-    | \.mypy_cache
-    | \.venv
-    | venv
-    | _build
-    | build
-    | dist
-    | pynguin.egg-info
-  )/
-)
-'''
+# (
+#   /(
+#       \.eggs          # exclude a few common directories in the
+#     | \.git           # root of the project
+#     | \.pytest_cache
+#     | \.mypy_cache
+#     | \.venv
+#     | venv
+#     | _build
+#     | build
+#     | dist
+#     | pynguin.egg-info
+#   )/
+# )
+# '''
 
 [tool.coverage.run]
 branch = true
@@ -168,7 +168,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.ruff]
 # Assume Python 3.10.
 target-version = "py310"
-line-length = 88
+line-length = 120
 preview = true
 src = ["src", "tests"]
 exclude = [
@@ -218,7 +218,7 @@ select = [
     "G",     # flake8-logging-format
     "ICN",   # flake8-import-conventions
     "INT",   # flake8-gettext
-    "ISC",   # flake8-implicit-str-concat
+    # "ISC",   # flake8-implicit-str-concat
     "LOG",   # flake8-logging
     "N",     # flake8-naming
     "NPY",   # numpy

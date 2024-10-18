@@ -5,6 +5,7 @@
 #  SPDX-License-Identifier: MIT
 #
 """Provides a visitor that transforms test cases to asts."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -56,18 +57,11 @@ class TestCaseToAstVisitor(TestCaseVisitor):
         self, test_case: dtc.DefaultTestCase
     ) -> None:
         self._test_case_ast = []
-        return_type_trace = (
-            None
-            if self._exec_result is None
-            else self._exec_result.proper_return_type_trace
-        )
+        return_type_trace = None if self._exec_result is None else self._exec_result.proper_return_type_trace
         variables = ns.VariableTypeNamingScope(return_type_trace=return_type_trace)
         for idx, statement in enumerate(test_case.statements):
             store_call_return = True
-            if (
-                self._exec_result is not None
-                and self._exec_result.get_first_position_of_thrown_exception() == idx
-            ):
+            if self._exec_result is not None and self._exec_result.get_first_position_of_thrown_exception() == idx:
                 # If a statement causes an exception and defines a new name, we don't
                 # actually want to create that name, as it will not be stored anyway.
                 store_call_return = False
@@ -127,8 +121,6 @@ class TestCaseToAstVisitor(TestCaseVisitor):
         Returns:
             Whether the assertion shall be generated for this statement
         """
-        if isinstance(assertion, ass.ExceptionAssertion) and isinstance(
-            statement, statmt.ParametrizedStatement
-        ):
+        if isinstance(assertion, ass.ExceptionAssertion) and isinstance(statement, statmt.ParametrizedStatement):
             return assertion.exception_type_name in statement.raised_exceptions
         return True

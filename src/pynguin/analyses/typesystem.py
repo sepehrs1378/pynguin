@@ -5,6 +5,7 @@
 #  SPDX-License-Identifier: MIT
 #
 """Provides analyses for a module's type information."""
+
 from __future__ import annotations
 
 import functools
@@ -141,11 +142,7 @@ class Instance(ProperType):
         return self._hash
 
     def __eq__(self, other):
-        return (
-            isinstance(other, Instance)
-            and self.type == other.type
-            and self.args == other.args
-        )
+        return isinstance(other, Instance) and self.type == other.type and self.args == other.args
 
 
 class TupleType(ProperType):
@@ -172,11 +169,7 @@ class TupleType(ProperType):
         return self._hash
 
     def __eq__(self, other):
-        return (
-            isinstance(other, TupleType)
-            and self.args == other.args
-            and self.unknown_size == other.unknown_size
-        )
+        return isinstance(other, TupleType) and self.args == other.args and self.unknown_size == other.unknown_size
 
 
 class UnionType(ProperType):
@@ -328,12 +321,7 @@ class _PartialTypeMatch(TypeVisitor[ProperType | None]):
 
     def visit_union_type(self, left: UnionType) -> ProperType | None:
         matches: tuple[ProperType, ...] = tuple(
-            elem
-            for elem in (
-                _is_partial_type_match(left_elem, self.right)
-                for left_elem in left.items
-            )
-            if elem
+            elem for elem in (_is_partial_type_match(left_elem, self.right) for left_elem in left.items) if elem
         )
         if matches:
             return UnionType(matches)
@@ -359,9 +347,7 @@ def _is_partial_type_match(left: ProperType, right: ProperType) -> ProperType | 
     if isinstance(right, UnionType):
         matches: tuple[ProperType, ...] = tuple(
             elem
-            for elem in (
-                _is_partial_type_match(left, right_elem) for right_elem in right.items
-            )
+            for elem in (_is_partial_type_match(left, right_elem) for right_elem in right.items)
             if elem is not None
         )
         if matches:
@@ -476,19 +462,15 @@ class _SubtypeVisitor(TypeVisitor[bool]):
             if not self.graph.is_subclass(left.type, self.right.type):
                 return False
             if (
-                left.type.num_hardcoded_generic_parameters
-                == self.right.type.num_hardcoded_generic_parameters
+                left.type.num_hardcoded_generic_parameters == self.right.type.num_hardcoded_generic_parameters
                 and left.type.num_hardcoded_generic_parameters is not None
             ):
                 # TODO(fk) handle generics properly :(
                 # We only check hard coded generics for now and treat them as invariant,
                 # i.e., set[T1] <: set[T2] <=> T1 <: T2 and T2 <: T1
                 return all(
-                    self.sub_type_check(left_elem, right_elem)
-                    and self.sub_type_check(right_elem, left_elem)
-                    for left_elem, right_elem in zip(
-                        left.args, self.right.args, strict=True
-                    )
+                    self.sub_type_check(left_elem, right_elem) and self.sub_type_check(right_elem, left_elem)
+                    for left_elem, right_elem in zip(left.args, self.right.args, strict=True)
                 )
             return True
         return False
@@ -498,17 +480,11 @@ class _SubtypeVisitor(TypeVisitor[bool]):
             if len(left.args) != len(self.right.args):
                 # TODO(fk) Handle unknown size.
                 return False
-            return all(
-                starmap(
-                    self.sub_type_check, zip(left.args, self.right.args, strict=True)
-                )
-            )
+            return all(starmap(self.sub_type_check, zip(left.args, self.right.args, strict=True)))
         return False
 
     def visit_union_type(self, left: UnionType) -> bool:
-        return all(
-            self.sub_type_check(left_elem, self.right) for left_elem in left.items
-        )
+        return all(self.sub_type_check(left_elem, self.right) for left_elem in left.items)
 
     def visit_unsupported_type(self, left: Unsupported) -> bool:
         raise NotImplementedError("This type shall not be used during runtime")
@@ -522,9 +498,7 @@ class _MaybeSubtypeVisitor(_SubtypeVisitor):
     """
 
     def visit_union_type(self, left: UnionType) -> bool:
-        return any(
-            self.sub_type_check(left_elem, self.right) for left_elem in left.items
-        )
+        return any(self.sub_type_check(left_elem, self.right) for left_elem in left.items)
 
     def visit_unsupported_type(self, left: Unsupported) -> bool:
         raise NotImplementedError("This type shall not be used during runtime")
@@ -677,9 +651,7 @@ class InferredSignature:
 
     # The currently guessed parameter types. Guessing will never result in Any, as
     # that is not a useful guess.
-    current_guessed_parameters: dict[str, list[ProperType]] = field(
-        init=False, default_factory=dict
-    )
+    current_guessed_parameters: dict[str, list[ProperType]] = field(init=False, default_factory=dict)
 
     # Parameter types of each parameter, including unsupported types,
     # i.e., types that we currently cannot understand/parse. Purely used for statistics
@@ -745,10 +717,7 @@ class InferredSignature:
 
             chosen = randomness.choices(choices, weights)[0]
 
-            if (
-                randomness.next_float()
-                < config.configuration.test_creation.wrap_var_param_type_probability
-            ):
+            if randomness.next_float() < config.configuration.test_creation.wrap_var_param_type_probability:
                 # Wrap var-positional or var-keyword parameters in list/dict,
                 # with a certain probability, as there might also be other data
                 # structures suitable for being passed by * and **, e.g.,
@@ -776,9 +745,7 @@ class InferredSignature:
             # append current
             old.append(guessed)
 
-    def _guess_parameter_type(
-        self, knowledge: tt.UsageTraceNode, kind
-    ) -> ProperType | None:
+    def _guess_parameter_type(self, knowledge: tt.UsageTraceNode, kind) -> ProperType | None:
         """Guess a type for a parameter.
 
         Args:
@@ -795,9 +762,7 @@ class InferredSignature:
                 # We know that it is always dict[str, ?].
                 # We can guess the unknown type by looking at the knowledge of
                 # __getitem__ of the proxy.
-                if (
-                    get_item_knowledge := knowledge.children.get("__getitem__")
-                ) is not None:
+                if (get_item_knowledge := knowledge.children.get("__getitem__")) is not None:
                     return self._guess_parameter_type_from(get_item_knowledge)
             case inspect.Parameter.VAR_POSITIONAL:
                 # Case for *args parameter
@@ -813,24 +778,22 @@ class InferredSignature:
     # to make guesses.
     # __mul__ and __rmul__ are not reliable, as they don't necessarily have to indicate
     # the type, for example, [1,2] * 3 is well-defined between a list and an int.
-    _ARGUMENT_ATTRIBUTES = OrderedSet(
-        [
-            "__eq__",
-            "__ne__",
-            "__lt__",
-            "__le__",
-            "__gt__",
-            "__ge__",
-            "__add__",
-            "__radd__",
-            "__sub__",
-            "__rsub__",
-            "__truediv__",
-            "__rtruediv__",
-            "__floordiv__",
-            "__rfloordiv__",
-        ]
-    )
+    _ARGUMENT_ATTRIBUTES = OrderedSet([
+        "__eq__",
+        "__ne__",
+        "__lt__",
+        "__le__",
+        "__gt__",
+        "__ge__",
+        "__add__",
+        "__radd__",
+        "__sub__",
+        "__rsub__",
+        "__truediv__",
+        "__rtruediv__",
+        "__floordiv__",
+        "__rfloordiv__",
+    ])
 
     # We can guess the element type by looking at the knowledge from these
     _LIST_ELEMENT_ATTRIBUTES = OrderedSet(("__iter__", "__getitem__"))
@@ -842,14 +805,12 @@ class InferredSignature:
     # We can guess generic type(s) from the argument type(s) of these methods:
     _LIST_ELEMENT_FROM_ARGUMENT_TYPES = OrderedSet(("__contains__", "__delitem__"))
     _SET_ELEMENT_FROM_ARGUMENT_TYPES = OrderedSet(("__contains__", "__delitem__"))
-    _DICT_KEY_FROM_ARGUMENT_TYPES = OrderedSet(
-        (
-            "__contains__",
-            "__delitem__",
-            "__getitem__",
-            "__setitem__",
-        )
-    )
+    _DICT_KEY_FROM_ARGUMENT_TYPES = OrderedSet((
+        "__contains__",
+        "__delitem__",
+        "__getitem__",
+        "__setitem__",
+    ))
     _DICT_VALUE_FROM_ARGUMENT_TYPES = OrderedSet(("__setitem__",))
     _TUPLE_ELEMENT_FROM_ARGUMENT_TYPES = OrderedSet(("__contains__",))
 
@@ -862,10 +823,8 @@ class InferredSignature:
         )
     )
     # fmt: on
-    _SET_ELEMENT_FROM_ARGUMENT_TYPES_PATH: OrderedSet[tuple[str, ...]] = (
-        OrderedSet(  # noqa: RUF009
-            [("add", "__call__"), ("remove", "__call__"), ("discard", "__call__")]
-        )
+    _SET_ELEMENT_FROM_ARGUMENT_TYPES_PATH: OrderedSet[tuple[str, ...]] = OrderedSet(  # noqa: RUF009
+        [("add", "__call__"), ("remove", "__call__"), ("discard", "__call__")]
     )
     # Nothing for tuple and dict.
     _EMPTY_SET: OrderedSet[tuple[str, ...]] = OrderedSet()  # noqa: RUF009
@@ -873,13 +832,7 @@ class InferredSignature:
     def _from_type_check(self, knowledge: tt.UsageTraceNode) -> ProperType | None:
         # Type checks is not empty here.
         return self._choose_type_or_negate(
-            OrderedSet(
-                [
-                    self.type_system.to_type_info(
-                        randomness.choice(knowledge.type_checks)
-                    )
-                ]
-            )
+            OrderedSet([self.type_system.to_type_info(randomness.choice(knowledge.type_checks))])
         )
 
     def _from_attr_table(self, knowledge: tt.UsageTraceNode) -> ProperType | None:
@@ -889,19 +842,11 @@ class InferredSignature:
             and knowledge.children[random_attribute].arg_types[0]
             and randomness.next_float() < 0.5
         ):
-            random_arg_type = randomness.choice(
-                knowledge.children[random_attribute].arg_types[0]
-            )
-            return self._choose_type_or_negate(
-                OrderedSet([self.type_system.to_type_info(random_arg_type)])
-            )
-        return self._choose_type_or_negate(
-            self.type_system.find_by_attribute(random_attribute)
-        )
+            random_arg_type = randomness.choice(knowledge.children[random_attribute].arg_types[0])
+            return self._choose_type_or_negate(OrderedSet([self.type_system.to_type_info(random_arg_type)]))
+        return self._choose_type_or_negate(self.type_system.find_by_attribute(random_attribute))
 
-    def _guess_parameter_type_from(
-        self, knowledge: tt.UsageTraceNode, recursion_depth: int = 0
-    ) -> ProperType | None:
+    def _guess_parameter_type_from(self, knowledge: tt.UsageTraceNode, recursion_depth: int = 0) -> ProperType | None:
         guess_from: list[Callable[[tt.UsageTraceNode], ProperType | None]] = []
         if knowledge.type_checks:
             guess_from.append(self._from_type_check)
@@ -913,14 +858,8 @@ class InferredSignature:
 
         guessed_type: ProperType | None = randomness.choice(guess_from)(knowledge)
 
-        if (
-            recursion_depth <= 1
-            and guessed_type
-            and guessed_type.accept(is_collection_type)
-        ):
-            guessed_type = self._guess_generic_type_parameters_for_builtins(
-                guessed_type, knowledge, recursion_depth
-            )
+        if recursion_depth <= 1 and guessed_type and guessed_type.accept(is_collection_type):
+            guessed_type = self._guess_generic_type_parameters_for_builtins(guessed_type, knowledge, recursion_depth)
         return guessed_type
 
     def _guess_generic_type_parameters_for_builtins(
@@ -978,9 +917,7 @@ class InferredSignature:
             guessed_type = Instance(guessed_type.type, args)
         elif isinstance(guessed_type, TupleType):
             # Guess random size of tuple.
-            num_elements = randomness.next_int(
-                1, config.configuration.test_creation.collection_size
-            )
+            num_elements = randomness.next_int(1, config.configuration.test_creation.collection_size)
             elements = []
             for _ in range(num_elements):
                 guessed_element_type = self._guess_generic_arguments(
@@ -998,18 +935,14 @@ class InferredSignature:
             guessed_type = TupleType(tuple(elements))
         return guessed_type
 
-    def _choose_type_or_negate(
-        self, positive_types: OrderedSet[TypeInfo]
-    ) -> ProperType | None:
+    def _choose_type_or_negate(self, positive_types: OrderedSet[TypeInfo]) -> ProperType | None:
         if not positive_types:
             return None
 
         if randomness.next_float() < config.configuration.test_creation.negate_type:
             negated_choices = self.type_system.get_type_outside_of(positive_types)
             if len(negated_choices) > 0:
-                return self.type_system.make_instance(
-                    randomness.choice(negated_choices)
-                )
+                return self.type_system.make_instance(randomness.choice(negated_choices))
         return self.type_system.make_instance(randomness.choice(positive_types))
 
     def _guess_generic_arguments(  # noqa: PLR0917
@@ -1028,9 +961,7 @@ class InferredSignature:
             ]
         ] = []
 
-        if elem_attributes := element_attributes.intersection(
-            knowledge.children.keys()
-        ):
+        if elem_attributes := element_attributes.intersection(knowledge.children.keys()):
             guess_from.append(
                 functools.partial(
                     self._guess_parameter_type_from,
@@ -1038,9 +969,7 @@ class InferredSignature:
                     recursion_depth + 1,
                 )
             )
-        if arg_attributes := argument_attributes.intersection(
-            knowledge.children.keys()
-        ):
+        if arg_attributes := argument_attributes.intersection(knowledge.children.keys()):
             guess_from.append(
                 functools.partial(
                     self._guess_from_argument_types,
@@ -1049,16 +978,8 @@ class InferredSignature:
                     argument_idx,
                 )
             )
-        if paths := [
-            path
-            for path in argument_attribute_paths
-            if knowledge.find_path(path) is not None
-        ]:
-            guess_from.append(
-                functools.partial(
-                    self._guess_from_argument_types_from_path, paths, knowledge
-                )
-            )
+        if paths := [path for path in argument_attribute_paths if knowledge.find_path(path) is not None]:
+            guess_from.append(functools.partial(self._guess_from_argument_types_from_path, paths, knowledge))
         # Add Any as guess, i.e., do not make argument more specific
         guess_from.append(lambda: ANY)
 
@@ -1073,9 +994,7 @@ class InferredSignature:
         arg_types = knowledge.children[randomness.choice(arg_attrs)].arg_types[arg_idx]
         if arg_types:
             return self._choose_type_or_negate(
-                OrderedSet(
-                    [self.type_system.to_type_info(randomness.choice(arg_types))]
-                )
+                OrderedSet([self.type_system.to_type_info(randomness.choice(arg_types))])
             )
         return None
 
@@ -1093,9 +1012,7 @@ class InferredSignature:
         arg_types = path_end.children[path[-1]].arg_types[0]
         if arg_types:
             return self._choose_type_or_negate(
-                OrderedSet(
-                    [self.type_system.to_type_info(randomness.choice(arg_types))]
-                )
+                OrderedSet([self.type_system.to_type_info(randomness.choice(arg_types))])
             )
         return None
 
@@ -1116,9 +1033,7 @@ class InferredSignature:
         """
         sig_info = stats.signature_infos[callable_full_name]
 
-        sig_info.annotated_parameter_types = {
-            k: str(v) for k, v in self.parameters_for_statistics.items()
-        }
+        sig_info.annotated_parameter_types = {k: str(v) for k, v in self.parameters_for_statistics.items()}
         if not is_constructor:
             # Constructors don't need a return type, so no need to log it.
             sig_info.annotated_return_type = str(self.return_type_for_statistics)
@@ -1143,9 +1058,7 @@ class InferredSignature:
                     )
                     if guess is not None:
                         counter[guess] += 1
-                for typ, _ in counter.most_common(
-                    config.configuration.statistics_output.type_guess_top_n
-                ):
+                for typ, _ in counter.most_common(config.configuration.statistics_output.type_guess_top_n):
                     top_n_guesses.append(typ)
 
             for item in top_n_guesses:
@@ -1154,9 +1067,7 @@ class InferredSignature:
                 )
             parameter_types[param_name] = [str(t) for t in top_n_guesses]
         # Also need to compute for return type(s).
-        compute_partial_matches_for.append(
-            (self.return_type, self.return_type_for_statistics)
-        )
+        compute_partial_matches_for.append((self.return_type, self.return_type_for_statistics))
 
         # Need to compute which types are base type matches of others.
         # Otherwise, we need to parse the string again in the evaluation...
@@ -1192,20 +1103,14 @@ class TypeSystem:  # noqa: PLR0904
         # These types are intrinsic for Pynguin, i.e., we can generate them ourselves
         # without needing a generator. We store them here, so we don't have to generate
         # them all the time.
-        self.primitive_proper_types = [
-            self.convert_type_hint(prim) for prim in PRIMITIVES
-        ]
-        self.collection_proper_types = [
-            self.convert_type_hint(coll) for coll in COLLECTIONS
-        ]
+        self.primitive_proper_types = [self.convert_type_hint(prim) for prim in PRIMITIVES]
+        self.collection_proper_types = [self.convert_type_hint(coll) for coll in COLLECTIONS]
         # Pre-compute numeric tower
         numeric = [complex, float, int, bool]
         self.numeric_tower: dict[Instance, list[Instance]] = cast(
             dict[Instance, list[Instance]],
             {
-                self.convert_type_hint(typ): [
-                    self.convert_type_hint(tp) for tp in numeric[idx:]
-                ]
+                self.convert_type_hint(typ): [self.convert_type_hint(tp) for tp in numeric[idx:]]
                 for idx, typ in enumerate(numeric)
             },
         )
@@ -1263,9 +1168,7 @@ class TypeSystem:  # noqa: PLR0904
         result.add(klass)
         return result
 
-    def get_type_outside_of(
-        self, klasses: OrderedSet[TypeInfo]
-    ) -> OrderedSet[TypeInfo]:
+    def get_type_outside_of(self, klasses: OrderedSet[TypeInfo]) -> OrderedSet[TypeInfo]:
         """Find a type that does not belong to the given types or any subclasses.
 
         Args:
@@ -1342,9 +1245,7 @@ class TypeSystem:  # noqa: PLR0904
             return True
         if isinstance(right, UnionType) and not isinstance(left, UnionType):
             # Case that would be duplicated for each type, so we put it here.
-            return any(
-                self.is_maybe_subtype(left, right_elem) for right_elem in right.items
-            )
+            return any(self.is_maybe_subtype(left, right_elem) for right_elem in right.items)
         return left.accept(_MaybeSubtypeVisitor(self, right, self.is_maybe_subtype))
 
     @property
@@ -1424,9 +1325,7 @@ class TypeSystem:  # noqa: PLR0904
         # because it will raise a NotImplementedError.
         object_info = self.find_type_info("builtins.object")
         assert object_info is not None
-        object_info.attributes.difference_update(
-            {"__lt__", "__le__", "__gt__", "__ge__"}
-        )
+        object_info.attributes.difference_update({"__lt__", "__le__", "__gt__", "__ge__"})
 
         # Use fix point iteration with reach-in/out to push elements down.
         work_list = list(self._graph.nodes)
@@ -1487,9 +1386,7 @@ class TypeSystem:  # noqa: PLR0904
             case config.TypeInferenceStrategy.NONE:
                 return self.infer_signature(method, self.no_type_hints_provider)
             case _:
-                raise ConfigurationException(
-                    f"Unknown type-inference strategy {type_inference_strategy}"
-                )
+                raise ConfigurationException(f"Unknown type-inference strategy {type_inference_strategy}")
 
     @staticmethod
     def no_type_hints_provider(_: Callable) -> dict[str, Any]:
@@ -1673,11 +1570,7 @@ class TypeSystem:  # noqa: PLR0904
         if is_union_type(hint) or isinstance(hint, types.UnionType):
             # Type is `int | str` or `typing.Union[int, str]`
             # TODO(fk) don't make a union including Any.
-            return UnionType(
-                tuple(
-                    sorted(self.__convert_args_if_exists(hint, unsupported=unsupported))
-                )
-            )
+            return UnionType(tuple(sorted(self.__convert_args_if_exists(hint, unsupported=unsupported))))
         if isinstance(hint, _BaseGenericAlias | types.GenericAlias):
             # `list[int, str]` or `List[int, str]` or `Dict[int, str]` or `set[str]`
             result = Instance(
@@ -1698,14 +1591,9 @@ class TypeSystem:  # noqa: PLR0904
         # Should raise an error in the future.
         return unsupported
 
-    def __convert_args_if_exists(
-        self, hint: Any, unsupported: ProperType
-    ) -> tuple[ProperType, ...]:
+    def __convert_args_if_exists(self, hint: Any, unsupported: ProperType) -> tuple[ProperType, ...]:
         if hasattr(hint, "__args__"):
-            return tuple(
-                self.convert_type_hint(t, unsupported=unsupported)
-                for t in hint.__args__
-            )
+            return tuple(self.convert_type_hint(t, unsupported=unsupported) for t in hint.__args__)
         return ()
 
     def make_instance(self, typ: TypeInfo) -> Instance | TupleType | NoneType:
@@ -1732,9 +1620,7 @@ class TypeSystem:  # noqa: PLR0904
             args = tuple(result.args)
             if len(result.args) < result.type.num_hardcoded_generic_parameters:
                 # Fill with AnyType if to small
-                args += (ANY,) * (
-                    result.type.num_hardcoded_generic_parameters - len(args)
-                )
+                args += (ANY,) * (result.type.num_hardcoded_generic_parameters - len(args))
             elif len(result.args) > result.type.num_hardcoded_generic_parameters:
                 # Remove excessive args.
                 args = args[: result.type.num_hardcoded_generic_parameters]

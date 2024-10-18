@@ -5,6 +5,7 @@
 #  SPDX-License-Identifier: MIT
 #
 """Contains all code related to test-case execution."""
+
 from __future__ import annotations
 
 import abc
@@ -100,9 +101,7 @@ class ExecutionContext:
         self._module_provider = module_provider
         self._local_namespace: dict[str, Any] = {}
         self._variable_names = ns.NamingScope()
-        self._module_aliases = ns.NamingScope(
-            prefix="module", new_name_callback=self.add_new_module_alias
-        )
+        self._module_aliases = ns.NamingScope(prefix="module", new_name_callback=self.add_new_module_alias)
         self._global_namespace: dict[str, ModuleType] = {}
 
     @property
@@ -114,9 +113,7 @@ class ExecutionContext:
         """
         return self._local_namespace
 
-    def replace_variable_value(
-        self, variable: vr.VariableReference, new_value: Any
-    ) -> None:
+    def replace_variable_value(self, variable: vr.VariableReference, new_value: Any) -> None:
         """Replace the value of the variable with the new value.
 
         Args:
@@ -190,15 +187,11 @@ class ExecutionContext:
         Returns:
             An ast node.
         """
-        stmt_visitor = stmt_to_ast.StatementToAstVisitor(
-            self._module_aliases, self._variable_names
-        )
+        stmt_visitor = stmt_to_ast.StatementToAstVisitor(self._module_aliases, self._variable_names)
         statement.accept(stmt_visitor)
         return stmt_visitor.ast_node
 
-    def node_for_assertion(
-        self, assertion: ass.Assertion, statement_node: ast.stmt
-    ) -> ast.stmt:
+    def node_for_assertion(self, assertion: ass.Assertion, statement_node: ast.stmt) -> ast.stmt:
         """Transforms the given assertion in an executable ast node.
 
         Args:
@@ -278,9 +271,7 @@ class ExecutionObserver:
         """
 
     @abstractmethod
-    def after_test_case_execution_inside_thread(
-        self, test_case: tc.TestCase, result: ExecutionResult
-    ) -> None:
+    def after_test_case_execution_inside_thread(self, test_case: tc.TestCase, result: ExecutionResult) -> None:
         """Called after test case execution.
 
         The call happens from inside the thread that executed the test case. You should
@@ -295,9 +286,7 @@ class ExecutionObserver:
         """
 
     @abstractmethod
-    def after_test_case_execution_outside_thread(
-        self, test_case: tc.TestCase, result: ExecutionResult
-    ) -> None:
+    def after_test_case_execution_outside_thread(self, test_case: tc.TestCase, result: ExecutionResult) -> None:
         """Called after test case execution from the main thread.
 
         Note: This method is always called, though the data you expect in the execution
@@ -365,9 +354,7 @@ class AssertionExecutionObserver(ExecutionObserver):
             test_case: not used
         """
 
-    def after_test_case_execution_inside_thread(
-        self, test_case: tc.TestCase, result: ExecutionResult
-    ) -> None:
+    def after_test_case_execution_inside_thread(self, test_case: tc.TestCase, result: ExecutionResult) -> None:
         """Not used.
 
         Args:
@@ -375,9 +362,7 @@ class AssertionExecutionObserver(ExecutionObserver):
             result: Not used
         """
 
-    def after_test_case_execution_outside_thread(
-        self, test_case: tc.TestCase, result: ExecutionResult
-    ) -> None:
+    def after_test_case_execution_outside_thread(self, test_case: tc.TestCase, result: ExecutionResult) -> None:
         """Not used.
 
         Args:
@@ -416,18 +401,14 @@ class AssertionExecutionObserver(ExecutionObserver):
                 executor.execute_ast(assertion_node, exec_ctx)
 
                 code_object_id, node_id = self._get_assertion_node_and_code_object_ids()
-                self._tracer.register_assertion_position(
-                    code_object_id, node_id, assertion
-                )
+                self._tracer.register_assertion_position(code_object_id, node_id, assertion)
         finally:
             if enabled:
                 # Restore old state
                 self._tracer.disable()
 
     def _get_assertion_node_and_code_object_ids(self) -> tuple[int, int]:
-        existing_code_objects = (
-            self._tracer.get_subject_properties().existing_code_objects
-        )
+        existing_code_objects = self._tracer.get_subject_properties().existing_code_objects
         code_object_id = len(existing_code_objects) - 1
         code_object = existing_code_objects[code_object_id]
         assert_node = None
@@ -436,8 +417,7 @@ class AssertionExecutionObserver(ExecutionObserver):
                 continue
             bb_node: BasicBlock = node.basic_block  # type: ignore[assignment]
             if (
-                not isinstance(bb_node[-1], ArtificialInstr)
-                and bb_node[-1].opcode == op.POP_JUMP_IF_TRUE  # type:ignore[union-attr]
+                not isinstance(bb_node[-1], ArtificialInstr) and bb_node[-1].opcode == op.POP_JUMP_IF_TRUE  # type:ignore[union-attr]
             ):
                 assert_node = node
         assert assert_node
@@ -480,9 +460,7 @@ class ReturnTypeObserver(ExecutionObserver):
         self, test_case: tc.TestCase, result: ExecutionResult
     ):
         result.raw_return_types = dict(self._return_type_local_state.return_type_trace)
-        result.raw_return_type_generic_args = dict(
-            self._return_type_local_state.return_type_generic_args
-        )
+        result.raw_return_type_generic_args = dict(self._return_type_local_state.return_type_generic_args)
 
     def after_test_case_execution_outside_thread(  # noqa: D102
         self, test_case: tc.TestCase, result: ExecutionResult
@@ -501,9 +479,7 @@ class ReturnTypeObserver(ExecutionObserver):
                 assert isinstance(call_acc, gao.GenericCallableAccessibleObject)
                 self._test_cluster.update_return_type(call_acc, proper_type)
 
-    def __infer_known_generics(
-        self, result: ExecutionResult, idx: int, proper: ProperType
-    ) -> ProperType:
+    def __infer_known_generics(self, result: ExecutionResult, idx: int, proper: ProperType) -> ProperType:
         if idx not in result.raw_return_type_generic_args:
             return proper
 
@@ -544,9 +520,7 @@ class ReturnTypeObserver(ExecutionObserver):
             # Try to guess generic arguments from elements.
 
             if type(value) in {set, list} and len(value) > 0:
-                self._return_type_local_state.return_type_generic_args[position] = (
-                    type(next(iter(value))),
-                )
+                self._return_type_local_state.return_type_generic_args[position] = (type(next(iter(value))),)
             elif isinstance(value, dict) and len(value) > 0:
                 first_item = next(iter(value.items()))
                 self._return_type_local_state.return_type_generic_args[position] = (
@@ -554,9 +528,7 @@ class ReturnTypeObserver(ExecutionObserver):
                     type(first_item[1]),
                 )
             elif type(value) is tuple:
-                self._return_type_local_state.return_type_generic_args[position] = (
-                    tuple(type(v) for v in value)
-                )
+                self._return_type_local_state.return_type_generic_args[position] = tuple(type(v) for v in value)
 
 
 @dataclass
@@ -610,9 +582,7 @@ class ExecutionTrace:
         for key, value in source.items():
             target[key] = min(target.get(key, inf), value)
 
-    def update_predicate_distances(
-        self, distance_true: float, distance_false: float, predicate: int
-    ) -> None:
+    def update_predicate_distances(self, distance_true: float, distance_false: float, predicate: int) -> None:
         """Update the distances and predicate execution count.
 
         Args:
@@ -620,15 +590,9 @@ class ExecutionTrace:
             distance_false: the measured false distance
             predicate: the predicate id
         """
-        self.executed_predicates[predicate] = (
-            self.executed_predicates.get(predicate, 0) + 1
-        )
-        self.true_distances[predicate] = min(
-            self.true_distances.get(predicate, inf), distance_true
-        )
-        self.false_distances[predicate] = min(
-            self.false_distances.get(predicate, inf), distance_false
-        )
+        self.executed_predicates[predicate] = self.executed_predicates.get(predicate, 0) + 1
+        self.true_distances[predicate] = min(self.true_distances.get(predicate, inf), distance_true)
+        self.false_distances[predicate] = min(self.false_distances.get(predicate, inf), distance_false)
 
     def add_instruction(  # noqa: PLR0917
         self,
@@ -649,9 +613,7 @@ class ExecutionTrace:
             lineno: the line number of the instruction
             offset: the offset of the instruction
         """
-        executed_instr = ei.ExecutedInstruction(
-            module, code_object_id, node_id, opcode, None, lineno, offset
-        )
+        executed_instr = ei.ExecutedInstruction(module, code_object_id, node_id, opcode, None, lineno, offset)
         self.executed_instructions.append(executed_instr)
 
     def add_memory_instruction(  # noqa: PLR0917
@@ -783,9 +745,7 @@ class ExecutionTrace:
             offset: the offset of the instruction
             arg: the argument to the instruction
         """
-        executed_instr = ei.ExecutedCallInstruction(
-            module, code_object_id, node_id, opcode, arg, lineno, offset
-        )
+        executed_instr = ei.ExecutedCallInstruction(module, code_object_id, node_id, opcode, arg, lineno, offset)
 
         self.executed_instructions.append(executed_instr)
 
@@ -808,9 +768,7 @@ class ExecutionTrace:
             lineno: the line number of the instruction
             offset: the offset of the instruction
         """
-        executed_instr = ei.ExecutedReturnInstruction(
-            module, code_object_id, node_id, opcode, None, lineno, offset
-        )
+        executed_instr = ei.ExecutedReturnInstruction(module, code_object_id, node_id, opcode, None, lineno, offset)
 
         self.executed_instructions.append(executed_instr)
 
@@ -820,34 +778,20 @@ class ExecutionResult:
     """Result of an execution."""
 
     timeout: bool = False
-    exceptions: dict[int, BaseException] = dataclasses.field(
-        default_factory=dict, init=False
-    )
-    assertion_trace: at.AssertionTrace = dataclasses.field(
-        default_factory=at.AssertionTrace, init=False
-    )
+    exceptions: dict[int, BaseException] = dataclasses.field(default_factory=dict, init=False)
+    assertion_trace: at.AssertionTrace = dataclasses.field(default_factory=at.AssertionTrace, init=False)
     assertion_verification_trace: at.AssertionVerificationTrace = dataclasses.field(
         default_factory=at.AssertionVerificationTrace, init=False
     )
-    execution_trace: ExecutionTrace = dataclasses.field(
-        default_factory=ExecutionTrace, init=False
-    )
+    execution_trace: ExecutionTrace = dataclasses.field(default_factory=ExecutionTrace, init=False)
 
     # Observation of return types.
-    raw_return_types: dict[int, type] = dataclasses.field(
-        default_factory=dict, init=False
-    )
-    raw_return_type_generic_args: dict[int, tuple[type, ...]] = dataclasses.field(
-        default_factory=dict, init=False
-    )
+    raw_return_types: dict[int, type] = dataclasses.field(default_factory=dict, init=False)
+    raw_return_type_generic_args: dict[int, tuple[type, ...]] = dataclasses.field(default_factory=dict, init=False)
     # Observed return types converted to proper types.
-    proper_return_type_trace: dict[int, ProperType] = dataclasses.field(
-        default_factory=dict, init=False
-    )
+    proper_return_type_trace: dict[int, ProperType] = dataclasses.field(default_factory=dict, init=False)
 
-    proxy_knowledge: dict[tuple[int, str], tt.UsageTraceNode] = dataclasses.field(
-        default_factory=dict, init=False
-    )
+    proxy_knowledge: dict[tuple[int, str], tt.UsageTraceNode] = dataclasses.field(default_factory=dict, init=False)
 
     def has_test_exceptions(self) -> bool:
         """Returns true if any exceptions were thrown during the execution.
@@ -886,18 +830,12 @@ class ExecutionResult:
         Args:
             deleted_statements: The indexes of the deleted statements
         """
-        self.raw_return_types = ExecutionResult.shift_dict(
-            self.raw_return_types, deleted_statements
-        )
+        self.raw_return_types = ExecutionResult.shift_dict(self.raw_return_types, deleted_statements)
         self.raw_return_type_generic_args = ExecutionResult.shift_dict(
             self.raw_return_type_generic_args, deleted_statements
         )
-        self.proper_return_type_trace = ExecutionResult.shift_dict(
-            self.proper_return_type_trace, deleted_statements
-        )
-        self.exceptions = ExecutionResult.shift_dict(
-            self.exceptions, deleted_statements
-        )
+        self.proper_return_type_trace = ExecutionResult.shift_dict(self.proper_return_type_trace, deleted_statements)
+        self.exceptions = ExecutionResult.shift_dict(self.exceptions, deleted_statements)
 
     T = TypeVar("T")
 
@@ -930,10 +868,7 @@ class ExecutionResult:
         return shifted
 
     def __str__(self) -> str:
-        return (
-            f"ExecutionResult(exceptions: {self.exceptions}, "
-            f"trace: {self.execution_trace})"
-        )
+        return f"ExecutionResult(exceptions: {self.exceptions}, " f"trace: {self.execution_trace})"
 
     def __repr__(self) -> str:
         return str(self)
@@ -964,9 +899,7 @@ class LineMetaData:
             return False
         # code object id is not checked since file
         # and line number are the unique identifiers
-        return (
-            self.line_number == other.line_number and self.file_name == other.file_name
-        )
+        return self.line_number == other.line_number and self.file_name == other.file_name
 
 
 @dataclass
@@ -1137,13 +1070,9 @@ class ExecutionTracer:  # noqa: PLR0904
             RuntimeError: raised when called from another thread
         """
         if threading.current_thread().ident != self._current_thread_identifier:
-            raise RuntimeError(
-                "The current thread shall not be executed any more, thus I kill it."
-            )
+            raise RuntimeError("The current thread shall not be executed any more, thus I kill it.")
 
-        assert (
-            code_object_id in self.subject_properties.existing_code_objects
-        ), "Cannot trace unknown code object"
+        assert code_object_id in self.subject_properties.existing_code_objects, "Cannot trace unknown code object"
         self._thread_local_state.trace.executed_code_objects.add(code_object_id)
 
     def register_predicate(self, meta: PredicateMetaData) -> int:
@@ -1177,30 +1106,22 @@ class ExecutionTracer:  # noqa: PLR0904
             AssertionError: when encountering an unknown compare op.
         """
         if threading.current_thread().ident != self._current_thread_identifier:
-            raise RuntimeError(
-                "The current thread shall not be executed any more, thus I kill it."
-            )
+            raise RuntimeError("The current thread shall not be executed any more, thus I kill it.")
 
         if self.is_disabled():
             return
 
         try:
             self.disable()
-            assert (
-                predicate in self.subject_properties.existing_predicates
-            ), "Cannot trace unknown predicate"
+            assert predicate in self.subject_properties.existing_predicates, "Cannot trace unknown predicate"
             value1 = tt.unwrap(value1)
             value2 = tt.unwrap(value2)
 
             match cmp_op:
                 case PynguinCompare.EQ:
-                    distance_true, distance_false = _eq(value1, value2), _neq(
-                        value1, value2
-                    )
+                    distance_true, distance_false = _eq(value1, value2), _neq(value1, value2)
                 case PynguinCompare.NE:
-                    distance_true, distance_false = _neq(value1, value2), _eq(
-                        value1, value2
-                    )
+                    distance_true, distance_false = _neq(value1, value2), _eq(value1, value2)
                 case PynguinCompare.LT:
                     distance_true, distance_false = (
                         _lt(value1, value2),
@@ -1258,18 +1179,14 @@ class ExecutionTracer:  # noqa: PLR0904
             RuntimeError: raised when called from another thread
         """
         if threading.current_thread().ident != self._current_thread_identifier:
-            raise RuntimeError(
-                "The current thread shall not be executed any more, thus I kill it."
-            )
+            raise RuntimeError("The current thread shall not be executed any more, thus I kill it.")
 
         if self.is_disabled():
             return
 
         try:
             self.disable()
-            assert (
-                predicate in self.subject_properties.existing_predicates
-            ), "Cannot trace unknown predicate"
+            assert predicate in self.subject_properties.existing_predicates, "Cannot trace unknown predicate"
             distance_true = 0.0
             distance_false = 0.0
             # Might be necessary when using Proxies.
@@ -1308,18 +1225,14 @@ class ExecutionTracer:  # noqa: PLR0904
             RuntimeError: raised when called from another thread
         """
         if threading.current_thread().ident != self._current_thread_identifier:
-            raise RuntimeError(
-                "The current thread shall not be executed any more, thus I kill it."
-            )
+            raise RuntimeError("The current thread shall not be executed any more, thus I kill it.")
 
         if self.is_disabled():
             return
 
         try:
             self.disable()
-            assert (
-                predicate in self.subject_properties.existing_predicates
-            ), "Cannot trace unknown predicate"
+            assert predicate in self.subject_properties.existing_predicates, "Cannot trace unknown predicate"
             distance_true = 0.0
             distance_false = 0.0
             # Might be necessary when using Proxies.
@@ -1344,18 +1257,14 @@ class ExecutionTracer:  # noqa: PLR0904
             RuntimeError: raised when called from another thread
         """
         if threading.current_thread().ident != self._current_thread_identifier:
-            raise RuntimeError(
-                "The current thread shall not be executed any more, thus I kill it."
-            )
+            raise RuntimeError("The current thread shall not be executed any more, thus I kill it.")
 
         if self.is_disabled():
             return
 
         self._thread_local_state.trace.covered_line_ids.add(line_id)
 
-    def register_line(
-        self, code_object_id: int, file_name: str, line_number: int
-    ) -> int:
+    def register_line(self, code_object_id: int, file_name: str, line_number: int) -> int:
         """Tracks the existence of a line.
 
         Args:
@@ -1371,18 +1280,12 @@ class ExecutionTracer:  # noqa: PLR0904
             line_id = len(self.subject_properties.existing_lines)
             self.subject_properties.existing_lines[line_id] = line_meta
         else:
-            index = list(self.subject_properties.existing_lines.values()).index(
-                line_meta
-            )
+            index = list(self.subject_properties.existing_lines.values()).index(line_meta)
             line_id = list(self.subject_properties.existing_lines.keys())[index]
         return line_id
 
-    def _update_metrics(
-        self, distance_false: float, distance_true: float, predicate: int
-    ):
-        assert (
-            predicate in self.subject_properties.existing_predicates
-        ), "Cannot update unknown predicate"
+    def _update_metrics(self, distance_false: float, distance_true: float, predicate: int):
+        assert predicate in self.subject_properties.existing_predicates, "Cannot update unknown predicate"
         assert distance_true >= 0.0, "True distance cannot be negative"
         assert distance_false >= 0.0, "False distance cannot be negative"
         assert (distance_true == 0.0) ^ (
@@ -1422,16 +1325,12 @@ class ExecutionTracer:  # noqa: PLR0904
             RuntimeError: raised when called from another thread
         """
         if threading.current_thread().ident != self._current_thread_identifier:
-            raise RuntimeError(
-                "The current thread shall not be executed any more, thus I kill it."
-            )
+            raise RuntimeError("The current thread shall not be executed any more, thus I kill it.")
 
         if self.is_disabled():
             return
 
-        self._thread_local_state.trace.add_instruction(
-            module, code_object_id, node_id, opcode, lineno, offset
-        )
+        self._thread_local_state.trace.add_instruction(module, code_object_id, node_id, opcode, lineno, offset)
 
     def track_memory_access(  # noqa: PLR0917
         self,
@@ -1468,9 +1367,7 @@ class ExecutionTracer:  # noqa: PLR0904
             RuntimeError: raised when called from another thread
         """
         if threading.current_thread().ident != self._current_thread_identifier:
-            raise RuntimeError(
-                "The current thread shall not be executed any more, thus I kill it."
-            )
+            raise RuntimeError("The current thread shall not be executed any more, thus I kill it.")
 
         if self.is_disabled():
             return
@@ -1488,10 +1385,7 @@ class ExecutionTracer:  # noqa: PLR0904
         # Determine if this is a definition of a completely new object
         # (required later during slicing)
         object_creation = False
-        if (
-            arg_address
-            and arg_address not in self.get_subject_properties().object_addresses
-        ):
+        if arg_address and arg_address not in self.get_subject_properties().object_addresses:
             object_creation = True
             self.subject_properties.object_addresses.add(arg_address)
 
@@ -1544,9 +1438,7 @@ class ExecutionTracer:  # noqa: PLR0904
             RuntimeError: raised when called from another thread
         """
         if threading.current_thread().ident != self._current_thread_identifier:
-            raise RuntimeError(
-                "The current thread shall not be executed any more, thus I kill it."
-            )
+            raise RuntimeError("The current thread shall not be executed any more, thus I kill it.")
 
         if self.is_disabled():
             return
@@ -1605,9 +1497,7 @@ class ExecutionTracer:  # noqa: PLR0904
             RuntimeError: raised when called from another thread
         """
         if threading.current_thread().ident != self._current_thread_identifier:
-            raise RuntimeError(
-                "The current thread shall not be executed any more, thus I kill it."
-            )
+            raise RuntimeError("The current thread shall not be executed any more, thus I kill it.")
 
         if self.is_disabled():
             return
@@ -1646,9 +1536,7 @@ class ExecutionTracer:  # noqa: PLR0904
             RuntimeError: raised when called from another thread
         """
         if threading.current_thread().ident != self._current_thread_identifier:
-            raise RuntimeError(
-                "The current thread shall not be executed any more, thus I kill it."
-            )
+            raise RuntimeError("The current thread shall not be executed any more, thus I kill it.")
 
         if self.is_disabled():
             return
@@ -1685,16 +1573,12 @@ class ExecutionTracer:  # noqa: PLR0904
             RuntimeError: raised when called from another thread
         """
         if threading.current_thread().ident != self._current_thread_identifier:
-            raise RuntimeError(
-                "The current thread shall not be executed any more, thus I kill it."
-            )
+            raise RuntimeError("The current thread shall not be executed any more, thus I kill it.")
 
         if self.is_disabled():
             return
 
-        self._thread_local_state.trace.add_return_instruction(
-            module, code_object_id, node_id, opcode, lineno, offset
-        )
+        self._thread_local_state.trace.add_return_instruction(module, code_object_id, node_id, opcode, lineno, offset)
 
     def register_exception_assertion(self, statement: stmt.Statement) -> None:
         """Track the position of an exception assertion in the trace.
@@ -1712,9 +1596,7 @@ class ExecutionTracer:  # noqa: PLR0904
             RuntimeError: raised when called from another thread
         """
         if threading.current_thread().ident != self._current_thread_identifier:
-            raise RuntimeError(
-                "The current thread shall not be executed any more, thus I kill it."
-            )
+            raise RuntimeError("The current thread shall not be executed any more, thus I kill it.")
 
         if self.is_disabled():
             return
@@ -1734,9 +1616,7 @@ class ExecutionTracer:  # noqa: PLR0904
                 )
             )
 
-    def register_assertion_position(
-        self, code_object_id: int, node_id: int, assertion: ass.Assertion
-    ) -> None:
+    def register_assertion_position(self, code_object_id: int, node_id: int, assertion: ass.Assertion) -> None:
         """Track the position of an assertion in the trace.
 
         Args:
@@ -1748,9 +1628,7 @@ class ExecutionTracer:  # noqa: PLR0904
             RuntimeError: raised when called from another thread
         """
         if threading.current_thread().ident != self._current_thread_identifier:
-            raise RuntimeError(
-                "The current thread shall not be executed any more, thus I kill it."
-            )
+            raise RuntimeError("The current thread shall not be executed any more, thus I kill it.")
 
         if self.is_disabled():
             return
@@ -1761,9 +1639,7 @@ class ExecutionTracer:  # noqa: PLR0904
             if instr.opcode == op.POP_JUMP_IF_TRUE:
                 break
             pop_jump_if_true_position -= 1
-        assert (
-            pop_jump_if_true_position != -1
-        ), "Node in code object did not contain a POP_JUMP_IF_TRUE instruction"
+        assert pop_jump_if_true_position != -1, "Node in code object did not contain a POP_JUMP_IF_TRUE instruction"
 
         self._thread_local_state.trace.executed_assertions.append(
             ExecutedAssertion(
@@ -1788,9 +1664,7 @@ class ExecutionTracer:  # noqa: PLR0904
             The id of the object type or the class if it has the attribute, -1 otherwise
         """
         for cls in type(object_type).__mro__:
-            if attribute in cls.__dict__ and inspect.isdatadescriptor(
-                cls.__dict__.get(attribute)
-            ):
+            if attribute in cls.__dict__ and inspect.isdatadescriptor(cls.__dict__.get(attribute)):
                 # Class in the MRO hierarchy has attribute
                 # Class has attribute and attribute is a data descriptor
                 return id(cls)
@@ -1799,17 +1673,9 @@ class ExecutionTracer:  # noqa: PLR0904
         if attribute in {"__getattr__", "__getitem__"}:
             return -1
         # Check if the dictionary of the object on which lookup is performed
-        if (
-            hasattr(object_type, "__dict__")
-            and object_type.__dict__
-            and attribute in object_type.__dict__
-        ):
+        if hasattr(object_type, "__dict__") and object_type.__dict__ and attribute in object_type.__dict__:
             return id(object_type)
-        if (
-            hasattr(object_type, "__slots__")
-            and object_type.__slots__
-            and attribute in object_type.__slots__
-        ):
+        if hasattr(object_type, "__slots__") and object_type.__slots__ and attribute in object_type.__slots__:
             return id(object_type)
 
         # Check if attribute in MRO hierarchy (no need for data descriptor)
@@ -1831,12 +1697,7 @@ class ExecutionTracer:  # noqa: PLR0904
         Returns:
             The line numbers.
         """
-        return OrderedSet(
-            [
-                self.subject_properties.existing_lines[line_id].line_number
-                for line_id in line_ids
-            ]
-        )
+        return OrderedSet([self.subject_properties.existing_lines[line_id].line_number for line_id in line_ids])
 
 
 @dataclass
@@ -1870,9 +1731,7 @@ def _eq(val1, val2) -> float:
     if is_string(val1) and is_string(val2):
         return levenshtein_distance(val1, val2)
     if is_bytes(val1) and is_bytes(val2):
-        return levenshtein_distance(
-            val1.decode("iso-8859-1"), val2.decode("iso-8859-1")
-        )
+        return levenshtein_distance(val1.decode("iso-8859-1"), val2.decode("iso-8859-1"))
     return inf
 
 
@@ -2033,9 +1892,7 @@ class ModuleProvider:
         Returns:
             the module which should be loaded.
         """
-        if (
-            mutated_module := self._mutated_module_aliases.get(module_name, None)
-        ) is not None:
+        if (mutated_module := self._mutated_module_aliases.get(module_name, None)) is not None:
             return mutated_module
         return self.__get_sys_module(module_name)
 
@@ -2146,19 +2003,12 @@ class TestCaseExecutor(AbstractTestCaseExecutor):
         self._maximum_test_execution_timeout = maximum_test_execution_timeout
         self._test_execution_time_per_statement = test_execution_time_per_statement
 
-        self._module_provider = (
-            module_provider if module_provider is not None else ModuleProvider()
-        )
+        self._module_provider = module_provider if module_provider is not None else ModuleProvider()
         self._tracer = tracer
         self._observers: list[ExecutionObserver] = []
-        self._instrument = (
-            config.CoverageMetric.CHECKED
-            in config.configuration.statistics_output.coverage_metrics
-        )
+        self._instrument = config.CoverageMetric.CHECKED in config.configuration.statistics_output.coverage_metrics
         checked_instrumentation = CheckedCoverageInstrumentation(self._tracer)
-        self._checked_transformer = InstrumentationTransformer(
-            self._tracer, [checked_instrumentation]
-        )
+        self._checked_transformer = InstrumentationTransformer(self._tracer, [checked_instrumentation])
 
         def log_thread_exception(arg):
             _LOGGER.error(
@@ -2272,9 +2122,7 @@ class TestCaseExecutor(AbstractTestCaseExecutor):
         self._after_test_case_execution_inside_thread(test_case, result)
         result_queue.put(result)
 
-    def _after_test_case_execution_inside_thread(
-        self, test_case: tc.TestCase, result: ExecutionResult
-    ) -> None:
+    def _after_test_case_execution_inside_thread(self, test_case: tc.TestCase, result: ExecutionResult) -> None:
         """Collect the trace data after each executed test case.
 
         Args:
@@ -2285,9 +2133,7 @@ class TestCaseExecutor(AbstractTestCaseExecutor):
         for observer in self._observers:
             observer.after_test_case_execution_inside_thread(test_case, result)
 
-    def _after_test_case_execution_outside_thread(
-        self, test_case: tc.TestCase, result: ExecutionResult
-    ) -> None:
+    def _after_test_case_execution_outside_thread(self, test_case: tc.TestCase, result: ExecutionResult) -> None:
         """Process results outside of thread.
 
         Args:
@@ -2297,16 +2143,12 @@ class TestCaseExecutor(AbstractTestCaseExecutor):
         for observer in self._observers:
             observer.after_test_case_execution_outside_thread(test_case, result)
 
-    def _before_statement_execution(
-        self, statement: stmt.Statement, exec_ctx: ExecutionContext
-    ) -> ast.Module:
+    def _before_statement_execution(self, statement: stmt.Statement, exec_ctx: ExecutionContext) -> ast.Module:
         # Check if the current thread is still the one that should be executing
         # Otherwise raise an exception to kill it.
         if self.tracer.current_thread_identifier != threading.current_thread().ident:
             # Kill this thread
-            raise RuntimeError(
-                "The current thread shall not be executed any more, thus I kill it."
-            )
+            raise RuntimeError("The current thread shall not be executed any more, thus I kill it.")
 
         # We need to disable the tracer, because an observer might interact with an
         # object of the SUT via the ExecutionContext and trigger code execution, which
@@ -2316,9 +2158,7 @@ class TestCaseExecutor(AbstractTestCaseExecutor):
         ast_node = exec_ctx.node_for_statement(statement)
         try:
             for observer in self._observers:
-                ast_node = observer.before_statement_execution(
-                    statement, ast_node, exec_ctx
-                )
+                ast_node = observer.before_statement_execution(statement, ast_node, exec_ctx)
         finally:
             self._tracer.enable()
         return ExecutionContext.wrap_node_in_module(ast_node)
@@ -2366,9 +2206,7 @@ class TestCaseExecutor(AbstractTestCaseExecutor):
         # See comments in _before_statement_execution
         if self.tracer.current_thread_identifier != threading.current_thread().ident:
             # Kill this thread
-            raise RuntimeError(
-                "The current thread shall not be executed any more, thus I kill it."
-            )
+            raise RuntimeError("The current thread shall not be executed any more, thus I kill it.")
 
         self._tracer.disable()
         try:
@@ -2385,9 +2223,7 @@ class TypeTracingTestCaseExecutor(AbstractTestCaseExecutor):
     and one time with proxies in order to refine parameter types.
     """
 
-    def __init__(
-        self, delegate: AbstractTestCaseExecutor, cluster: module.ModuleTestCluster
-    ):
+    def __init__(self, delegate: AbstractTestCaseExecutor, cluster: module.ModuleTestCluster):
         """Initializes the executor.
 
         Args:
@@ -2465,9 +2301,7 @@ class TypeTracingObserver(ExecutionObserver):
         self, test_case: tc.TestCase, result: ExecutionResult
     ) -> None:
         for (stmt_pos, arg_name), proxy in self._local_state.proxies.items():
-            result.proxy_knowledge[(stmt_pos, arg_name)] = copy.deepcopy(
-                tt.UsageTraceNode.from_proxy(proxy)
-            )
+            result.proxy_knowledge[(stmt_pos, arg_name)] = copy.deepcopy(tt.UsageTraceNode.from_proxy(proxy))
 
     def after_test_case_execution_outside_thread(  # noqa: D102
         self, test_case: tc.TestCase, result: ExecutionResult
@@ -2476,9 +2310,7 @@ class TypeTracingObserver(ExecutionObserver):
             statement = test_case.get_statement(stmt_pos)
             assert isinstance(statement, stmt.ParametrizedStatement)
             self._cluster.update_parameter_knowledge(
-                cast(
-                    gao.GenericCallableAccessibleObject, statement.accessible_object()
-                ),
+                cast(gao.GenericCallableAccessibleObject, statement.accessible_object()),
                 arg_name,
                 knowledge,
             )
@@ -2506,14 +2338,10 @@ class TypeTracingObserver(ExecutionObserver):
                 stmt.ParametrizedStatement,
                 statement.clone(statement.test_case, Mirror()),
             )
-            signature = cast(
-                gao.GenericCallableAccessibleObject, modified.accessible_object()
-            ).inferred_signature
+            signature = cast(gao.GenericCallableAccessibleObject, modified.accessible_object()).inferred_signature
             modified.args = modified_args
             modified.ret_val = statement.ret_val
-            visitor = stmt_to_ast.StatementToAstVisitor(
-                exec_ctx.module_aliases, exec_ctx.variable_names
-            )
+            visitor = stmt_to_ast.StatementToAstVisitor(exec_ctx.module_aliases, exec_ctx.variable_names)
             modified.accept(visitor)
             # Now we know the names.
             for (name, modified_param), original_param in real_params.items():
@@ -2528,8 +2356,7 @@ class TypeTracingObserver(ExecutionObserver):
                 proxy = tt.ObjectProxy(
                     old,
                     usage_trace=tt.UsageTraceNode(name=name),
-                    is_kwargs=signature.signature.parameters[name].kind
-                    == inspect.Parameter.VAR_KEYWORD,
+                    is_kwargs=signature.signature.parameters[name].kind == inspect.Parameter.VAR_KEYWORD,
                 )
                 self._local_state.proxies[(statement.get_position(), name)] = proxy
                 exec_ctx.replace_variable_value(modified_param, proxy)

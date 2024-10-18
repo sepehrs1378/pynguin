@@ -71,9 +71,7 @@ def test_integrate_algorithms(module_name: str, algorithm):
 
         executor = TestCaseExecutor(tracer)
         cluster = generate_test_cluster(module_name)
-        search_algorithm = gaf.TestSuiteGenerationAlgorithmFactory(
-            executor, cluster
-        ).get_search_algorithm()
+        search_algorithm = gaf.TestSuiteGenerationAlgorithmFactory(executor, cluster).get_search_algorithm()
         search_algorithm._logger = logger
         test_cases = search_algorithm.generate_tests()
         assert test_cases.size() >= 0
@@ -108,9 +106,7 @@ def test_integrate_whole_suite_plus_archive(module_name: str):
     # Enable all features to get Whole Suite + Archive.
     config.configuration.search_algorithm.use_archive = True
     config.configuration.seeding.seed_from_archive = True
-    config.configuration.search_algorithm.filter_covered_targets_from_test_cluster = (
-        True
-    )
+    config.configuration.search_algorithm.filter_covered_targets_from_test_cluster = True
 
     logger = MagicMock(Logger)
     tracer = ExecutionTracer()
@@ -122,9 +118,7 @@ def test_integrate_whole_suite_plus_archive(module_name: str):
 
         executor = TestCaseExecutor(tracer)
         cluster = generate_test_cluster(module_name)
-        search_algorithm = gaf.TestSuiteGenerationAlgorithmFactory(
-            executor, cluster
-        ).get_search_algorithm()
+        search_algorithm = gaf.TestSuiteGenerationAlgorithmFactory(executor, cluster).get_search_algorithm()
         search_algorithm._logger = logger
         test_cases = search_algorithm.generate_tests()
         assert test_cases.size() >= 0

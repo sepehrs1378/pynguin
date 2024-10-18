@@ -5,6 +5,7 @@
 #  SPDX-License-Identifier: MIT
 #
 """Provides implementations of a ranking function."""
+
 from __future__ import annotations
 
 import logging
@@ -111,9 +112,7 @@ class RankBasedPreferenceSorting(RankingFunction, Generic[C]):
 
         if len(zero_front) < config.configuration.search_algorithm.population:
             ranked_solutions = len(zero_front)
-            comparator: DominanceComparator[C] = DominanceComparator(
-                goals=uncovered_goals
-            )
+            comparator: DominanceComparator[C] = DominanceComparator(goals=uncovered_goals)
 
             remaining: list[C] = []
             remaining.extend(solutions)
@@ -121,13 +120,8 @@ class RankBasedPreferenceSorting(RankingFunction, Generic[C]):
                 if element in remaining:
                     remaining.remove(element)
 
-            while (
-                ranked_solutions < config.configuration.search_algorithm.population
-                and len(remaining) > 0
-            ):
-                new_front: list[C] = self._get_non_dominated_solutions(
-                    remaining, comparator, front_index
-                )
+            while ranked_solutions < config.configuration.search_algorithm.population and len(remaining) > 0:
+                new_front: list[C] = self._get_non_dominated_solutions(remaining, comparator, front_index)
                 fronts.append(new_front)
                 for element in new_front:
                     if element in remaining:
@@ -148,14 +142,10 @@ class RankBasedPreferenceSorting(RankingFunction, Generic[C]):
         return RankedFronts(fronts)
 
     @staticmethod
-    def _get_zero_front(
-        solutions: list[C], uncovered_goals: OrderedSet[ff.FitnessFunction]
-    ) -> list[C]:
+    def _get_zero_front(solutions: list[C], uncovered_goals: OrderedSet[ff.FitnessFunction]) -> list[C]:
         zero_front: OrderedSet[C] = OrderedSet()
         for goal in uncovered_goals:
-            comparator: PreferenceSortingComparator[C] = PreferenceSortingComparator(
-                goal
-            )
+            comparator: PreferenceSortingComparator[C] = PreferenceSortingComparator(goal)
             best: C | None = None
             for solution in solutions:
                 flag = comparator.compare(solution, best)
@@ -193,9 +183,7 @@ class RankBasedPreferenceSorting(RankingFunction, Generic[C]):
         return front
 
 
-def fast_epsilon_dominance_assignment(
-    front: list[C], goals: OrderedSet[ff.FitnessFunction]
-) -> None:
+def fast_epsilon_dominance_assignment(front: list[C], goals: OrderedSet[ff.FitnessFunction]) -> None:
     """Implements a “fast” version of the variant of the crowding distance.
 
     It is named “epsilon-dominance-assignment” and was proposed by Köppen and Yoshida in

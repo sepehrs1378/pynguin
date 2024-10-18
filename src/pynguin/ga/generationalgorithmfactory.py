@@ -10,6 +10,7 @@
 #  SPDX-License-Identifier: MIT
 #
 """Provides factories for the generation algorithm."""
+
 from __future__ import annotations
 
 import logging
@@ -110,22 +111,14 @@ class GenerationAlgorithmFactory(ABC, Generic[C]):
             plateau_iterations = stopping.minimum_plateau_iterations
             if plateau_iterations <= 0:
                 raise AssertionError("Minimum Plateau Iterations has to be larger 0")
-            conditions.append(
-                MinimumCoveragePlateauStoppingCondition(
-                    min_coverage, plateau_iterations
-                )
-            )
+            conditions.append(MinimumCoveragePlateauStoppingCondition(min_coverage, plateau_iterations))
         if len(conditions) == 0:
             self._logger.info("No stopping condition configured!")
             self._logger.info(
                 "Using fallback timeout of %i seconds",
                 GenerationAlgorithmFactory._DEFAULT_MAX_SEARCH_TIME,
             )
-            conditions.append(
-                MaxSearchTimeStoppingCondition(
-                    GenerationAlgorithmFactory._DEFAULT_MAX_SEARCH_TIME
-                )
-            )
+            conditions.append(MaxSearchTimeStoppingCondition(GenerationAlgorithmFactory._DEFAULT_MAX_SEARCH_TIME))
         return conditions
 
     @abstractmethod
@@ -137,9 +130,7 @@ class GenerationAlgorithmFactory(ABC, Generic[C]):
         """
 
 
-class TestSuiteGenerationAlgorithmFactory(
-    GenerationAlgorithmFactory[tsc.TestSuiteChromosome]
-):
+class TestSuiteGenerationAlgorithmFactory(GenerationAlgorithmFactory[tsc.TestSuiteChromosome]):
     """A factory for a search algorithm generating test-suites."""
 
     _strategies: ClassVar[dict[config.Algorithm, Callable[[], GenerationAlgorithm]]] = {
@@ -178,9 +169,7 @@ class TestSuiteGenerationAlgorithmFactory(
             constant_provider = EmptyConstantProvider()
         self._constant_provider: ConstantProvider = constant_provider
 
-    def _get_chromosome_factory(
-        self, strategy: GenerationAlgorithm
-    ) -> cf.ChromosomeFactory:
+    def _get_chromosome_factory(self, strategy: GenerationAlgorithm) -> cf.ChromosomeFactory:
         """Provides a chromosome factory.
 
         Args:
@@ -201,22 +190,16 @@ class TestSuiteGenerationAlgorithmFactory(
                 constant_provider=self._constant_provider,
             )
             self._logger.info("Collecting and parsing provided testcases.")
-            population_provider.collect_testcases(
-                config.configuration.seeding.initial_population_data
-            )
+            population_provider.collect_testcases(config.configuration.seeding.initial_population_data)
             if len(population_provider) == 0:
                 self._logger.info("Could not parse any test case")
             else:
                 self._logger.info("Parsed testcases: %s", len(population_provider))
-                test_case_factory = tcf.SeededTestCaseFactory(
-                    test_case_factory, population_provider
-                )
-        test_case_chromosome_factory: cf.ChromosomeFactory = (
-            tccf.TestCaseChromosomeFactory(
-                strategy.test_factory,
-                test_case_factory,
-                strategy.test_case_fitness_functions,
-            )
+                test_case_factory = tcf.SeededTestCaseFactory(test_case_factory, population_provider)
+        test_case_chromosome_factory: cf.ChromosomeFactory = tccf.TestCaseChromosomeFactory(
+            strategy.test_factory,
+            test_case_factory,
+            strategy.test_case_fitness_functions,
         )
         if config.configuration.seeding.seed_from_archive:
             self._logger.info("Using archive seeding")
@@ -243,23 +226,15 @@ class TestSuiteGenerationAlgorithmFactory(
             A fully configured test-generation strategy
         """
         strategy = self._get_generation_strategy()
-        strategy.branch_goal_pool = bg.BranchGoalPool(
-            self._executor.tracer.get_subject_properties()
-        )
-        strategy.test_case_fitness_functions = self._get_test_case_fitness_functions(
-            strategy
-        )
+        strategy.branch_goal_pool = bg.BranchGoalPool(self._executor.tracer.get_subject_properties())
+        strategy.test_case_fitness_functions = self._get_test_case_fitness_functions(strategy)
         strategy.test_suite_fitness_functions = self._get_test_suite_fitness_functions()
-        strategy.test_suite_coverage_functions = (
-            self._get_test_suite_coverage_functions()
-        )
+        strategy.test_suite_coverage_functions = self._get_test_suite_coverage_functions()
         strategy.archive = self._get_archive(strategy)
 
         strategy.executor = self._executor
         strategy.test_cluster = self._get_test_cluster(strategy)
-        strategy.test_factory = self._get_test_factory(
-            strategy, self._constant_provider
-        )
+        strategy.test_factory = self._get_test_factory(strategy, self._constant_provider)
         chromosome_factory = self._get_chromosome_factory(strategy)
         strategy.chromosome_factory = chromosome_factory
 
@@ -314,9 +289,7 @@ class TestSuiteGenerationAlgorithmFactory(
             ConfigurationException: if an unknown function was requested
         """
         if config.configuration.search_algorithm.selection in cls._selections:
-            strategy = cls._selections.get(
-                config.configuration.search_algorithm.selection
-            )
+            strategy = cls._selections.get(config.configuration.search_algorithm.selection)
             assert strategy, "Selection function cannot be defined as None"
             cls._logger.info(
                 "Using selection function: %s",
@@ -354,9 +327,7 @@ class TestSuiteGenerationAlgorithmFactory(
         self._logger.info("Using ranking function: RankBasedPreferenceSorting")
         return RankBasedPreferenceSorting()
 
-    def _get_test_case_fitness_functions(
-        self, strategy: GenerationAlgorithm
-    ) -> OrderedSet[ff.TestCaseFitnessFunction]:
+    def _get_test_case_fitness_functions(self, strategy: GenerationAlgorithm) -> OrderedSet[ff.TestCaseFitnessFunction]:
         """Creates the fitness functions for test cases.
 
         Args:
@@ -375,24 +346,16 @@ class TestSuiteGenerationAlgorithmFactory(
             fitness_functions: OrderedSet[ff.TestCaseFitnessFunction] = OrderedSet()
             coverage_metrics = config.configuration.statistics_output.coverage_metrics
             if config.CoverageMetric.LINE in coverage_metrics:
-                fitness_functions.update(
-                    bg.create_line_coverage_fitness_functions(self._executor)
-                )
+                fitness_functions.update(bg.create_line_coverage_fitness_functions(self._executor))
 
             if config.CoverageMetric.BRANCH in coverage_metrics:
                 fitness_functions.update(
-                    bg.create_branch_coverage_fitness_functions(
-                        self._executor, strategy.branch_goal_pool
-                    )
+                    bg.create_branch_coverage_fitness_functions(self._executor, strategy.branch_goal_pool)
                 )
 
             if config.CoverageMetric.CHECKED in coverage_metrics:
-                fitness_functions.update(
-                    bg.create_checked_coverage_fitness_functions(self._executor)
-                )
-            self._logger.info(
-                "Instantiated %d fitness functions", len(fitness_functions)
-            )
+                fitness_functions.update(bg.create_checked_coverage_fitness_functions(self._executor))
+            self._logger.info("Instantiated %d fitness functions", len(fitness_functions))
             return fitness_functions
         return OrderedSet()
 
@@ -404,13 +367,9 @@ class TestSuiteGenerationAlgorithmFactory(
         if config.CoverageMetric.LINE in coverage_metrics:
             test_suite_ffs.update([ff.LineTestSuiteFitnessFunction(self._executor)])
         if config.CoverageMetric.BRANCH in coverage_metrics:
-            test_suite_ffs.update(
-                [ff.BranchDistanceTestSuiteFitnessFunction(self._executor)]
-            )
+            test_suite_ffs.update([ff.BranchDistanceTestSuiteFitnessFunction(self._executor)])
         if config.CoverageMetric.CHECKED in coverage_metrics:
-            test_suite_ffs.update(
-                [ff.StatementCheckedTestSuiteFitnessFunction(self._executor)]
-            )
+            test_suite_ffs.update([ff.StatementCheckedTestSuiteFitnessFunction(self._executor)])
         return test_suite_ffs
 
     def _get_test_suite_coverage_functions(
@@ -423,9 +382,7 @@ class TestSuiteGenerationAlgorithmFactory(
         if config.CoverageMetric.BRANCH in coverage_metrics:
             test_suite_ffs.update([ff.TestSuiteBranchCoverageFunction(self._executor)])
         if config.CoverageMetric.CHECKED in coverage_metrics:
-            test_suite_ffs.update(
-                [ff.TestSuiteStatementCheckedCoverageFunction(self._executor)]
-            )
+            test_suite_ffs.update([ff.TestSuiteStatementCheckedCoverageFunction(self._executor)])
         # do not add TestSuiteAssertionCheckedCoverageFunction here, since it must
         # be added and calculated after the assertion generation
         return test_suite_ffs
@@ -443,9 +400,5 @@ class TestSuiteGenerationAlgorithmFactory(
         return self._test_cluster
 
     @staticmethod
-    def _get_test_factory(
-        strategy: GenerationAlgorithm, constant_provider: ConstantProvider
-    ):
-        return tf.TestFactory(
-            strategy.test_cluster, constant_provider=constant_provider
-        )
+    def _get_test_factory(strategy: GenerationAlgorithm, constant_provider: ConstantProvider):
+        return tf.TestFactory(strategy.test_cluster, constant_provider=constant_provider)

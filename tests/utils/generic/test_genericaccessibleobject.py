@@ -21,9 +21,7 @@ class TestAccessibleObject(GenericAccessibleObject):
     def generated_type(self) -> type | None:
         pass  # pragma: no cover
 
-    def get_dependencies(
-        self, memo: dict[InferredSignature, dict[str, ProperType]]
-    ) -> OrderedSet[ProperType]:
+    def get_dependencies(self, memo: dict[InferredSignature, dict[str, ProperType]]) -> OrderedSet[ProperType]:
         pass  # pragma: no cover
 
 
@@ -45,9 +43,7 @@ def test_generic_constructor_eq_self(constructor_mock):
 
 
 def test_generic_constructor_eq_modified(constructor_mock, type_system):
-    second = GenericConstructor(
-        type_system.to_type_info(MagicMock), MagicMock(InferredSignature)
-    )
+    second = GenericConstructor(type_system.to_type_info(MagicMock), MagicMock(InferredSignature))
     assert constructor_mock != second
 
 
@@ -68,9 +64,7 @@ def test_generic_constructor_num_parameters(constructor_mock):
 
 
 def test_generic_constructor_dependencies(constructor_mock, type_system):
-    assert constructor_mock.get_dependencies({}) == OrderedSet(
-        [type_system.convert_type_hint(float)]
-    )
+    assert constructor_mock.get_dependencies({}) == OrderedSet([type_system.convert_type_hint(float)])
 
 
 def test_generic_method_eq_self(method_mock):
@@ -99,9 +93,10 @@ def test_generic_method_is_method(method_mock):
 
 
 def test_generic_method_dependencies(method_mock, type_system):
-    assert method_mock.get_dependencies({}) == OrderedSet(
-        [type_system.convert_type_hint(int), type_system.convert_type_hint(SomeType)]
-    )
+    assert method_mock.get_dependencies({}) == OrderedSet([
+        type_system.convert_type_hint(int),
+        type_system.convert_type_hint(SomeType),
+    ])
 
 
 def test_generic_function_eq_self(function_mock):
@@ -109,9 +104,7 @@ def test_generic_function_eq_self(function_mock):
 
 
 def test_generic_function_eq_modified(function_mock, type_system):
-    second = GenericFunction(
-        type_system.convert_type_hint(int), MagicMock(InferredSignature)
-    )
+    second = GenericFunction(type_system.convert_type_hint(int), MagicMock(InferredSignature))
     assert function_mock != second
 
 
@@ -132,9 +125,7 @@ def test_generic_field_eq_self(field_mock):
 
 
 def test_generic_field_eq_modified(field_mock, type_system):
-    second = GenericField(
-        type_system.to_type_info(MagicMock), "xyz", type_system.convert_type_hint(str)
-    )
+    second = GenericField(type_system.to_type_info(MagicMock), "xyz", type_system.convert_type_hint(str))
     assert field_mock != second
 
 
@@ -155,9 +146,7 @@ def test_generic_field_is_field(field_mock):
 
 
 def test_generic_field_dependencies(field_mock, type_system):
-    assert field_mock.get_dependencies({}) == OrderedSet(
-        [type_system.convert_type_hint(SomeType)]
-    )
+    assert field_mock.get_dependencies({}) == OrderedSet([type_system.convert_type_hint(SomeType)])
 
 
 def test_generic_function_raised_exceptions():

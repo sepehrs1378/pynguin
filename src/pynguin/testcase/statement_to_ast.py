@@ -5,6 +5,7 @@
 #  SPDX-License-Identifier: MIT
 #
 """Provides a visitor that transforms statements to AST."""
+
 from __future__ import annotations
 
 import ast
@@ -118,11 +119,7 @@ class StatementToAstVisitor(StatementVisitor):
         owner = stmt.accessible_object().owner
         assert owner
         self._ast_node = ast.Assign(
-            targets=[
-                au.create_full_name(
-                    self._variable_names, self._module_aliases, stmt.ret_val, load=False
-                )
-            ],
+            targets=[au.create_full_name(self._variable_names, self._module_aliases, stmt.ret_val, load=False)],
             value=ast.Attribute(
                 value=ast.Attribute(
                     value=self._create_module_alias(owner.module),
@@ -139,11 +136,7 @@ class StatementToAstVisitor(StatementVisitor):
     ) -> None:
         clazz = stmt.type_info
         self._ast_node = ast.Assign(
-            targets=[
-                au.create_full_name(
-                    self._variable_names, self._module_aliases, stmt.ret_val, load=False
-                )
-            ],
+            targets=[au.create_full_name(self._variable_names, self._module_aliases, stmt.ret_val, load=False)],
             # TODO(fk) think about nested classes, also for enums.
             value=ast.Attribute(
                 value=self._create_module_alias(clazz.module),
@@ -191,9 +184,7 @@ class StatementToAstVisitor(StatementVisitor):
             func=ast.Attribute(
                 attr=stmt.accessible_object().callable.__name__,
                 ctx=ast.Load(),
-                value=au.create_full_name(
-                    self._variable_names, self._module_aliases, stmt.callee, load=True
-                ),
+                value=au.create_full_name(self._variable_names, self._module_aliases, stmt.callee, load=True),
             ),
             args=args,
             keywords=kwargs,
@@ -219,9 +210,7 @@ class StatementToAstVisitor(StatementVisitor):
             func=ast.Attribute(
                 attr=stmt.accessible_object().callable.__name__,
                 ctx=ast.Load(),
-                value=self._create_module_alias(
-                    stmt.accessible_object().callable.__module__
-                ),
+                value=self._create_module_alias(stmt.accessible_object().callable.__module__),
             ),
             args=args,
             keywords=kwargs,
@@ -252,9 +241,7 @@ class StatementToAstVisitor(StatementVisitor):
             value=ast.Attribute(
                 attr=stmt.field.field,
                 ctx=ast.Load(),
-                value=au.create_full_name(
-                    self._variable_names, self._module_aliases, stmt.source, load=True
-                ),
+                value=au.create_full_name(self._variable_names, self._module_aliases, stmt.source, load=True),
             ),
         )
 
@@ -262,29 +249,16 @@ class StatementToAstVisitor(StatementVisitor):
         self, stmt: AssignmentStatement
     ) -> None:
         self._ast_node = ast.Assign(
-            targets=[
-                au.create_full_name(
-                    self._variable_names, self._module_aliases, stmt.lhs, load=False
-                )
-            ],
-            value=au.create_full_name(
-                self._variable_names, self._module_aliases, stmt.rhs, load=True
-            ),
+            targets=[au.create_full_name(self._variable_names, self._module_aliases, stmt.lhs, load=False)],
+            value=au.create_full_name(self._variable_names, self._module_aliases, stmt.rhs, load=True),
         )
 
     def visit_list_statement(self, stmt: ListStatement) -> None:  # noqa: D102
         self._ast_node = ast.Assign(
-            targets=[
-                au.create_full_name(
-                    self._variable_names, self._module_aliases, stmt.ret_val, load=False
-                )
-            ],
+            targets=[au.create_full_name(self._variable_names, self._module_aliases, stmt.ret_val, load=False)],
             value=ast.List(
                 elts=[
-                    au.create_full_name(
-                        self._variable_names, self._module_aliases, x, load=True
-                    )
-                    for x in stmt.elements
+                    au.create_full_name(self._variable_names, self._module_aliases, x, load=True) for x in stmt.elements
                 ],
                 ctx=ast.Load(),
             ),
@@ -294,42 +268,26 @@ class StatementToAstVisitor(StatementVisitor):
         # There is no literal for empty sets, so we have to write "set()"
         inner: Any
         if len(stmt.elements) == 0:
-            inner = ast.Call(
-                func=ast.Name(id="set", ctx=ast.Load()), args=[], keywords=[]
-            )
+            inner = ast.Call(func=ast.Name(id="set", ctx=ast.Load()), args=[], keywords=[])
         else:
             inner = ast.Set(
                 elts=[
-                    au.create_full_name(
-                        self._variable_names, self._module_aliases, x, load=True
-                    )
-                    for x in stmt.elements
+                    au.create_full_name(self._variable_names, self._module_aliases, x, load=True) for x in stmt.elements
                 ],
                 ctx=ast.Load(),
             )
 
         self._ast_node = ast.Assign(
-            targets=[
-                au.create_full_name(
-                    self._variable_names, self._module_aliases, stmt.ret_val, load=False
-                )
-            ],
+            targets=[au.create_full_name(self._variable_names, self._module_aliases, stmt.ret_val, load=False)],
             value=inner,
         )
 
     def visit_tuple_statement(self, stmt: TupleStatement) -> None:  # noqa: D102
         self._ast_node = ast.Assign(
-            targets=[
-                au.create_full_name(
-                    self._variable_names, self._module_aliases, stmt.ret_val, load=False
-                )
-            ],
+            targets=[au.create_full_name(self._variable_names, self._module_aliases, stmt.ret_val, load=False)],
             value=ast.Tuple(
                 elts=[
-                    au.create_full_name(
-                        self._variable_names, self._module_aliases, x, load=True
-                    )
-                    for x in stmt.elements
+                    au.create_full_name(self._variable_names, self._module_aliases, x, load=True) for x in stmt.elements
                 ],
                 ctx=ast.Load(),
             ),
@@ -337,22 +295,14 @@ class StatementToAstVisitor(StatementVisitor):
 
     def visit_dict_statement(self, stmt: DictStatement) -> None:  # noqa: D102
         self._ast_node = ast.Assign(
-            targets=[
-                au.create_full_name(
-                    self._variable_names, self._module_aliases, stmt.ret_val, load=False
-                )
-            ],
+            targets=[au.create_full_name(self._variable_names, self._module_aliases, stmt.ret_val, load=False)],
             value=ast.Dict(
                 keys=[
-                    au.create_full_name(
-                        self._variable_names, self._module_aliases, x[0], load=True
-                    )
+                    au.create_full_name(self._variable_names, self._module_aliases, x[0], load=True)
                     for x in stmt.elements
                 ],
                 values=[
-                    au.create_full_name(
-                        self._variable_names, self._module_aliases, x[1], load=True
-                    )
+                    au.create_full_name(self._variable_names, self._module_aliases, x[1], load=True)
                     for x in stmt.elements
                 ],
             ),
@@ -368,17 +318,11 @@ class StatementToAstVisitor(StatementVisitor):
             The matching AST statement
         """
         return ast.Assign(
-            targets=[
-                au.create_full_name(
-                    self._variable_names, self._module_aliases, stmt.ret_val, load=False
-                )
-            ],
+            targets=[au.create_full_name(self._variable_names, self._module_aliases, stmt.ret_val, load=False)],
             value=ast.Constant(value=stmt.value),
         )
 
-    def _create_args(
-        self, stmt: ParametrizedStatement
-    ) -> tuple[list[ast.expr], list[ast.keyword]]:
+    def _create_args(self, stmt: ParametrizedStatement) -> tuple[list[ast.expr], list[ast.keyword]]:
         """Creates the AST nodes for arguments.
 
         Creates the positional arguments, i.e., POSITIONAL_ONLY,
@@ -394,9 +338,7 @@ class StatementToAstVisitor(StatementVisitor):
         args: list[ast.expr] = []
         kwargs = []
 
-        gen_callable: GenericCallableAccessibleObject = cast(
-            GenericCallableAccessibleObject, stmt.accessible_object()
-        )
+        gen_callable: GenericCallableAccessibleObject = cast(GenericCallableAccessibleObject, stmt.accessible_object())
 
         left_of_current: list[str] = []
 
@@ -419,8 +361,7 @@ class StatementToAstVisitor(StatementVisitor):
                         # has a default, and we did not pass a value, we must pass the
                         # current value by keyword, otherwise by position.
                         if any(
-                            parameters[left].default is not Parameter.empty
-                            and left not in stmt.args
+                            parameters[left].default is not Parameter.empty and left not in stmt.args
                             for left in left_of_current
                         ):
                             kwargs.append(

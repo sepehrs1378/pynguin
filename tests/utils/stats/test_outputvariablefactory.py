@@ -33,9 +33,7 @@ class _DummySequenceOutputVariableFactory(SequenceOutputVariableFactory):
 
 @pytest.fixture()
 def factory():
-    return DirectSequenceOutputVariableFactory(
-        RuntimeVariable.TotalExceptionsTimeline, 0
-    )
+    return DirectSequenceOutputVariableFactory(RuntimeVariable.TotalExceptionsTimeline, 0)
 
 
 @pytest.fixture()
@@ -103,10 +101,7 @@ def test_get_output_variables_with_content(sequence_factory, chromosome):
     sequence_factory.update(chromosome_2)
     time.sleep(0.05)
     variables = sequence_factory.get_output_variables()
-    [
-        check_result(var.name, var.value, index + 1)
-        for index, var in enumerate(variables)
-    ]
+    [check_result(var.name, var.value, index + 1) for index, var in enumerate(variables)]
     assert len(variables) >= 0
 
 

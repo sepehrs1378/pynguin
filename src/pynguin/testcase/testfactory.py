@@ -5,6 +5,7 @@
 #  SPDX-License-Identifier: MIT
 #
 """Provides a factory for test-case generation."""
+
 from __future__ import annotations
 
 import contextlib
@@ -243,9 +244,7 @@ class TestFactory:
             )
             return test_case.add_variable_creating_statement(statement, position)
         except BaseException as exception:
-            raise ConstructionFailedException(
-                f"Failed to add constructor for {constructor}"
-            ) from exception
+            raise ConstructionFailedException(f"Failed to add constructor for {constructor}") from exception
 
     def add_method(
         self,
@@ -487,9 +486,7 @@ class TestFactory:
         statement = cast(stmt.PrimitiveStatement, primitive.clone(test_case, {}))
         return test_case.add_variable_creating_statement(statement, position)
 
-    def insert_random_statement(
-        self, test_case: tc.TestCase, last_position: int
-    ) -> int:
+    def insert_random_statement(self, test_case: tc.TestCase, last_position: int) -> int:
         """Insert a random statement up to the given position.
 
         If the insertion was successful, the position at which the statement was
@@ -517,9 +514,7 @@ class TestFactory:
             return position
         return -1
 
-    def insert_random_call_on_object(
-        self, test_case: tc.TestCase, position: int
-    ) -> bool:
+    def insert_random_call_on_object(self, test_case: tc.TestCase, position: int) -> bool:
         """Insert a random call on an object that already exists within the test case.
 
         Args:
@@ -532,9 +527,7 @@ class TestFactory:
         variable = self._select_random_variable_for_call(test_case, position)
         success = False
         if variable is not None:
-            success = self.insert_random_call_on_object_at(
-                test_case, variable, position
-            )
+            success = self.insert_random_call_on_object_at(test_case, variable, position)
 
         if not success and self._test_cluster.num_accessible_objects_under_test() > 0:
             success = self.insert_random_call(test_case, position)
@@ -556,8 +549,7 @@ class TestFactory:
         try:
             typ = (
                 ANY
-                if randomness.next_float()
-                < config.configuration.test_creation.use_random_object_for_call
+                if randomness.next_float() < config.configuration.test_creation.use_random_object_for_call
                 else variable.type
             )
             accessible = self._test_cluster.get_random_call_for(typ)
@@ -603,9 +595,7 @@ class TestFactory:
             return False
 
     @staticmethod
-    def _select_random_variable_for_call(
-        test_case: tc.TestCase, position: int
-    ) -> vr.VariableReference | None:
+    def _select_random_variable_for_call(test_case: tc.TestCase, position: int) -> vr.VariableReference | None:
         """Randomly select one of the variables in the test defined.
 
         Args:
@@ -689,8 +679,7 @@ class TestFactory:
             for i in range(position + 1, test_case.size()):
                 typ = (
                     ANY
-                    if randomness.next_float()
-                    < config.configuration.test_creation.use_random_object_for_call
+                    if randomness.next_float() < config.configuration.test_creation.use_random_object_for_call
                     else variable.type
                 )
                 alternatives = test_case.get_objects(typ, i)
@@ -725,9 +714,7 @@ class TestFactory:
         return True
 
     @staticmethod
-    def _recursive_delete_inclusion(
-        test_case: tc.TestCase, to_delete: set[int], position: int
-    ) -> None:
+    def _recursive_delete_inclusion(test_case: tc.TestCase, to_delete: set[int], position: int) -> None:
         if position in to_delete:
             return  # end of recursion
         to_delete.add(position)
@@ -754,9 +741,7 @@ class TestFactory:
                 references.update(temp)
         return positions
 
-    def change_random_call(
-        self, test_case: tc.TestCase, statement: stmt.VariableCreatingStatement
-    ) -> bool:
+    def change_random_call(self, test_case: tc.TestCase, statement: stmt.VariableCreatingStatement) -> bool:
         """Change the call represented by this statement to another one.
 
         Args:
@@ -810,24 +795,16 @@ class TestFactory:
         if call.is_method():
             method = cast(gao.GenericMethod, call)
             assert method.owner is not None
-            callee = test_case.get_random_object(
-                self._test_cluster.type_system.make_instance(method.owner), position
-            )
-            parameters = self._get_reuse_parameters(
-                test_case, method.inferred_signature, position, signature_memo
-            )
+            callee = test_case.get_random_object(self._test_cluster.type_system.make_instance(method.owner), position)
+            parameters = self._get_reuse_parameters(test_case, method.inferred_signature, position, signature_memo)
             replacement = stmt.MethodStatement(test_case, method, callee, parameters)
         elif call.is_constructor():
             constructor = cast(gao.GenericConstructor, call)
-            parameters = self._get_reuse_parameters(
-                test_case, constructor.inferred_signature, position, signature_memo
-            )
+            parameters = self._get_reuse_parameters(test_case, constructor.inferred_signature, position, signature_memo)
             replacement = stmt.ConstructorStatement(test_case, constructor, parameters)
         elif call.is_function():
             funktion = cast(gao.GenericFunction, call)
-            parameters = self._get_reuse_parameters(
-                test_case, funktion.inferred_signature, position, signature_memo
-            )
+            parameters = self._get_reuse_parameters(test_case, funktion.inferred_signature, position, signature_memo)
             replacement = stmt.FunctionStatement(test_case, funktion, parameters)
         elif call.is_enum():
             enum_ = cast(gao.GenericEnum, call)
@@ -858,18 +835,13 @@ class TestFactory:
             A dict of existing objects
         """
         found = {}
-        for parameter_name, parameter_type in inf_signature.get_parameter_types(
-            signature_memo
-        ).items():
+        for parameter_name, parameter_type in inf_signature.get_parameter_types(signature_memo).items():
             if (
                 is_optional_parameter(inf_signature, parameter_name)
-                and randomness.next_float()
-                < config.configuration.test_creation.skip_optional_parameter_probability
+                and randomness.next_float() < config.configuration.test_creation.skip_optional_parameter_probability
             ):
                 continue
-            found[parameter_name] = test_case.get_random_object(
-                parameter_type, position
-            )
+            found[parameter_name] = test_case.get_random_object(parameter_type, position)
         return found
 
     def _get_possible_calls(
@@ -892,11 +864,7 @@ class TestFactory:
         """
         calls: list[gao.GenericAccessibleObject] = []
         all_calls, _ = self._test_cluster.get_generators_for(return_type)
-        calls.extend(
-            i
-            for i in all_calls
-            if self._dependencies_satisfied(i.get_dependencies(signature_memo), objects)
-        )
+        calls.extend(i for i in all_calls if self._dependencies_satisfied(i.get_dependencies(signature_memo), objects))
         return calls
 
     def _dependencies_satisfied(
@@ -962,8 +930,7 @@ class TestFactory:
 
             if (
                 is_optional_parameter(signature, parameter_name)
-                and randomness.next_float()
-                < config.configuration.test_creation.skip_optional_parameter_probability
+                and randomness.next_float() < config.configuration.test_creation.skip_optional_parameter_probability
             ):
                 continue
 
@@ -977,10 +944,7 @@ class TestFactory:
 
             if not var:
                 raise ConstructionFailedException(
-                    (
-                        f"Failed to create variable for type {parameter_type} "
-                        f"at position {position}"
-                    ),
+                    (f"Failed to create variable for type {parameter_type} " f"at position {position}"),
                 )
 
             parameters[parameter_name] = var
@@ -1046,9 +1010,7 @@ class TestFactory:
             if randomness.next_float() <= 0.85:
                 return self._create_or_reuse_variable(
                     test_case=test_case,
-                    parameter_type=randomness.choice(
-                        self._test_cluster.get_all_generatable_types()
-                    ),
+                    parameter_type=randomness.choice(self._test_cluster.get_all_generatable_types()),
                     position=position,
                     recursion_depth=recursion_depth + 1,
                     allow_none=allow_none,
@@ -1058,13 +1020,9 @@ class TestFactory:
             raise ConstructionFailedException(f"No objects for type {parameter_type}")
 
         # Could not create, so re-use an existing variable.
-        self._logger.debug(
-            "Choosing from %d existing objects: %s", len(objects), objects
-        )
+        self._logger.debug("Choosing from %d existing objects: %s", len(objects), objects)
         reference = randomness.choice(objects)
-        self._logger.debug(
-            "Use existing object of type %s: %s", parameter_type, reference
-        )
+        self._logger.debug("Use existing object of type %s: %s", parameter_type, reference)
         return reference
 
     def _create_or_reuse_variable(
@@ -1076,9 +1034,7 @@ class TestFactory:
         *,
         allow_none: bool,
     ) -> vr.VariableReference | None:
-        if (
-            reused_variable := self._reuse_variable(test_case, parameter_type, position)
-        ) is not None:
+        if (reused_variable := self._reuse_variable(test_case, parameter_type, position)) is not None:
             return reused_variable
         if (
             created_variable := self._attempt_generation(
@@ -1090,9 +1046,7 @@ class TestFactory:
             )
         ) is not None:
             return created_variable
-        return self._get_variable_fallback(
-            test_case, parameter_type, position, recursion_depth, allow_none=allow_none
-        )
+        return self._get_variable_fallback(test_case, parameter_type, position, recursion_depth, allow_none=allow_none)
 
     def _attempt_generation(
         self,
@@ -1125,9 +1079,7 @@ class TestFactory:
                 position,
                 recursion_depth,
             )
-        type_generators, only_any = self._test_cluster.get_generators_for(
-            parameter_type
-        )
+        type_generators, only_any = self._test_cluster.get_generators_for(parameter_type)
         if type_generators and not only_any:
             type_generator = randomness.choice(type_generators)
             return self.append_generic_accessible(
@@ -1147,9 +1099,7 @@ class TestFactory:
     ) -> vr.VariableReference:
         # If there already is a None alias just return it.
         # TODO(fk) better way?
-        for statement in test_case.statements[
-            : min(len(test_case.statements), position)
-        ]:
+        for statement in test_case.statements[: min(len(test_case.statements), position)]:
             if isinstance(statement, stmt.NoneStatement):
                 return statement.ret_val
 
@@ -1167,9 +1117,7 @@ class TestFactory:
         constant_provider: ConstantProvider,
     ) -> vr.VariableReference:
         # Need to adhere to numeric tower.
-        if (
-            subtypes := self._test_cluster.type_system.numeric_tower.get(parameter_type)
-        ) is not None:
+        if (subtypes := self._test_cluster.type_system.numeric_tower.get(parameter_type)) is not None:
             parameter_type = randomness.choice(subtypes)
 
         match parameter_type.type.name:
@@ -1178,23 +1126,15 @@ class TestFactory:
                     test_case, constant_provider=constant_provider
                 )
             case "float":
-                statement = stmt.FloatPrimitiveStatement(
-                    test_case, constant_provider=constant_provider
-                )
+                statement = stmt.FloatPrimitiveStatement(test_case, constant_provider=constant_provider)
             case "complex":
-                statement = stmt.ComplexPrimitiveStatement(
-                    test_case, constant_provider=constant_provider
-                )
+                statement = stmt.ComplexPrimitiveStatement(test_case, constant_provider=constant_provider)
             case "bool":
                 statement = stmt.BooleanPrimitiveStatement(test_case)
             case "bytes":
-                statement = stmt.BytesPrimitiveStatement(
-                    test_case, constant_provider=constant_provider
-                )
+                statement = stmt.BytesPrimitiveStatement(test_case, constant_provider=constant_provider)
             case "str":
-                statement = stmt.StringPrimitiveStatement(
-                    test_case, constant_provider=constant_provider
-                )
+                statement = stmt.StringPrimitiveStatement(test_case, constant_provider=constant_provider)
             case "type":
                 statement = stmt.ClassPrimitiveStatement(test_case)
             case _:
@@ -1212,17 +1152,11 @@ class TestFactory:
     ) -> vr.VariableReference:
         if isinstance(parameter_type, Instance):
             if parameter_type.type.raw_type in {list, set}:
-                return self._create_list_or_set(
-                    test_case, parameter_type, position, recursion_depth
-                )
+                return self._create_list_or_set(test_case, parameter_type, position, recursion_depth)
             if parameter_type.type.raw_type is dict:
-                return self._create_dict(
-                    test_case, parameter_type, position, recursion_depth
-                )
+                return self._create_dict(test_case, parameter_type, position, recursion_depth)
         if isinstance(parameter_type, TupleType):
-            return self._create_tuple(
-                test_case, parameter_type, position, recursion_depth
-            )
+            return self._create_tuple(test_case, parameter_type, position, recursion_depth)
         raise RuntimeError("Unknown collection type")
 
     # TODO(fk) Methods below should be refactored asap,
@@ -1236,9 +1170,7 @@ class TestFactory:
         recursion_depth: int,
     ) -> vr.VariableReference:
         element_type = parameter_type.args[0]
-        size = randomness.next_int(
-            0, config.configuration.test_creation.collection_size
-        )
+        size = randomness.next_int(0, config.configuration.test_creation.collection_size)
         elements = []
         for _ in range(size):
             previous_length = test_case.size()
@@ -1266,21 +1198,14 @@ class TestFactory:
     ) -> vr.VariableReference:
         if parameter_type.unknown_size:
             # Untyped tuple, time to guess...
-            size = randomness.next_int(
-                0, config.configuration.test_creation.collection_size
-            )
-            args = tuple(
-                randomness.choice(self._test_cluster.get_all_generatable_types())
-                for _ in range(size)
-            )
+            size = randomness.next_int(0, config.configuration.test_creation.collection_size)
+            args = tuple(randomness.choice(self._test_cluster.get_all_generatable_types()) for _ in range(size))
         else:
             args = parameter_type.args
         elements = []
         for arg_type in args:
             previous_length = test_case.size()
-            var = self._create_or_reuse_variable(
-                test_case, arg_type, position, recursion_depth + 1, allow_none=True
-            )
+            var = self._create_or_reuse_variable(test_case, arg_type, position, recursion_depth + 1, allow_none=True)
             if var is not None:
                 elements.append(var)
             position += test_case.size() - previous_length
@@ -1300,15 +1225,11 @@ class TestFactory:
         args = parameter_type.args
         key_type = args[0]
         value_type = args[1]
-        size = randomness.next_int(
-            0, config.configuration.test_creation.collection_size
-        )
+        size = randomness.next_int(0, config.configuration.test_creation.collection_size)
         elements = []
         for _ in range(size):
             previous_length = test_case.size()
-            key = self._create_or_reuse_variable(
-                test_case, key_type, position, recursion_depth + 1, allow_none=True
-            )
+            key = self._create_or_reuse_variable(test_case, key_type, position, recursion_depth + 1, allow_none=True)
             position += test_case.size() - previous_length
             previous_length = test_case.size()
             value = self._create_or_reuse_variable(
@@ -1334,9 +1255,6 @@ class TestFactory:
             True, if the test case has a call on the SUT.
         """
         for statement in test_case.statements:
-            if (
-                statement.accessible_object()
-                in self._test_cluster.accessible_objects_under_test
-            ):
+            if statement.accessible_object() in self._test_cluster.accessible_objects_under_test:
                 return True
         return False

@@ -5,6 +5,7 @@
 #  SPDX-License-Identifier: MIT
 #
 """Provides analyses regarding the control-flow of the program."""
+
 from __future__ import annotations
 
 import queue
@@ -441,9 +442,7 @@ class CFG(ProgramGraph[ProgramGraphNode]):
         Returns:
             The copied graph
         """
-        copy = CFG(
-            ControlFlowGraph()
-        )  # TODO(fk) Cloning the bytecode cfg is complicated.
+        copy = CFG(ControlFlowGraph())  # TODO(fk) Cloning the bytecode cfg is complicated.
 
         copy._graph = cfg._graph.copy()  # noqa: SLF001
         return copy
@@ -478,9 +477,7 @@ class CFG(ProgramGraph[ProgramGraphNode]):
             target_block = block.get_jump()
 
             last_instr = block[-1]
-            if isinstance(last_instr, Instr) and (
-                last_instr.is_cond_jump() or last_instr.opcode == op.FOR_ITER
-            ):
+            if isinstance(last_instr, Instr) and (last_instr.is_cond_jump() or last_instr.opcode == op.FOR_ITER):
                 if last_instr.opcode in {op.POP_JUMP_IF_TRUE, op.JUMP_IF_TRUE_OR_POP}:
                     # These jump to arg if ToS is True
                     true_branch = target_block
@@ -496,19 +493,14 @@ class CFG(ProgramGraph[ProgramGraphNode]):
                     true_branch = next_block
                     false_branch = target_block
                 else:
-                    raise RuntimeError(
-                        "Unknown conditional Jump instruction in bytecode "
-                        + last_instr.name
-                    )
+                    raise RuntimeError("Unknown conditional Jump instruction in bytecode " + last_instr.name)
                 for next_branch, value in [(true_branch, True), (false_branch, False)]:
                     next_index = blocks.get_block_index(
                         next_branch  # type: ignore[arg-type]
                     )
                     # 'label' is also set to value, to get a nicer DOT representation,
                     # because 'label' is a keyword for labelling edges.
-                    edges[node_index].append(
-                        (next_index, {EDGE_DATA_BRANCH_VALUE: value, "label": value})
-                    )
+                    edges[node_index].append((next_index, {EDGE_DATA_BRANCH_VALUE: value, "label": value}))
             else:
                 if next_block:
                     next_index = blocks.get_block_index(next_block)
@@ -553,9 +545,7 @@ class CFG(ProgramGraph[ProgramGraphNode]):
         # Search node with index 0. This block contains the instruction where
         # the execution of a code object begins.
         node_zero = [n for n in cfg.nodes if n.index == 0]
-        assert (
-            len(node_zero) == 1
-        ), "Execution has to start at exactly one node that has index 0."
+        assert len(node_zero) == 1, "Execution has to start at exactly one node that has index 0."
         entry_node = node_zero[0]
         cfg.add_node(dummy_entry_node)
         cfg.add_edge(dummy_entry_node, entry_node)
@@ -565,9 +555,7 @@ class CFG(ProgramGraph[ProgramGraphNode]):
     def _insert_dummy_exit_node(cfg: CFG) -> CFG:
         dummy_exit_node = ProgramGraphNode(index=sys.maxsize, is_artificial=True)
         exit_nodes = cfg.exit_nodes
-        assert exit_nodes, (
-            "Control flow must have at least one exit node. Offending CFG: " + cfg.dot
-        )
+        assert exit_nodes, "Control flow must have at least one exit node. Offending CFG: " + cfg.dot
         cfg.add_node(dummy_exit_node)
         for exit_node in exit_nodes:
             cfg.add_edge(exit_node, dummy_exit_node)
@@ -642,9 +630,7 @@ class DominatorTree(ProgramGraph[ProgramGraphNode]):
         Returns:
             The dominance tree for the control-flow graph
         """
-        dominance: dict[ProgramGraphNode, set[ProgramGraphNode]] = (
-            DominatorTree._calculate_dominance(graph)
-        )
+        dominance: dict[ProgramGraphNode, set[ProgramGraphNode]] = DominatorTree._calculate_dominance(graph)
         for dominance_node, nodes in dominance.items():
             nodes.discard(dominance_node)
         dominance_tree = DominatorTree()
@@ -688,9 +674,7 @@ class DominatorTree(ProgramGraph[ProgramGraphNode]):
                 if node == entry:
                     continue
                 current_dominators = dominance_map.get(node)
-                new_dominators = DominatorTree._calculate_dominators(
-                    graph, dominance_map, node
-                )
+                new_dominators = DominatorTree._calculate_dominators(graph, dominance_map, node)
 
                 if current_dominators != new_dominators:
                     changed = True
@@ -752,20 +736,12 @@ class ControlDependenceGraph(ProgramGraph[ProgramGraphNode]):
                 if source not in post_dominator_tree.get_transitive_successors(target):
                     # Store branching data from edge, i.e., which outcome of the
                     # branching node leads to this node.
-                    data = frozenset(
-                        augmented_cfg.graph.get_edge_data(source, target).items()
-                    )
-                    edges.add(
-                        ControlDependenceGraph._Edge(
-                            source=source, target=target, data=data
-                        )
-                    )
+                    data = frozenset(augmented_cfg.graph.get_edge_data(source, target).items())
+                    edges.add(ControlDependenceGraph._Edge(source=source, target=target, data=data))
 
         # Mark nodes in the PDT and construct edges for them.
         for edge in edges:
-            least_common_ancestor = post_dominator_tree.get_least_common_ancestor(
-                edge.source, edge.target
-            )
+            least_common_ancestor = post_dominator_tree.get_least_common_ancestor(edge.source, edge.target)
             current = edge.target
             while current != least_common_ancestor:
                 # TODO(fk) can the branching info be actually used here?
@@ -773,8 +749,7 @@ class ControlDependenceGraph(ProgramGraph[ProgramGraphNode]):
                 cdg.add_edge(edge.source, current, **dict(edge.data))
                 predecessors = post_dominator_tree.get_predecessors(current)
                 assert len(predecessors) == 1, (
-                    "Cannot have more than one predecessor in a tree, this violates a "
-                    "tree invariant"
+                    "Cannot have more than one predecessor in a tree, this violates a " "tree invariant"
                 )
                 current = predecessors.pop()
 
@@ -783,9 +758,7 @@ class ControlDependenceGraph(ProgramGraph[ProgramGraphNode]):
 
         return filter_dead_code_nodes(cdg, entry_node_index=-sys.maxsize)
 
-    def get_control_dependencies(
-        self, node: ProgramGraphNode
-    ) -> OrderedSet[ControlDependency]:
+    def get_control_dependencies(self, node: ProgramGraphNode) -> OrderedSet[ControlDependency]:
         """Get the immediate control dependencies of this node.
 
         Args:
@@ -807,11 +780,7 @@ class ControlDependenceGraph(ProgramGraph[ProgramGraphNode]):
                 continue
             handled.add((pred, node))
 
-            if (
-                branch_value := self._graph.get_edge_data(pred, node).get(
-                    EDGE_DATA_BRANCH_VALUE, None
-                )
-            ) is not None:
+            if (branch_value := self._graph.get_edge_data(pred, node).get(EDGE_DATA_BRANCH_VALUE, None)) is not None:
                 assert pred.predicate_id is not None
                 result.add(ControlDependency(pred.predicate_id, branch_value))
             else:
@@ -829,9 +798,7 @@ class ControlDependenceGraph(ProgramGraph[ProgramGraphNode]):
         """
         return self._is_control_dependent_on_root(node, set())
 
-    def _is_control_dependent_on_root(
-        self, node: ProgramGraphNode, visited: set[ProgramGraphNode]
-    ) -> bool:
+    def _is_control_dependent_on_root(self, node: ProgramGraphNode, visited: set[ProgramGraphNode]) -> bool:
         if (self.entry_node, node) in self.graph.edges:
             return True
         for pred in self.graph.predecessors(node):

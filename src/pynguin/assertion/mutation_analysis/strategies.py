@@ -9,6 +9,7 @@
 Based on https://github.com/se2p/mutpy-pynguin/blob/main/mutpy/controller.py
 and integrated in Pynguin.
 """
+
 from __future__ import annotations
 
 import abc
@@ -45,10 +46,7 @@ def remove_bad_mutations(
                 mutation_to_apply.node == available_mutation.node
                 or mutation_to_apply.node in available_mutation.node.children  # type: ignore[attr-defined]
                 or available_mutation.node in mutation_to_apply.node.children  # type: ignore[attr-defined]
-                or (
-                    not allow_same_operators
-                    and mutation_to_apply.operator == available_mutation.operator
-                )
+                or (not allow_same_operators and mutation_to_apply.operator == available_mutation.operator)
             ):
                 available_mutations.remove(available_mutation)
 
@@ -65,9 +63,7 @@ class HOMStrategy(abc.ABC):
         self.order = order
 
     @abc.abstractmethod
-    def generate(
-        self, mutations: list[Mutation]
-    ) -> Generator[list[Mutation], None, None]:
+    def generate(self, mutations: list[Mutation]) -> Generator[list[Mutation], None, None]:
         """Generate the mutations.
 
         Args:
@@ -134,9 +130,7 @@ class BetweenOperatorsHOMStrategy(HOMStrategy):
                 if usage[mutation] == 0:
                     not_used.remove(mutation)
                 usage[mutation] += 1
-                remove_bad_mutations(
-                    mutations_to_apply, available_mutations, allow_same_operators=False
-                )
+                remove_bad_mutations(mutations_to_apply, available_mutations, allow_same_operators=False)
             yield mutations_to_apply
 
 

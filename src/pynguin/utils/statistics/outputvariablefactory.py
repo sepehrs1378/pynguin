@@ -5,6 +5,7 @@
 #  SPDX-License-Identifier: MIT
 #
 """Provides abstract factories for output variables."""
+
 from __future__ import annotations
 
 import time
@@ -60,9 +61,7 @@ class ChromosomeOutputVariableFactory(ABC, Generic[T]):
         Returns:
             The output variable for the individual
         """
-        return sb.OutputVariable(
-            name=self._variable.name, value=self.get_data(individual)
-        )
+        return sb.OutputVariable(name=self._variable.name, value=self.get_data(individual))
 
 
 class SequenceOutputVariableFactory(ABC, Generic[T]):
@@ -123,10 +122,7 @@ class SequenceOutputVariableFactory(ABC, Generic[T]):
         Returns:
             A list of pairs consisting of variable names and their index.
         """
-        return [
-            (i + 1, f"{self._variable.name}_T{i + 1}")
-            for i in range(self._calculate_number_of_intervals())
-        ]
+        return [(i + 1, f"{self._variable.name}_T{i + 1}") for i in range(self._calculate_number_of_intervals())]
 
     def get_output_variables(self) -> list[sb.OutputVariable[T]]:
         """Provides the output variables.
@@ -135,9 +131,7 @@ class SequenceOutputVariableFactory(ABC, Generic[T]):
             A list of output variables
         """
         return [
-            sb.OutputVariable(
-                name=variable_name, value=self._get_time_line_value(variable_index)
-            )
+            sb.OutputVariable(name=variable_name, value=self._get_time_line_value(variable_index))
             for variable_index, variable_name in self.get_variable_names_indices()
         ]
 
@@ -145,9 +139,7 @@ class SequenceOutputVariableFactory(ABC, Generic[T]):
     def area_under_curve(self) -> float:
         """Provides the area under the curve using trapezoid approximation."""
         assert config.configuration.stopping.maximum_search_time is not None
-        time_stamps_values: list[tuple[int, float]] = list(
-            zip(self._time_stamps, self._values, strict=True)
-        )
+        time_stamps_values: list[tuple[int, float]] = list(zip(self._time_stamps, self._values, strict=True))
         max_time = config.configuration.stopping.maximum_search_time - 1
         end_time = max_time * 1_000_000_000
         if self._time_stamps[-1] < end_time:
@@ -168,9 +160,7 @@ class SequenceOutputVariableFactory(ABC, Generic[T]):
     @property
     def area_under_curve_output_variable(self) -> sb.OutputVariable[float]:
         """Provides the output variable for area under curve."""
-        return sb.OutputVariable(
-            name=f"{self._variable.name}_AUC", value=self.area_under_curve
-        )
+        return sb.OutputVariable(name=f"{self._variable.name}_AUC", value=self.area_under_curve)
 
     def _get_time_line_value(self, index: int) -> T:
         if not self._time_stamps:
@@ -264,9 +254,7 @@ class DirectSequenceOutputVariableFactory(SequenceOutputVariableFactory, Generic
         return DirectSequenceOutputVariableFactory(variable, 0)
 
 
-class TypeEvolutionSequenceOutputVariableFactory(
-    DirectSequenceOutputVariableFactory, Generic[T]
-):
+class TypeEvolutionSequenceOutputVariableFactory(DirectSequenceOutputVariableFactory, Generic[T]):
     """A sequence output variable for type-information evolution."""
 
     def __init__(self, variable: RuntimeVariable, start_value: T) -> None:  # noqa: D107

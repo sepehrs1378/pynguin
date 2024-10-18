@@ -5,6 +5,7 @@
 #  SPDX-License-Identifier: MIT
 #
 """Provides a random test generation algorithm similar to Randoop."""
+
 from __future__ import annotations
 
 import logging
@@ -46,9 +47,7 @@ class RandomAlgorithm(GenerationAlgorithm):
             test_chromosome.add_coverage_function(coverage_function)
             failing_test_chromosome.add_coverage_function(coverage_function)
 
-        combined_chromosome = self._combine_current_individual(
-            test_chromosome, failing_test_chromosome
-        )
+        combined_chromosome = self._combine_current_individual(test_chromosome, failing_test_chromosome)
 
         self.before_first_search_iteration(combined_chromosome)
         while self.resources_left() and combined_chromosome.get_fitness() != 0.0:
@@ -57,13 +56,9 @@ class RandomAlgorithm(GenerationAlgorithm):
                     test_chromosome,
                     failing_test_chromosome,
                 )
-                combined_chromosome = self._combine_current_individual(
-                    test_chromosome, failing_test_chromosome
-                )
+                combined_chromosome = self._combine_current_individual(test_chromosome, failing_test_chromosome)
             except (ConstructionFailedException, GenerationException) as exception:
-                self._logger.debug(
-                    "Generate test case failed with exception %s", exception
-                )
+                self._logger.debug("Generate test case failed with exception %s", exception)
             self.after_search_iteration(combined_chromosome)
         self.after_search_finish()
         return combined_chromosome
@@ -82,27 +77,18 @@ class RandomAlgorithm(GenerationAlgorithm):
         Raises:
             GenerationException: In case an error occurs during generation
         """
-        objects_under_test: OrderedSet[gao.GenericAccessibleObject] = (
-            self.test_cluster.accessible_objects_under_test
-        )
+        objects_under_test: OrderedSet[gao.GenericAccessibleObject] = self.test_cluster.accessible_objects_under_test
 
         if not objects_under_test:
             # In case we do not have any objects under test, we cannot generate a
             # test case.
-            raise GenerationException(
-                "Cannot generate test case without an object-under-test!"
-            )
+            raise GenerationException("Cannot generate test case without an object-under-test!")
 
         # Create new test case, i.e., sequence in Randoop paper terminology
         # Pick a random public method from objects under test
         method = self._random_public_method(objects_under_test)
         # Select random test cases from existing ones to base generation on
-        tests = self._random_test_cases(
-            [
-                chromosome.test_case
-                for chromosome in test_chromosome.test_case_chromosomes
-            ]
-        )
+        tests = self._random_test_cases([chromosome.test_case for chromosome in test_chromosome.test_case_chromosomes])
         new_test = tcc.TestCaseChromosome(dtc.DefaultTestCase(self.test_cluster))
         for test in tests:
             new_test.test_case.append_test_case(test)
@@ -146,13 +132,9 @@ class RandomAlgorithm(GenerationAlgorithm):
     def _random_public_method(
         objects_under_test: OrderedSet[gao.GenericAccessibleObject],
     ) -> gao.GenericCallableAccessibleObject:
-        return randomness.RNG.choice(
-            [
-                obj
-                for obj in objects_under_test
-                if isinstance(obj, gao.GenericCallableAccessibleObject)
-            ]
-        )
+        return randomness.RNG.choice([
+            obj for obj in objects_under_test if isinstance(obj, gao.GenericCallableAccessibleObject)
+        ])
 
     def _random_test_cases(self, test_cases: list[tc.TestCase]) -> list[tc.TestCase]:
         if config.configuration.random.max_sequence_length == 0:
@@ -161,18 +143,13 @@ class RandomAlgorithm(GenerationAlgorithm):
             selectables = [
                 test_case
                 for test_case in test_cases
-                if len(test_case.statements)
-                < config.configuration.random.max_sequence_length
+                if len(test_case.statements) < config.configuration.random.max_sequence_length
             ]
         if config.configuration.random.max_sequences_combined == 0:
             upper_bound = len(selectables)
         else:
-            upper_bound = min(
-                len(selectables), config.configuration.random.max_sequences_combined
-            )
-        new_test_cases = randomness.RNG.sample(
-            selectables, randomness.RNG.randint(0, upper_bound)
-        )
+            upper_bound = min(len(selectables), config.configuration.random.max_sequences_combined)
+        new_test_cases = randomness.RNG.sample(selectables, randomness.RNG.randint(0, upper_bound))
         self._logger.debug(
             "Selected %d new test cases from %d available ones",
             len(new_test_cases),

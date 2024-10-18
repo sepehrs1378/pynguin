@@ -35,9 +35,7 @@ def test_generate_sequences(executor):
     config.configuration.stopping.maximum_search_time = 1
     config.configuration.algorithm = config.Algorithm.RANDOM
     logger = MagicMock(Logger)
-    algorithm = gaf.TestSuiteGenerationAlgorithmFactory(
-        executor, MagicMock(ModuleTestCluster)
-    ).get_search_algorithm()
+    algorithm = gaf.TestSuiteGenerationAlgorithmFactory(executor, MagicMock(ModuleTestCluster)).get_search_algorithm()
     algorithm._logger = logger
     algorithm._find_objects_under_test = lambda x: x  # pragma: no cover
     algorithm.generate_sequence = lambda _t, _f, _e: None  # pragma: no cover
@@ -57,9 +55,7 @@ def test_generate_sequences_exception(executor):
     config.configuration.stopping.maximum_search_time = 1
     config.configuration.algorithm = config.Algorithm.RANDOM
     logger = MagicMock(Logger)
-    algorithm = gaf.TestSuiteGenerationAlgorithmFactory(
-        executor, MagicMock(ModuleTestCluster)
-    ).get_search_algorithm()
+    algorithm = gaf.TestSuiteGenerationAlgorithmFactory(executor, MagicMock(ModuleTestCluster)).get_search_algorithm()
     algorithm._logger = logger
     algorithm._find_objects_under_test = lambda x: x  # pragma: no cover
     algorithm._combine_current_individual = _combine_current_individual
@@ -71,9 +67,7 @@ def test_generate_sequences_exception(executor):
 def test_random_test_cases_no_bounds(executor):
     config.configuration.algorithm = config.Algorithm.RANDOM
     logger = MagicMock(Logger)
-    algorithm = gaf.TestSuiteGenerationAlgorithmFactory(
-        executor, MagicMock(ModuleTestCluster)
-    ).get_search_algorithm()
+    algorithm = gaf.TestSuiteGenerationAlgorithmFactory(executor, MagicMock(ModuleTestCluster)).get_search_algorithm()
     algorithm._logger = logger
     config.configuration.random.max_sequences_combined = 0
     config.configuration.random.max_sequence_length = 0
@@ -89,9 +83,7 @@ def test_random_test_cases_no_bounds(executor):
 def test_random_test_cases_with_bounds(executor):
     config.configuration.algorithm = config.Algorithm.RANDOM
     logger = MagicMock(Logger)
-    algorithm = gaf.TestSuiteGenerationAlgorithmFactory(
-        executor, MagicMock(ModuleTestCluster)
-    ).get_search_algorithm()
+    algorithm = gaf.TestSuiteGenerationAlgorithmFactory(executor, MagicMock(ModuleTestCluster)).get_search_algorithm()
     algorithm._logger = logger
     config.configuration.random.max_sequences_combined = 2
     config.configuration.random.max_sequence_length = 2
@@ -106,9 +98,7 @@ def test_random_test_cases_with_bounds(executor):
 
 def test_random_public_method(executor):
     config.configuration.algorithm = config.Algorithm.RANDOM
-    algorithm = gaf.TestSuiteGenerationAlgorithmFactory(
-        executor, MagicMock(ModuleTestCluster)
-    ).get_search_algorithm()
+    algorithm = gaf.TestSuiteGenerationAlgorithmFactory(executor, MagicMock(ModuleTestCluster)).get_search_algorithm()
     out_0 = MagicMock(GenericCallableAccessibleObject)
     out_1 = MagicMock(GenericAccessibleObject)
     out_2 = MagicMock(GenericCallableAccessibleObject)
@@ -126,9 +116,7 @@ def test_generate_sequence(has_exceptions, executor, default_test_case):
     executor.execute.return_value = exec_result
     test_cluster = MagicMock(ModuleTestCluster)
     test_cluster.accessible_objects_under_test = set()
-    algorithm = gaf.TestSuiteGenerationAlgorithmFactory(
-        executor, test_cluster
-    ).get_search_algorithm()
+    algorithm = gaf.TestSuiteGenerationAlgorithmFactory(executor, test_cluster).get_search_algorithm()
     algorithm._random_public_method = lambda _: None  # pragma: no cover
     default_test_case.add_statement(MagicMock(stmt.Statement, ret_val=MagicMock()))
     algorithm._random_test_cases = lambda _: [default_test_case]  # pragma: no cover
@@ -144,9 +132,7 @@ def test_generate_sequence_duplicate(executor, default_test_case):
     config.configuration.algorithm = config.Algorithm.RANDOM
     test_cluster = MagicMock(ModuleTestCluster)
     test_cluster.accessible_objects_under_test = set()
-    algorithm = gaf.TestSuiteGenerationAlgorithmFactory(
-        executor, test_cluster
-    ).get_search_algorithm()
+    algorithm = gaf.TestSuiteGenerationAlgorithmFactory(executor, test_cluster).get_search_algorithm()
     algorithm._random_public_method = lambda _: None  # pragma: no cover
     algorithm._random_test_cases = lambda _: [default_test_case]  # pragma: no cover
     assert isinstance(algorithm, RandomAlgorithm)

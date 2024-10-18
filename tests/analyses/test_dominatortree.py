@@ -60,16 +60,12 @@ LOAD_NAME 'print'
 LOAD_NAME 'test'
 POP_JUMP_IF_FALSE ProgramGraphNode" -> "ProgramGraphNode(-1)";
 }"""
-    assert bytes(dot_representation, "utf-8").decode("unicode_escape") == bytes(
-        graph, "utf-8"
-    ).decode("unicode_escape")
+    assert bytes(dot_representation, "utf-8").decode("unicode_escape") == bytes(graph, "utf-8").decode("unicode_escape")
     assert post_dominator_tree.entry_node.index == sys.maxsize
 
 
 def test_integration(small_control_flow_graph):
-    post_dominator_tree = DominatorTree.compute_post_dominator_tree(
-        small_control_flow_graph
-    )
+    post_dominator_tree = DominatorTree.compute_post_dominator_tree(small_control_flow_graph)
     dot_representation = post_dominator_tree.dot
     graph = """strict digraph  {
 "ProgramGraphNode(9223372036854775807)";
@@ -91,9 +87,7 @@ def test_integration(small_control_flow_graph):
 
 
 def test_integration_post_domination(larger_control_flow_graph):
-    post_dominator_tree = DominatorTree.compute_post_dominator_tree(
-        larger_control_flow_graph
-    )
+    post_dominator_tree = DominatorTree.compute_post_dominator_tree(larger_control_flow_graph)
     node = next(n for n in larger_control_flow_graph.nodes if n.index == 110)
     successors = post_dominator_tree.get_transitive_successors(node)
     successor_indices = {n.index for n in successors}

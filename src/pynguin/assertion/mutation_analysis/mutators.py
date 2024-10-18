@@ -9,6 +9,7 @@
 Based on https://github.com/se2p/mutpy-pynguin/blob/main/mutpy/controller.py
 and integrated in Pynguin.
 """
+
 from __future__ import annotations
 
 import abc

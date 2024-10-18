@@ -31,19 +31,12 @@ def test_rhs(test_case_mock, variable_reference_mock):
 
 
 def test_structural_hash(assignment_statement):
-    assert (
-        assignment_statement.structural_hash(
-            {assignment_statement.lhs.source: 0, assignment_statement.rhs: 1}
-        )
-        != 0
-    )
+    assert assignment_statement.structural_hash({assignment_statement.lhs.source: 0, assignment_statement.rhs: 1}) != 0
 
 
 def test_structural_hash_same(assignment_statement):
     memo = {assignment_statement.lhs.source: 0, assignment_statement.rhs: 1}
-    assert assignment_statement.structural_hash(
-        memo
-    ) == assignment_statement.structural_hash(memo)
+    assert assignment_statement.structural_hash(memo) == assignment_statement.structural_hash(memo)
 
 
 def test_structural_eq_same(assignment_statement):
@@ -60,9 +53,7 @@ def test_structural_eq_same(assignment_statement):
 
 
 def test_structural_eq_other_type(test_case_mock, variable_reference_mock):
-    statement = AssignmentStatement(
-        test_case_mock, variable_reference_mock, MagicMock(vr.VariableReference)
-    )
+    statement = AssignmentStatement(test_case_mock, variable_reference_mock, MagicMock(vr.VariableReference))
     assert not statement.structural_eq(test_case_mock, {})
 
 
@@ -88,9 +79,7 @@ def test_structural_eq_other_different_types(test_case_mock, lhs, rhs, res):
 
 
 def test_accept(test_case_mock, variable_reference_mock):
-    statement = AssignmentStatement(
-        test_case_mock, variable_reference_mock, variable_reference_mock
-    )
+    statement = AssignmentStatement(test_case_mock, variable_reference_mock, variable_reference_mock)
     visitor = MagicMock()
     statement.accept(visitor)
     visitor.visit_assignment_statement.assert_called_with(statement)
