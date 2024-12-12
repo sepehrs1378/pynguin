@@ -355,6 +355,8 @@ class TestSuiteGenerationAlgorithmFactory(GenerationAlgorithmFactory[tsc.TestSui
 
             if config.CoverageMetric.CHECKED in coverage_metrics:
                 fitness_functions.update(bg.create_checked_coverage_fitness_functions(self._executor))
+
+            # TODO!: add execution_time here?
             self._logger.info("Instantiated %d fitness functions", len(fitness_functions))
             return fitness_functions
         return OrderedSet()
@@ -370,6 +372,8 @@ class TestSuiteGenerationAlgorithmFactory(GenerationAlgorithmFactory[tsc.TestSui
             test_suite_ffs.update([ff.BranchDistanceTestSuiteFitnessFunction(self._executor)])
         if config.CoverageMetric.CHECKED in coverage_metrics:
             test_suite_ffs.update([ff.StatementCheckedTestSuiteFitnessFunction(self._executor)])
+        if config.CoverageMetric.EXECUTION_TIME in coverage_metrics:
+            test_suite_ffs.update([ff.ExecutionTimeTestSuiteFitnessFunction(self._executor)])
         return test_suite_ffs
 
     def _get_test_suite_coverage_functions(
@@ -383,6 +387,8 @@ class TestSuiteGenerationAlgorithmFactory(GenerationAlgorithmFactory[tsc.TestSui
             test_suite_ffs.update([ff.TestSuiteBranchCoverageFunction(self._executor)])
         if config.CoverageMetric.CHECKED in coverage_metrics:
             test_suite_ffs.update([ff.TestSuiteStatementCheckedCoverageFunction(self._executor)])
+        if config.CoverageMetric.EXECUTION_TIME in coverage_metrics:
+            test_suite_ffs.update([ff.TestSuiteExecutionTimeCoverageFunction(self._executor)])
         # do not add TestSuiteAssertionCheckedCoverageFunction here, since it must
         # be added and calculated after the assertion generation
         return test_suite_ffs

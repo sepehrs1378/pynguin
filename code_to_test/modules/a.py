@@ -1,13 +1,12 @@
-def order(x: int, y: int, z: int) -> str:
-    if x > y > z:
-        return "x > y > z"
-    elif y > x > z:
-        return "y > x > z"
-    elif x > z > y:
-        return "x > z > y"
-    elif y > z > x:
-        return "y > z > x"
-    elif z > x > y:
-        return "z > x > y"
+import time
+
+
+def is_none(x: int | None) -> int:
+    if x is None:
+        return -1
+    elif x == 1:
+        return 1
+    elif x == 2:
+        return 2
     else:
-        return "z > y > x"
+        return 3

@@ -18,6 +18,7 @@ import logging
 import os
 import sys
 import threading
+import time
 
 from abc import abstractmethod
 from collections.abc import Sized
@@ -777,6 +778,7 @@ class ExecutionTrace:
 class ExecutionResult:
     """Result of an execution."""
 
+    execution_time_ns: float = -1.0
     timeout: bool = False
     exceptions: dict[int, BaseException] = dataclasses.field(default_factory=dict, init=False)
     assertion_trace: at.AssertionTrace = dataclasses.field(default_factory=at.AssertionTrace, init=False)
@@ -2071,7 +2073,7 @@ class TestCaseExecutor(AbstractTestCaseExecutor):
         test_case: tc.TestCase,
     ) -> ExecutionResult:
         with (
-            contextlib.redirect_stdout(self._null_file),
+            # contextlib.redirect_stdout(self._null_file),
             contextlib.redirect_stderr(self._null_file),
         ):
             return_queue: Queue[ExecutionResult] = Queue()
@@ -2112,6 +2114,7 @@ class TestCaseExecutor(AbstractTestCaseExecutor):
         result = ExecutionResult()
         exec_ctx = ExecutionContext(self._module_provider)
         self._tracer.current_thread_identifier = threading.current_thread().ident
+        start_time = time.time_ns()
         for idx, statement in enumerate(test_case.statements):
             ast_node = self._before_statement_execution(statement, exec_ctx)
             exception = self.execute_ast(ast_node, exec_ctx)
@@ -2119,17 +2122,23 @@ class TestCaseExecutor(AbstractTestCaseExecutor):
             if exception is not None:
                 result.report_new_thrown_exception(idx, exception)
                 break
-        self._after_test_case_execution_inside_thread(test_case, result)
+            print(self._tracer.import_trace)
+        execution_time_ns = time.time_ns() - start_time
+        self._after_test_case_execution_inside_thread(test_case, result, execution_time_ns)
         result_queue.put(result)
 
-    def _after_test_case_execution_inside_thread(self, test_case: tc.TestCase, result: ExecutionResult) -> None:
+    def _after_test_case_execution_inside_thread(
+        self, test_case: tc.TestCase, result: ExecutionResult, execution_time_ns: float
+    ) -> None:
         """Collect the trace data after each executed test case.
 
         Args:
             test_case: The executed test case
             result: The execution result
+            execution_time_ns: The execution time of test case in nanoseconds
         """
         result.execution_trace = self._tracer.get_trace()
+        result.execution_time_ns = execution_time_ns
         for observer in self._observers:
             observer.after_test_case_execution_inside_thread(test_case, result)
 

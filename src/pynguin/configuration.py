@@ -151,6 +151,8 @@ class CoverageMetric(str, enum.Enum):
     """Calculate how many of the possible lines in the
     code are checked by an assertion."""
 
+    EXECUTION_TIME = "EXECUTION_TIME"
+
 
 class Selection(str, enum.Enum):
     """Different selection algorithms to select from."""
@@ -184,6 +186,9 @@ class StatisticsOutputConfiguration:
     coverage_metrics: list[CoverageMetric] = dataclasses.field(
         default_factory=lambda: [
             CoverageMetric.BRANCH,
+            # TODO!: I think we have to remove it and insert it some other way in the config.
+            #   It seems to work here, but it's not nice.
+            # CoverageMetric.EXECUTION_TIME,
         ]
     )
     """List of coverage metrics that are optimised during the search"""
@@ -529,6 +534,9 @@ class SearchAlgorithmConfiguration:
 
     number_of_mutations: int = 1
     """Number of mutations that should be applied in one breeding step."""
+
+    execution_time_coverage_threshold: int = 10000000  # Nano seconds
+    """If test case execution time is below this value, its execution time fitness is coveraged."""
 
 
 @dataclasses.dataclass

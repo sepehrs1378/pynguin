@@ -17,8 +17,10 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import TypeVar
+from typing_extensions import override
 
 import pynguin.utils.opcodes as op
+import pynguin.configuration as config
 
 from pynguin.slicer.dynamicslicer import AssertionSlicer
 from pynguin.slicer.dynamicslicer import DynamicSlicer
@@ -169,6 +171,39 @@ class BranchDistanceTestCaseFitnessFunction(TestCaseFitnessFunction):
         return False
 
 
+class MemoryUsageTestCaseFitnessFunction(TestCaseFitnessFunction):
+    def compute_fitness(self, individual) -> float:
+        pass
+
+    def compute_is_covered(self, individual) -> bool:
+        return False
+
+    def is_maximisation_function(self) -> bool:
+        return False
+
+
+class ExecutionTimeTestCaseFitnessFunction(TestCaseFitnessFunction):
+    """A fitness function for test case execution time."""
+
+    @override
+    def compute_fitness(self, individual) -> float:
+        result: ExecutionResult = self._run_test_case_chromosome(individual=individual)
+
+        return result.execution_time_ns
+
+    @override
+    def compute_is_covered(self, individual) -> bool:
+        # TODO!: Does coverage for time have a good meaning?
+        #   It seems yes. because if execution time is below sth, we can say it is enough and no further efforts are needed.
+        result: ExecutionResult = self._run_test_case_chromosome(individual=individual)
+
+        return result.execution_time_ns < config.configuration.search_algorithm.execution_time_coverage_threshold
+
+    @override
+    def is_maximisation_function(self) -> bool:
+        return False
+
+
 class TestSuiteFitnessFunction(TestSuiteChromosomeComputation, FitnessFunction, abc.ABC):
     """Base class for test suite fitness functions."""
 
@@ -199,6 +234,7 @@ class BranchDistanceTestSuiteFitnessFunction(TestSuiteFitnessFunction):
         self._excluded_false_predicates.update(exclude_false)
 
     def compute_fitness(self, individual) -> float:  # noqa: D102
+        # print("ts compute_fitness")
         results = self._run_test_suite_chromosome(individual)
         merged_trace = analyze_results(results)
         tracer = self._executor.tracer
@@ -212,6 +248,7 @@ class BranchDistanceTestSuiteFitnessFunction(TestSuiteFitnessFunction):
         )
 
     def compute_is_covered(self, individual) -> bool:  # noqa: D102
+        # print("ts compute_is_covered")
         results = self._run_test_suite_chromosome(individual)
         merged_trace = analyze_results(results)
         tracer = self._executor.tracer
@@ -225,6 +262,32 @@ class BranchDistanceTestSuiteFitnessFunction(TestSuiteFitnessFunction):
         )
 
     def is_maximisation_function(self) -> bool:  # noqa: D102
+        return False
+
+
+class ExecutionTimeTestSuiteFitnessFunction(TestSuiteFitnessFunction):
+    """A fitness function based on execution time."""
+
+    @override
+    def compute_fitness(self, individual) -> float:
+        results: list[ExecutionResult] = self._run_test_suite_chromosome(individual)
+
+        return statistics.mean(
+            max(r.execution_time_ns - config.configuration.search_algorithm.execution_time_coverage_threshold, 0)
+            for r in results
+        )
+
+    @override
+    def compute_is_covered(self, individual) -> bool:
+        results: list[ExecutionResult] = self._run_test_suite_chromosome(individual)
+
+        return all(
+            r.execution_time_ns < config.configuration.search_algorithm.execution_time_coverage_threshold
+            for r in results
+        )
+
+    @override
+    def is_maximisation_function(self) -> bool:
         return False
 
 
@@ -321,6 +384,17 @@ class TestCaseBranchCoverageFunction(TestCaseCoverageFunction):
         merged_trace = analyze_results([result])
         tracer = self._executor.tracer
         return compute_branch_coverage(merged_trace, tracer.get_subject_properties())
+
+
+class TestSuiteExecutionTimeCoverageFunction(TestSuiteCoverageFunction):
+    """Computes execution time coverage on test cases."""
+
+    @override
+    def compute_coverage(self, individual):
+        results: list[ExecutionResult] = self._run_test_suite_chromosome(individual)
+
+        coverage_threshold = config.configuration.search_algorithm.execution_time_coverage_threshold
+        return statistics.mean(min(1.0, coverage_threshold / r.execution_time_ns) for r in results)
 
 
 class TestSuiteLineCoverageFunction(TestSuiteCoverageFunction):
@@ -648,6 +722,7 @@ def analyze_results(results: list[ExecutionResult]) -> ExecutionTrace:
     Returns:
         the merged traces.
     """
+    # TODO!: should I handle execution time here?
     merged = ExecutionTrace()
     for result in results:
         trace = result.execution_trace
