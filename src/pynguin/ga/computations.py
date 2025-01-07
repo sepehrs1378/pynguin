@@ -171,24 +171,12 @@ class BranchDistanceTestCaseFitnessFunction(TestCaseFitnessFunction):
         return False
 
 
-class MemoryUsageTestCaseFitnessFunction(TestCaseFitnessFunction):
-    def compute_fitness(self, individual) -> float:
-        pass
-
-    def compute_is_covered(self, individual) -> bool:
-        return False
-
-    def is_maximisation_function(self) -> bool:
-        return False
-
-
 class ExecutionTimeTestCaseFitnessFunction(TestCaseFitnessFunction):
     """A fitness function for test case execution time."""
 
     @override
     def compute_fitness(self, individual) -> float:
         result: ExecutionResult = self._run_test_case_chromosome(individual=individual)
-
         return result.execution_time_ns
 
     @override
@@ -196,8 +184,25 @@ class ExecutionTimeTestCaseFitnessFunction(TestCaseFitnessFunction):
         # TODO!: Does coverage for time have a good meaning?
         #   It seems yes. because if execution time is below sth, we can say it is enough and no further efforts are needed.
         result: ExecutionResult = self._run_test_case_chromosome(individual=individual)
-
         return result.execution_time_ns < config.configuration.search_algorithm.execution_time_coverage_threshold
+
+    @override
+    def is_maximisation_function(self) -> bool:
+        return False
+
+
+class MemoryUsageTestCaseFitnessFunction(TestCaseFitnessFunction):
+    """A fitness function for test case memory usage."""
+
+    @override
+    def compute_fitness(self, individual) -> int:
+        result: ExecutionResult = self._run_test_case_chromosome(individual=individual)
+        return result.memory_usage
+
+    @override
+    def compute_is_covered(self, individual) -> bool:
+        result: ExecutionResult = self._run_test_case_chromosome(individual=individual)
+        return result.memory_usage < config.configuration.search_algorithm.memory_usage_coverage_threshold
 
     @override
     def is_maximisation_function(self) -> bool:
@@ -270,21 +275,35 @@ class ExecutionTimeTestSuiteFitnessFunction(TestSuiteFitnessFunction):
 
     @override
     def compute_fitness(self, individual) -> float:
-        results: list[ExecutionResult] = self._run_test_suite_chromosome(individual)
-
-        return statistics.mean(
-            max(r.execution_time_ns - config.configuration.search_algorithm.execution_time_coverage_threshold, 0)
-            for r in results
-        )
+        results: list[ExecutionResult] = self._run_test_suite_chromosome(individual=individual)
+        threshold = config.configuration.search_algorithm.execution_time_coverage_threshold
+        return statistics.mean(max(r.execution_time_ns - threshold, 0) for r in results)
 
     @override
     def compute_is_covered(self, individual) -> bool:
-        results: list[ExecutionResult] = self._run_test_suite_chromosome(individual)
+        results: list[ExecutionResult] = self._run_test_suite_chromosome(individual=individual)
+        threshold = config.configuration.search_algorithm.execution_time_coverage_threshold
+        return all(r.execution_time_ns < threshold for r in results)
 
-        return all(
-            r.execution_time_ns < config.configuration.search_algorithm.execution_time_coverage_threshold
-            for r in results
-        )
+    @override
+    def is_maximisation_function(self) -> bool:
+        return False
+
+
+class MemoryUsageTestSuiteFitnessFunction(TestSuiteFitnessFunction):
+    """A fitness function based on memory usage."""
+
+    @override
+    def compute_fitness(self, individual) -> int:
+        results: list[ExecutionResult] = self._run_test_suite_chromosome(individual=individual)
+        threshold = config.configuration.search_algorithm.memory_usage_coverage_threshold
+        return statistics.mean(max(r.memory_usage - threshold, 0) for r in results)
+
+    @override
+    def compute_is_covered(self, individual) -> bool:
+        results: list[ExecutionResult] = self._run_test_suite_chromosome(individual=individual)
+        threshold = config.configuration.search_algorithm.memory_usage_coverage_threshold
+        return all(r.memory_usage < threshold for r in results)
 
     @override
     def is_maximisation_function(self) -> bool:
@@ -390,11 +409,20 @@ class TestSuiteExecutionTimeCoverageFunction(TestSuiteCoverageFunction):
     """Computes execution time coverage on test cases."""
 
     @override
-    def compute_coverage(self, individual):
-        results: list[ExecutionResult] = self._run_test_suite_chromosome(individual)
+    def compute_coverage(self, individual) -> float:
+        results: list[ExecutionResult] = self._run_test_suite_chromosome(individual=individual)
+        threshold = config.configuration.search_algorithm.execution_time_coverage_threshold
+        return statistics.mean(min(1.0, threshold / r.execution_time_ns) for r in results)
 
-        coverage_threshold = config.configuration.search_algorithm.execution_time_coverage_threshold
-        return statistics.mean(min(1.0, coverage_threshold / r.execution_time_ns) for r in results)
+
+class TestSuiteMemroyUsageCoverageFunction(TestSuiteCoverageFunction):
+    """Computes memory usage coverage on test cases."""
+
+    @override
+    def compute_coverage(self, individual) -> float:
+        results: list[ExecutionResult] = self._run_test_suite_chromosome(individual=individual)
+        threshold = config.configuration.search_algorithm.memory_usage_coverage_threshold
+        return statistics.mean(min(1.0, threshold / r.memory_usage) for r in results)
 
 
 class TestSuiteLineCoverageFunction(TestSuiteCoverageFunction):

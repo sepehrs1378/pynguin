@@ -19,6 +19,7 @@ import os
 import sys
 import threading
 import time
+import psutil
 
 from abc import abstractmethod
 from collections.abc import Sized
@@ -779,6 +780,7 @@ class ExecutionResult:
     """Result of an execution."""
 
     execution_time_ns: float = -1.0
+    memory_usage: int = -1
     timeout: bool = False
     exceptions: dict[int, BaseException] = dataclasses.field(default_factory=dict, init=False)
     assertion_trace: at.AssertionTrace = dataclasses.field(default_factory=at.AssertionTrace, init=False)
@@ -870,7 +872,7 @@ class ExecutionResult:
         return shifted
 
     def __str__(self) -> str:
-        return f"ExecutionResult(exceptions: {self.exceptions}, " f"trace: {self.execution_trace})"
+        return f"ExecutionResult(exceptions: {self.exceptions}, trace: {self.execution_trace})"
 
     def __repr__(self) -> str:
         return str(self)
@@ -1290,9 +1292,9 @@ class ExecutionTracer:  # noqa: PLR0904
         assert predicate in self.subject_properties.existing_predicates, "Cannot update unknown predicate"
         assert distance_true >= 0.0, "True distance cannot be negative"
         assert distance_false >= 0.0, "False distance cannot be negative"
-        assert (distance_true == 0.0) ^ (
-            distance_false == 0.0
-        ), "Exactly one distance must be 0.0, i.e., one branch must be taken."
+        assert (distance_true == 0.0) ^ (distance_false == 0.0), (
+            "Exactly one distance must be 0.0, i.e., one branch must be taken."
+        )
         self._thread_local_state.trace.update_predicate_distances(
             distance_true=distance_true,
             distance_false=distance_false,
@@ -2073,6 +2075,7 @@ class TestCaseExecutor(AbstractTestCaseExecutor):
         test_case: tc.TestCase,
     ) -> ExecutionResult:
         with (
+            # NOTE!: I commented this to see thread outputs.
             # contextlib.redirect_stdout(self._null_file),
             contextlib.redirect_stderr(self._null_file),
         ):
@@ -2115,6 +2118,8 @@ class TestCaseExecutor(AbstractTestCaseExecutor):
         exec_ctx = ExecutionContext(self._module_provider)
         self._tracer.current_thread_identifier = threading.current_thread().ident
         start_time = time.time_ns()
+        process = psutil.Process(os.getpid())
+        before_memory_usage = process.memory_info().rss
         for idx, statement in enumerate(test_case.statements):
             ast_node = self._before_statement_execution(statement, exec_ctx)
             exception = self.execute_ast(ast_node, exec_ctx)
@@ -2122,13 +2127,16 @@ class TestCaseExecutor(AbstractTestCaseExecutor):
             if exception is not None:
                 result.report_new_thrown_exception(idx, exception)
                 break
-            print(self._tracer.import_trace)
         execution_time_ns = time.time_ns() - start_time
-        self._after_test_case_execution_inside_thread(test_case, result, execution_time_ns)
+        after_memory_usage = process.memory_info().rss
+        print(f"&& memory_usage: {after_memory_usage - before_memory_usage}")
+        self._after_test_case_execution_inside_thread(
+            test_case, result, execution_time_ns, after_memory_usage - before_memory_usage
+        )
         result_queue.put(result)
 
     def _after_test_case_execution_inside_thread(
-        self, test_case: tc.TestCase, result: ExecutionResult, execution_time_ns: float
+        self, test_case: tc.TestCase, result: ExecutionResult, execution_time_ns: float, memory_usage: int
     ) -> None:
         """Collect the trace data after each executed test case.
 
@@ -2136,9 +2144,11 @@ class TestCaseExecutor(AbstractTestCaseExecutor):
             test_case: The executed test case
             result: The execution result
             execution_time_ns: The execution time of test case in nanoseconds
+            memory_usage: The memory usage in bytes.
         """
         result.execution_trace = self._tracer.get_trace()
         result.execution_time_ns = execution_time_ns
+        result.memory_usage = memory_usage
         for observer in self._observers:
             observer.after_test_case_execution_inside_thread(test_case, result)
 

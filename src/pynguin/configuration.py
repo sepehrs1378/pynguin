@@ -153,6 +153,8 @@ class CoverageMetric(str, enum.Enum):
 
     EXECUTION_TIME = "EXECUTION_TIME"
 
+    MEMORY_USAGE = "MEMORY_USAGE"
+
 
 class Selection(str, enum.Enum):
     """Different selection algorithms to select from."""
@@ -536,7 +538,10 @@ class SearchAlgorithmConfiguration:
     """Number of mutations that should be applied in one breeding step."""
 
     execution_time_coverage_threshold: int = 10000000  # Nano seconds
-    """If test case execution time is below this value, its execution time fitness is coveraged."""
+    """If test case execution time is below this value, its execution time fitness is covered."""
+
+    memory_usage_coverage_threshold: int = 1024**2
+    """If test case execution memory usage is below this value, its memory usage fitness is covered."""
 
 
 @dataclasses.dataclass

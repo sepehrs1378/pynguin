@@ -374,6 +374,8 @@ class TestSuiteGenerationAlgorithmFactory(GenerationAlgorithmFactory[tsc.TestSui
             test_suite_ffs.update([ff.StatementCheckedTestSuiteFitnessFunction(self._executor)])
         if config.CoverageMetric.EXECUTION_TIME in coverage_metrics:
             test_suite_ffs.update([ff.ExecutionTimeTestSuiteFitnessFunction(self._executor)])
+        if config.CoverageMetric.MEMORY_USAGE in coverage_metrics:
+            test_suite_ffs.update([ff.MemoryUsageTestSuiteFitnessFunction(self._executor)])
         return test_suite_ffs
 
     def _get_test_suite_coverage_functions(
@@ -389,6 +391,9 @@ class TestSuiteGenerationAlgorithmFactory(GenerationAlgorithmFactory[tsc.TestSui
             test_suite_ffs.update([ff.TestSuiteStatementCheckedCoverageFunction(self._executor)])
         if config.CoverageMetric.EXECUTION_TIME in coverage_metrics:
             test_suite_ffs.update([ff.TestSuiteExecutionTimeCoverageFunction(self._executor)])
+        if config.CoverageMetric.MEMORY_USAGE in coverage_metrics:
+            test_suite_ffs.update([ff.TestSuiteMemroyUsageCoverageFunction(self._executor)])
+
         # do not add TestSuiteAssertionCheckedCoverageFunction here, since it must
         # be added and calculated after the assertion generation
         return test_suite_ffs
