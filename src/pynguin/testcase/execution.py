@@ -18,6 +18,8 @@ import logging
 import os
 import sys
 import threading
+import time
+import psutil
 
 from abc import abstractmethod
 from collections.abc import Sized
@@ -777,6 +779,8 @@ class ExecutionTrace:
 class ExecutionResult:
     """Result of an execution."""
 
+    execution_time: int = -1
+    # TODO!: memory_usage: int = -1
     timeout: bool = False
     exceptions: dict[int, BaseException] = dataclasses.field(default_factory=dict, init=False)
     assertion_trace: at.AssertionTrace = dataclasses.field(default_factory=at.AssertionTrace, init=False)
@@ -868,7 +872,7 @@ class ExecutionResult:
         return shifted
 
     def __str__(self) -> str:
-        return f"ExecutionResult(exceptions: {self.exceptions}, " f"trace: {self.execution_trace})"
+        return f"ExecutionResult(exceptions: {self.exceptions}, trace: {self.execution_trace})"
 
     def __repr__(self) -> str:
         return str(self)
@@ -1288,9 +1292,9 @@ class ExecutionTracer:  # noqa: PLR0904
         assert predicate in self.subject_properties.existing_predicates, "Cannot update unknown predicate"
         assert distance_true >= 0.0, "True distance cannot be negative"
         assert distance_false >= 0.0, "False distance cannot be negative"
-        assert (distance_true == 0.0) ^ (
-            distance_false == 0.0
-        ), "Exactly one distance must be 0.0, i.e., one branch must be taken."
+        assert (distance_true == 0.0) ^ (distance_false == 0.0), (
+            "Exactly one distance must be 0.0, i.e., one branch must be taken."
+        )
         self._thread_local_state.trace.update_predicate_distances(
             distance_true=distance_true,
             distance_false=distance_false,
@@ -2071,7 +2075,8 @@ class TestCaseExecutor(AbstractTestCaseExecutor):
         test_case: tc.TestCase,
     ) -> ExecutionResult:
         with (
-            contextlib.redirect_stdout(self._null_file),
+            # NOTE!: I commented this to see thread outputs.
+            # contextlib.redirect_stdout(self._null_file),
             contextlib.redirect_stderr(self._null_file),
         ):
             return_queue: Queue[ExecutionResult] = Queue()
@@ -2107,29 +2112,49 @@ class TestCaseExecutor(AbstractTestCaseExecutor):
         for observer in self._observers:
             observer.before_test_case_execution(test_case)
 
-    def _execute_test_case(self, test_case: tc.TestCase, result_queue: Queue) -> None:
+    def _execute_test_case(self, test_case: tc.TestCase, result_queue: Queue[ExecutionResult]) -> None:
         self._before_test_case_execution(test_case)
         result = ExecutionResult()
         exec_ctx = ExecutionContext(self._module_provider)
         self._tracer.current_thread_identifier = threading.current_thread().ident
+        total_exec_time = 0
+        # process = psutil.Process(os.getpid())
+        # before_memory_usage = process.memory_info().rss
         for idx, statement in enumerate(test_case.statements):
             ast_node = self._before_statement_execution(statement, exec_ctx)
-            exception = self.execute_ast(ast_node, exec_ctx)
+            exception, exec_time = self.execute_ast(ast_node, exec_ctx)
             self._after_statement_execution(statement, exec_ctx, exception)
+            total_exec_time += exec_time
             if exception is not None:
                 result.report_new_thrown_exception(idx, exception)
                 break
-        self._after_test_case_execution_inside_thread(test_case, result)
+        # TODO!: we want to measure mean memory usage. This doesn't count for memory used but released during execution.
+        # after_memory_usage = process.memory_info().rss
+        self._after_test_case_execution_inside_thread(
+            test_case,
+            result,
+            total_exec_time,
+            # after_memory_usage - before_memory_usage,
+        )
         result_queue.put(result)
 
-    def _after_test_case_execution_inside_thread(self, test_case: tc.TestCase, result: ExecutionResult) -> None:
+    def _after_test_case_execution_inside_thread(
+        self,
+        test_case: tc.TestCase,
+        result: ExecutionResult,
+        execution_time_ns: int,
+        # memory_usage: int,
+    ) -> None:
         """Collect the trace data after each executed test case.
 
         Args:
             test_case: The executed test case
             result: The execution result
+            execution_time_ns: The execution time of test case in nanoseconds
+            memory_usage: The memory usage in bytes.
         """
         result.execution_trace = self._tracer.get_trace()
+        result.execution_time = execution_time_ns
         for observer in self._observers:
             observer.after_test_case_execution_inside_thread(test_case, result)
 
@@ -2167,7 +2192,7 @@ class TestCaseExecutor(AbstractTestCaseExecutor):
         self,
         ast_node: ast.Module,
         exec_ctx: ExecutionContext,
-    ) -> BaseException | None:
+    ) -> tuple[BaseException | None, int]:
         """Execute the given ast_node in the given context.
 
         You can use this in an observer if you also need to execute an AST Node.
@@ -2186,16 +2211,19 @@ class TestCaseExecutor(AbstractTestCaseExecutor):
         if self._instrument:
             code = self._checked_transformer.instrument_module(code)
 
+        start_time = time.time_ns()
         try:
             exec(  # noqa: S102
                 code, exec_ctx.global_namespace, exec_ctx.local_namespace
             )
+            execution_time = time.time_ns() - start_time
         except BaseException as err:  # noqa: BLE001
+            execution_time = time.time_ns() - start_time
             failed_stmt = ast.unparse(ast_node)
             _LOGGER.debug("Failed to execute statement:\n%s%s", failed_stmt, err.args)
-            return err
+            return err, execution_time
 
-        return None
+        return None, execution_time
 
     def _after_statement_execution(
         self,

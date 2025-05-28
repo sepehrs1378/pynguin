@@ -15,7 +15,7 @@ import pynguin.ga.chromosomevisitor as cv
 import pynguin.ga.computations as ff
 
 
-class Chromosome(ABC):
+class Chromosome(ABC):  # noqa: PLR0904
     """An abstract base class for chromosomes."""
 
     def __init__(self, orig: Chromosome | None = None):
@@ -75,6 +75,9 @@ class Chromosome(ABC):
             fitness_function: A fitness function
         """
         self.computation_cache.add_fitness_function(fitness_function)
+
+    def add_constraint(self, constraint: ff.Constraint) -> None:
+        self.computation_cache.add_constraint(constraint)
 
     def get_coverage_functions(self) -> list[ff.CoverageFunction]:
         """Provide the currently configured coverage functions of this chromosome.
@@ -148,6 +151,9 @@ class Chromosome(ABC):
             The coverage value for the fitness function
         """
         return self.computation_cache.get_coverage_for(coverage_function)
+
+    def satisfies_constraints(self) -> bool:
+        return self.computation_cache.satisfies_constraints()
 
     @abstractmethod
     def cross_over(self, other: Chromosome, position1: int, position2: int) -> None:

@@ -16,13 +16,13 @@ from typing import TYPE_CHECKING
 
 import pynguin.configuration as config
 import pynguin.ga.algorithms.archive as arch
+import pynguin.ga.testcasechromosome as tcc
 
 from pynguin.ga.algorithms.generationalgorithm import GenerationAlgorithm
 from pynguin.utils import randomness
 
 
 if TYPE_CHECKING:
-    import pynguin.ga.testcasechromosome as tcc
     import pynguin.ga.testsuitechromosome as tsc
 
 
@@ -46,7 +46,7 @@ class Parameters:
         assert self.m >= 1
 
 
-class MIOAlgorithm(GenerationAlgorithm[arch.MIOArchive]):
+class MIOAlgorithm(GenerationAlgorithm[arch.MIOArchive, tcc.TestCaseChromosome]):
     """Implements MIO."""
 
     _logger = logging.getLogger(__name__)
@@ -128,6 +128,7 @@ class MIOAlgorithm(GenerationAlgorithm[arch.MIOArchive]):
             offspring = self.chromosome_factory.get_chromosome()
             self._current_mutations = 1
         else:
+            # NOTE!: No need to clone this. Archive does itself in get_solution().
             maybe_offspring = self._archive.get_solution()
             if maybe_offspring is None:
                 # Nothing in archive, so sample new one.
@@ -136,5 +137,11 @@ class MIOAlgorithm(GenerationAlgorithm[arch.MIOArchive]):
                 offspring = maybe_offspring
             offspring.mutate()
             self._current_mutations = 1
+
+        # TODO!: doc
+        if not offspring.satisfies_constraints():
+            self._logger.info("Constraints not satisfied")
+            return
+
         if self._archive.update([offspring]):
             self._solution = offspring

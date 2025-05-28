@@ -27,6 +27,7 @@ import json
 import logging
 import sys
 import threading
+import statistics
 
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -477,6 +478,17 @@ def _run() -> ReturnCode:
     algorithm: GenerationAlgorithm = _instantiate_test_generation_strategy(executor, test_cluster, constant_provider)
     _LOGGER.info("Start generating test cases")
     generation_result = algorithm.generate_tests()
+    exec_times = [
+        tcc.get_last_execution_result().execution_time * 1e-9 for tcc in generation_result.test_case_chromosomes
+    ]
+    _LOGGER.info(
+        "Execution Time: min=%s, max=%s, mean=%s, sum=%s, count=%s",
+        min(exec_times),
+        max(exec_times),
+        statistics.mean(exec_times),
+        sum(exec_times),
+        len(exec_times),
+    )
     if algorithm.resources_left():
         _LOGGER.info("Algorithm stopped before using all resources.")
     else:

@@ -151,6 +151,10 @@ class CoverageMetric(str, enum.Enum):
     """Calculate how many of the possible lines in the
     code are checked by an assertion."""
 
+    EXECUTION_TIME = "EXECUTION_TIME"
+
+    # TODO!: MEMORY_USAGE = "MEMORY_USAGE"
+
 
 class Selection(str, enum.Enum):
     """Different selection algorithms to select from."""
@@ -181,6 +185,8 @@ class StatisticsOutputConfiguration:
     timeline_interpolation: bool = True
     """Interpolate timeline values"""
 
+    # TODO!: now exec time and memory usage are considered coverage metrics but it's better to define a new variable
+    # config (like 'constraints').
     coverage_metrics: list[CoverageMetric] = dataclasses.field(
         default_factory=lambda: [
             CoverageMetric.BRANCH,
@@ -529,6 +535,12 @@ class SearchAlgorithmConfiguration:
 
     number_of_mutations: int = 1
     """Number of mutations that should be applied in one breeding step."""
+
+    test_suite_execution_time_limit: int = 1_000_000_000  # Nano seconds
+    """If test suite execution time is below this value, its execution time fitness is covered."""
+
+    test_case_execution_time_limit: int = 100_000_000  # Nano seconds
+    """If test case execution time is below this value, its execution time fitness is covered."""
 
 
 @dataclasses.dataclass

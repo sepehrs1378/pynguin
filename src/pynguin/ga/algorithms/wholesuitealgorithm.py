@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import logging
 
-from typing import TYPE_CHECKING
 from typing import cast
 
 import pynguin.configuration as config
@@ -21,16 +20,13 @@ import pynguin.ga.coveragegoals as bg
 from pynguin.ga.algorithms.generationalgorithm import GenerationAlgorithm
 from pynguin.utils import randomness
 from pynguin.utils.exceptions import ConstructionFailedException
-
-
-if TYPE_CHECKING:
-    import pynguin.ga.testsuitechromosome as tsc
+import pynguin.ga.testsuitechromosome as tsc
 
 # TODO(fk) instead of switching on 'use_archive' on two locations, we could
 # also create another subclass?
 
 
-class WholeSuiteAlgorithm(GenerationAlgorithm[arch.CoverageArchive]):
+class WholeSuiteAlgorithm(GenerationAlgorithm[arch.CoverageArchive, tsc.TestSuiteChromosome]):
     """Implements a whole-suite test generation algorithm similar to EvoSuite."""
 
     _logger = logging.getLogger(__name__)
@@ -66,6 +62,13 @@ class WholeSuiteAlgorithm(GenerationAlgorithm[arch.CoverageArchive]):
             offspring1 = parent1.clone()
             offspring2 = parent2.clone()
 
+            if not offspring1.satisfies_constraints():
+                self._logger.info("1st offspring doesn't satisfy constraints")
+                continue
+            if not offspring2.satisfies_constraints():
+                self._logger.info("2nd offspring doesn't satisfy constraints")
+                continue
+
             try:
                 if randomness.next_float() <= config.configuration.search_algorithm.crossover_rate:
                     self._crossover_function.cross_over(offspring1, offspring2)
@@ -98,10 +101,15 @@ class WholeSuiteAlgorithm(GenerationAlgorithm[arch.CoverageArchive]):
         self._sort_population()
 
     def _get_random_population(self) -> list[tsc.TestSuiteChromosome]:
-        population = []
-        for _ in range(config.configuration.search_algorithm.population):
+        population: list[tsc.TestSuiteChromosome] = []
+        iteration = 0
+        population_size = config.configuration.search_algorithm.population
+        while len(population) < population_size and iteration < 5 * population_size:
             chromosome = self._chromosome_factory.get_chromosome()
-            population.append(chromosome)
+            if chromosome.satisfies_constraints():
+                population.append(chromosome)
+            iteration += 1
+        self._logger.info("Initial population size: %d/%d", len(population), population_size)
         return population
 
     def _update_archive(self) -> None:

@@ -37,6 +37,7 @@ class TestCaseChromosomeFactory(cf.ChromosomeFactory[tcc.TestCaseChromosome]):
         test_factory: tf.TestFactory,
         test_case_factory: tcf.TestCaseFactory,
         fitness_functions: OrderedSet[ff.TestCaseFitnessFunction],
+        constrains: OrderedSet[ff.TestCaseConstraint],
     ) -> None:
         """Instantiates a new factory to create test case chromosomes.
 
@@ -50,12 +51,15 @@ class TestCaseChromosomeFactory(cf.ChromosomeFactory[tcc.TestCaseChromosome]):
         self._test_factory = test_factory
         self._test_case_factory = test_case_factory
         self._fitness_functions = fitness_functions
+        self._constraints = constrains
 
     def get_chromosome(self) -> tcc.TestCaseChromosome:  # noqa: D102
         test_case = self._test_case_factory.get_test_case()
         chrom = tcc.TestCaseChromosome(test_case=test_case, test_factory=self._test_factory)
         for func in self._fitness_functions:
             chrom.add_fitness_function(func)
+        for constraint in self._constraints:
+            chrom.add_constraint(constraint)
         return chrom
 
 

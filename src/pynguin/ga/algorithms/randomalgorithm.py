@@ -23,7 +23,6 @@ from pynguin.utils import randomness
 from pynguin.utils.exceptions import ConstructionFailedException
 from pynguin.utils.exceptions import GenerationException
 
-
 if TYPE_CHECKING:
     import pynguin.testcase.testcase as tc
 
@@ -42,11 +41,9 @@ class RandomAlgorithm(GenerationAlgorithm):
         for fitness_function in self._test_suite_fitness_functions:
             test_chromosome.add_fitness_function(fitness_function)
             failing_test_chromosome.add_fitness_function(fitness_function)
-
         for coverage_function in self._test_suite_coverage_functions:
             test_chromosome.add_coverage_function(coverage_function)
             failing_test_chromosome.add_coverage_function(coverage_function)
-
         combined_chromosome = self._combine_current_individual(test_chromosome, failing_test_chromosome)
 
         self.before_first_search_iteration(combined_chromosome)
@@ -90,6 +87,8 @@ class RandomAlgorithm(GenerationAlgorithm):
         # Select random test cases from existing ones to base generation on
         tests = self._random_test_cases([chromosome.test_case for chromosome in test_chromosome.test_case_chromosomes])
         new_test = tcc.TestCaseChromosome(dtc.DefaultTestCase(self.test_cluster))
+        for constraint in self.test_case_constraints:
+            new_test.add_constraint(constraint)
         for test in tests:
             new_test.test_case.append_test_case(test)
 
@@ -108,6 +107,11 @@ class RandomAlgorithm(GenerationAlgorithm):
         exec_result = self._executor.execute(new_test.test_case)
         new_test.set_last_execution_result(exec_result)
         new_test.changed = False
+
+        # TODO!: doc
+        if not new_test.satisfies_constraints():
+            self._logger.info("Constraints not satisfied")
+            return
 
         # Classify new test case and outputs
         if exec_result.timeout:

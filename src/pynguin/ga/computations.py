@@ -17,6 +17,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import TypeVar
+from typing_extensions import override
 
 import pynguin.utils.opcodes as op
 
@@ -33,6 +34,8 @@ if TYPE_CHECKING:
     from pynguin.testcase.execution import ExecutionResult
     from pynguin.testcase.execution import SubjectProperties
     from pynguin.testcase.statement import Statement
+    import pynguin.ga.testcasechromosome as tcc
+    import pynguin.ga.testsuitechromosome as tsc
 
 
 @dataclasses.dataclass(eq=False)
@@ -46,7 +49,7 @@ class ChromosomeComputation(abc.ABC):
 class TestCaseChromosomeComputation(ChromosomeComputation, abc.ABC):
     """A function that computes something on a test case chromosome."""
 
-    def _run_test_case_chromosome(self, individual) -> ExecutionResult:
+    def _run_test_case_chromosome(self, individual: tcc.TestCaseChromosome) -> ExecutionResult:
         """Runs a test suite and updates the execution results.
 
         Updates all test cases that were changed.
@@ -68,7 +71,7 @@ class TestCaseChromosomeComputation(ChromosomeComputation, abc.ABC):
 class TestSuiteChromosomeComputation(ChromosomeComputation, abc.ABC):
     """A function that computes something on a test suite chromosome."""
 
-    def _run_test_suite_chromosome(self, individual) -> list[ExecutionResult]:
+    def _run_test_suite_chromosome(self, individual: tsc.TestSuiteChromosome) -> list[ExecutionResult]:
         """Runs a test suite and updates the execution results.
 
         Updates all test cases that were changed.
@@ -134,7 +137,7 @@ class FitnessFunction:
 class TestCaseFitnessFunction(TestCaseChromosomeComputation, FitnessFunction, abc.ABC):
     """Base class for test case fitness functions."""
 
-    def __init__(self, executor, code_object_id: int):  # noqa: D107
+    def __init__(self, executor, code_object_id: int | None = None):  # noqa: D107
         super().__init__(executor)
         self._code_object_id = code_object_id
 
@@ -411,6 +414,7 @@ class ComputationCache:
         *,
         fitness_functions: list[FitnessFunction] | None = None,
         coverage_functions: list[CoverageFunction] | None = None,
+        constraints: list[Constraint] | None = None,
         fitness_cache: dict[FitnessFunction, float] | None = None,
         is_covered_cache: dict[FitnessFunction, bool] | None = None,
         coverage_cache: dict[CoverageFunction, float] | None = None,
@@ -418,6 +422,7 @@ class ComputationCache:
         self._chromosome = chromosome
         self._fitness_functions = fitness_functions or []
         self._coverage_functions = coverage_functions or []
+        self._constraints = constraints or []
         self._fitness_cache: dict[FitnessFunction, float] = fitness_cache or {}
         self._is_covered_cache: dict[FitnessFunction, bool] = is_covered_cache or {}
         self._coverage_cache: dict[CoverageFunction, float] = coverage_cache or {}
@@ -435,6 +440,7 @@ class ComputationCache:
             new_chromosome,
             fitness_functions=list(self._fitness_functions),
             coverage_functions=list(self._coverage_functions),
+            constraints=list(self._constraints),
             fitness_cache=dict(self._fitness_cache),
             is_covered_cache=dict(self._is_covered_cache),
             coverage_cache=dict(self._coverage_cache),
@@ -459,6 +465,14 @@ class ComputationCache:
         """
         assert not fitness_function.is_maximisation_function(), "Currently only minimization is supported"
         self._fitness_functions.append(fitness_function)
+
+    def get_constraints(self) -> list[Constraint]:
+        """TODO!: docstring"""
+        return self._constraints
+
+    def add_constraint(self, constraint: Constraint) -> None:
+        """TODO! docstring"""
+        self._constraints.append(constraint)
 
     def get_coverage_functions(self) -> list[CoverageFunction]:
         """Provide the currently configured coverage functions of this chromosome.
@@ -618,6 +632,9 @@ class ComputationCache:
             coverage_function,
         )
         return self._coverage_cache[coverage_function]
+
+    def satisfies_constraints(self) -> bool:
+        return all(c.is_satisfied(self._chromosome) for c in self._constraints)
 
 
 def normalise(value: float) -> float:
@@ -950,3 +967,52 @@ def compare(fitness_1: float, fitness_2: float) -> int:
     if fitness_1 > fitness_2:
         return 1
     return 0
+
+
+class Constraint:
+    def __init__(self, executor) -> None:
+        super().__init__(executor)
+
+    @abstractmethod
+    def is_satisfied(self, individual) -> bool:
+        pass
+
+
+class TestCaseConstraint(Constraint, TestCaseChromosomeComputation):
+    @abstractmethod
+    def is_satisfied(self, individual: tcc.TestCaseChromosome) -> bool:
+        pass
+
+
+class TestCaseExecutionTimeConstraint(TestCaseConstraint):
+    def __init__(self, executor, exec_time_limit: int) -> None:
+        super().__init__(executor)
+        self.exec_time_limit = exec_time_limit
+
+    @override
+    def is_satisfied(self, individual: tcc.TestCaseChromosome) -> bool:
+        result: ExecutionResult = self._run_test_case_chromosome(individual=individual)
+        return result.execution_time <= self.exec_time_limit
+
+
+# TODO!: add test case memory usage constraint
+
+
+class TestSuiteConstraint(Constraint, TestSuiteChromosomeComputation):
+    @abstractmethod
+    def is_satisfied(self, individual: tsc.TestSuiteChromosome) -> bool:
+        pass
+
+
+class TestSuiteExecutionTimeConstraint(TestSuiteConstraint):
+    def __init__(self, executor, exec_time_limit: int) -> None:
+        super().__init__(executor)
+        self.exec_time_limit = exec_time_limit
+
+    @override
+    def is_satisfied(self, individual: tsc.TestSuiteChromosome) -> bool:
+        results = self._run_test_suite_chromosome(individual=individual)
+        return sum(r.execution_time for r in results) <= self.exec_time_limit
+
+
+# TODO!: add test suite memory usage constraint

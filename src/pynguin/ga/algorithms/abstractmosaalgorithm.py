@@ -23,7 +23,7 @@ from pynguin.utils import randomness
 from pynguin.utils.exceptions import ConstructionFailedException
 
 
-class AbstractMOSAAlgorithm(GenerationAlgorithm[CoverageArchive], ABC):
+class AbstractMOSAAlgorithm(GenerationAlgorithm[CoverageArchive, tcc.TestCaseChromosome], ABC):
     """An abstract base implementation for MOSA and its derivatives."""
 
     _logger = logging.getLogger(__name__)
@@ -52,13 +52,13 @@ class AbstractMOSAAlgorithm(GenerationAlgorithm[CoverageArchive], ABC):
             # Apply mutation on offspring_1
             for _ in range(config.configuration.search_algorithm.number_of_mutations):
                 self._mutate(offspring_1)
-            if offspring_1.changed and offspring_1.size() > 0:
+            if offspring_1.changed and offspring_1.size() > 0 and offspring_1.satisfies_constraints():
                 offspring_population.append(offspring_1)
 
             # Apply mutation on offspring_2
             for _ in range(config.configuration.search_algorithm.number_of_mutations):
                 self._mutate(offspring_2)
-            if offspring_2.changed and offspring_2.size() > 0:
+            if offspring_2.changed and offspring_2.size() > 0 and offspring_2.satisfies_constraints():
                 offspring_population.append(offspring_2)
 
         # Add new randomly generated tests
@@ -74,7 +74,7 @@ class AbstractMOSAAlgorithm(GenerationAlgorithm[CoverageArchive], ABC):
                 tch = randomness.choice(self._archive.solutions).clone()
                 tch.mutate()
 
-            if tch.changed and tch.size() > 0:
+            if tch.changed and tch.size() > 0 and tch.satisfies_constraints():
                 offspring_population.append(tch)
 
         self._logger.debug("Number of offsprings = %d", len(offspring_population))
@@ -111,9 +111,14 @@ class AbstractMOSAAlgorithm(GenerationAlgorithm[CoverageArchive], ABC):
 
     def _get_random_population(self) -> list[tcc.TestCaseChromosome]:
         population: list[tcc.TestCaseChromosome] = []
-        for _ in range(config.configuration.search_algorithm.population):
+        iteration = 0
+        population_size = config.configuration.search_algorithm.population
+        while len(population) < population_size and iteration < 5 * population_size:
             chromosome = self._chromosome_factory.get_chromosome()
-            population.append(chromosome)
+            if chromosome.satisfies_constraints():
+                population.append(chromosome)
+            iteration += 1
+        self._logger.info("Initial population size: %d/%d", len(population), population_size)
         return population
 
     def _get_best_individuals(self) -> list[tcc.TestCaseChromosome]:

@@ -17,6 +17,7 @@ from typing import Generic
 from typing import TypeVar
 
 import pynguin.ga.algorithms.archive as arch
+import pynguin.ga.chromosome
 import pynguin.ga.testsuitechromosome as tsc
 
 from pynguin.utils.orderedset import OrderedSet
@@ -40,29 +41,32 @@ if TYPE_CHECKING:
     from pynguin.testcase.execution import AbstractTestCaseExecutor
 
 A = TypeVar("A", bound=arch.Archive)
+CH = TypeVar("CH", bound=pynguin.ga.chromosome.Chromosome)
 
 
-class GenerationAlgorithm(Generic[A]):  # noqa: PLR0904
+class GenerationAlgorithm(Generic[A, CH]):  # noqa: PLR0904
     """Provides an abstract base class for a test generation algorithm."""
 
     def __init__(self) -> None:  # noqa: D107
         self._archive: A
-        self._chromosome_factory: cf.ChromosomeFactory
+        self._chromosome_factory: cf.ChromosomeFactory[CH]
         self._executor: AbstractTestCaseExecutor
         self._test_cluster: ModuleTestCluster
         self._test_factory: tf.TestFactory
-        self._selection_function: SelectionFunction
+        self._selection_function: SelectionFunction[CH]
         self._stopping_conditions: list[StoppingCondition]
-        self._crossover_function: CrossOverFunction
-        self._ranking_function: RankingFunction
+        self._crossover_function: CrossOverFunction[CH]
+        self._ranking_function: RankingFunction[CH]
         self._test_case_fitness_functions: OrderedSet[ff.TestCaseFitnessFunction] = OrderedSet()
         self._test_suite_fitness_functions: OrderedSet[ff.TestSuiteFitnessFunction] = OrderedSet()
         self._test_suite_coverage_functions: OrderedSet[ff.TestSuiteCoverageFunction] = OrderedSet()
+        self._test_case_constraints: OrderedSet[ff.TestCaseConstraint] = OrderedSet()
+        self._test_suite_constraints: OrderedSet[ff.TestSuiteConstraint] = OrderedSet()
         self._branch_goal_pool: bg.BranchGoalPool
         self._search_observers: list[so.SearchObserver] = []
 
     @property
-    def chromosome_factory(self) -> cf.ChromosomeFactory:
+    def chromosome_factory(self) -> cf.ChromosomeFactory[CH]:
         """Provides the chromosome factory.
 
         Returns:
@@ -71,7 +75,7 @@ class GenerationAlgorithm(Generic[A]):  # noqa: PLR0904
         return self._chromosome_factory
 
     @chromosome_factory.setter
-    def chromosome_factory(self, chromosome_factory):
+    def chromosome_factory(self, chromosome_factory: cf.ChromosomeFactory[CH]):
         self._chromosome_factory = chromosome_factory
 
     @property
@@ -134,7 +138,7 @@ class GenerationAlgorithm(Generic[A]):  # noqa: PLR0904
         self._branch_goal_pool = branch_goal_pool
 
     @property
-    def selection_function(self) -> SelectionFunction:
+    def selection_function(self) -> SelectionFunction[CH]:
         """Provides the used selection function.
 
         Returns:
@@ -143,7 +147,7 @@ class GenerationAlgorithm(Generic[A]):  # noqa: PLR0904
         return self._selection_function
 
     @selection_function.setter
-    def selection_function(self, selection_function: SelectionFunction) -> None:
+    def selection_function(self, selection_function: SelectionFunction[CH]) -> None:
         self._selection_function = selection_function
 
     @property
@@ -160,7 +164,7 @@ class GenerationAlgorithm(Generic[A]):  # noqa: PLR0904
         self._stopping_conditions = stopping_conditions
 
     @property
-    def crossover_function(self) -> CrossOverFunction:
+    def crossover_function(self) -> CrossOverFunction[CH]:
         """Provides the used crossover function.
 
         Returns:
@@ -169,11 +173,11 @@ class GenerationAlgorithm(Generic[A]):  # noqa: PLR0904
         return self._crossover_function
 
     @crossover_function.setter
-    def crossover_function(self, crossover_function: CrossOverFunction) -> None:
+    def crossover_function(self, crossover_function: CrossOverFunction[CH]) -> None:
         self._crossover_function = crossover_function
 
     @property
-    def ranking_function(self) -> RankingFunction:
+    def ranking_function(self) -> RankingFunction[CH]:
         """Provides the used ranking function.
 
         Returns:
@@ -182,7 +186,7 @@ class GenerationAlgorithm(Generic[A]):  # noqa: PLR0904
         return self._ranking_function
 
     @ranking_function.setter
-    def ranking_function(self, ranking_function: RankingFunction):
+    def ranking_function(self, ranking_function: RankingFunction[CH]):
         self._ranking_function = ranking_function
 
     @property
@@ -238,6 +242,24 @@ class GenerationAlgorithm(Generic[A]):  # noqa: PLR0904
         test_suite_coverage_functions: OrderedSet[ff.TestSuiteCoverageFunction],
     ) -> None:
         self._test_suite_coverage_functions = test_suite_coverage_functions
+
+    @property
+    def test_case_constraints(self) -> OrderedSet[ff.TestCaseConstraint]:
+        # TODO!: docstring
+        return self._test_case_constraints
+
+    @test_case_constraints.setter
+    def test_case_constraints(self, test_case_constraints: OrderedSet[ff.TestCaseConstraint]) -> None:
+        self._test_case_constraints = test_case_constraints
+
+    @property
+    def test_suite_constraints(self) -> OrderedSet[ff.TestSuiteConstraint]:
+        # TODO!: docstring
+        return self._test_suite_constraints
+
+    @test_suite_constraints.setter
+    def test_suite_constraints(self, test_suite_constraints: OrderedSet[ff.TestSuiteConstraint]) -> None:
+        self._test_suite_constraints = test_suite_constraints
 
     def create_test_suite(self, population: Iterable[tcc.TestCaseChromosome]) -> tsc.TestSuiteChromosome:
         """Wraps a population of test-case chromosomes in a test-suite chromosome.

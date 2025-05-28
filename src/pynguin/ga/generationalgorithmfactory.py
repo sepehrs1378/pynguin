@@ -200,6 +200,7 @@ class TestSuiteGenerationAlgorithmFactory(GenerationAlgorithmFactory[tsc.TestSui
             strategy.test_factory,
             test_case_factory,
             strategy.test_case_fitness_functions,
+            strategy.test_case_constraints,
         )
         if config.configuration.seeding.seed_from_archive:
             self._logger.info("Using archive seeding")
@@ -217,6 +218,7 @@ class TestSuiteGenerationAlgorithmFactory(GenerationAlgorithmFactory[tsc.TestSui
             test_case_chromosome_factory,
             strategy.test_suite_fitness_functions,
             strategy.test_suite_coverage_functions,
+            strategy.test_suite_constraints,
         )
 
     def get_search_algorithm(self) -> GenerationAlgorithm:
@@ -230,6 +232,8 @@ class TestSuiteGenerationAlgorithmFactory(GenerationAlgorithmFactory[tsc.TestSui
         strategy.test_case_fitness_functions = self._get_test_case_fitness_functions(strategy)
         strategy.test_suite_fitness_functions = self._get_test_suite_fitness_functions()
         strategy.test_suite_coverage_functions = self._get_test_suite_coverage_functions()
+        strategy.test_case_constraints = self._get_test_case_constraints()
+        strategy.test_suite_constraints = self._get_test_suite_constraints()
         strategy.archive = self._get_archive(strategy)
 
         strategy.executor = self._executor
@@ -386,6 +390,24 @@ class TestSuiteGenerationAlgorithmFactory(GenerationAlgorithmFactory[tsc.TestSui
         # do not add TestSuiteAssertionCheckedCoverageFunction here, since it must
         # be added and calculated after the assertion generation
         return test_suite_ffs
+
+    def _get_test_case_constraints(self) -> OrderedSet[ff.TestCaseConstraint]:
+        test_case_constraints = OrderedSet[ff.TestCaseConstraint]()
+        coverage_metrics = config.configuration.statistics_output.coverage_metrics
+        if config.CoverageMetric.EXECUTION_TIME in coverage_metrics:
+            exec_time_limit = config.configuration.search_algorithm.test_case_execution_time_limit
+            test_case_constraints.add(ff.TestCaseExecutionTimeConstraint(self._executor, exec_time_limit))
+        # TODO!: add memory usage too
+        return test_case_constraints
+
+    def _get_test_suite_constraints(self) -> OrderedSet[ff.TestSuiteConstraint]:
+        test_suite_constraints = OrderedSet[ff.TestSuiteConstraint]()
+        coverage_metrics = config.configuration.statistics_output.coverage_metrics
+        if config.CoverageMetric.EXECUTION_TIME in coverage_metrics:
+            exec_time_limit = config.configuration.search_algorithm.test_suite_execution_time_limit
+            test_suite_constraints.add(ff.TestSuiteExecutionTimeConstraint(self._executor, exec_time_limit))
+        # TODO!: add memory usage too
+        return test_suite_constraints
 
     def _get_test_cluster(self, strategy: GenerationAlgorithm):
         search_alg = config.configuration.search_algorithm
