@@ -489,6 +489,15 @@ def _run() -> ReturnCode:
         sum(exec_times),
         len(exec_times),
     )
+    memory_usages = [tcc.get_last_execution_result().memory_usage for tcc in generation_result.test_case_chromosomes]
+    _LOGGER.info(
+        "Memory Usage: min=%s, max=%s, mean=%s, sum=%s, count=%s",
+        min(memory_usages),
+        max(memory_usages),
+        statistics.mean(memory_usages),
+        sum(memory_usages),
+        len(memory_usages),
+    )
     if algorithm.resources_left():
         _LOGGER.info("Algorithm stopped before using all resources.")
     else:

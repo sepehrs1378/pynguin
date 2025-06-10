@@ -393,20 +393,24 @@ class TestSuiteGenerationAlgorithmFactory(GenerationAlgorithmFactory[tsc.TestSui
 
     def _get_test_case_constraints(self) -> OrderedSet[ff.TestCaseConstraint]:
         test_case_constraints = OrderedSet[ff.TestCaseConstraint]()
-        coverage_metrics = config.configuration.statistics_output.coverage_metrics
-        if config.CoverageMetric.EXECUTION_TIME in coverage_metrics:
+        constraints = config.configuration.search_algorithm.constraints
+        if config.Constraint.EXECUTION_TIME in constraints:
             exec_time_limit = config.configuration.search_algorithm.test_case_execution_time_limit
             test_case_constraints.add(ff.TestCaseExecutionTimeConstraint(self._executor, exec_time_limit))
-        # TODO!: add memory usage too
+        if config.Constraint.MEMORY_USAGE in constraints:
+            mem_usage_limit = config.configuration.search_algorithm.test_case_memory_usage_limit
+            test_case_constraints.add(ff.TestCaseMemoryUsageConstraint(self._executor, mem_usage_limit))
         return test_case_constraints
 
     def _get_test_suite_constraints(self) -> OrderedSet[ff.TestSuiteConstraint]:
         test_suite_constraints = OrderedSet[ff.TestSuiteConstraint]()
-        coverage_metrics = config.configuration.statistics_output.coverage_metrics
-        if config.CoverageMetric.EXECUTION_TIME in coverage_metrics:
+        constraints = config.configuration.search_algorithm.constraints
+        if config.Constraint.EXECUTION_TIME in constraints:
             exec_time_limit = config.configuration.search_algorithm.test_suite_execution_time_limit
             test_suite_constraints.add(ff.TestSuiteExecutionTimeConstraint(self._executor, exec_time_limit))
-        # TODO!: add memory usage too
+        if config.Constraint.MEMORY_USAGE in constraints:
+            mem_usage_limit = config.configuration.search_algorithm.test_case_memory_usage_limit
+            test_suite_constraints.add(ff.TestSuiteMemoryUsageConstraint(self._executor, mem_usage_limit))
         return test_suite_constraints
 
     def _get_test_cluster(self, strategy: GenerationAlgorithm):

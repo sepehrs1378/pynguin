@@ -19,7 +19,7 @@ import os
 import sys
 import threading
 import time
-import psutil
+import statistics
 
 from abc import abstractmethod
 from collections.abc import Sized
@@ -39,6 +39,8 @@ from typing import cast
 
 # Needs to be loaded, i.e., in sys.modules for the execution of assertions to work.
 import pytest  # noqa: F401
+import memory_profiler
+import tracemalloc
 
 from bytecode import BasicBlock
 from bytecode import CellVar
@@ -780,7 +782,7 @@ class ExecutionResult:
     """Result of an execution."""
 
     execution_time: int = -1
-    # TODO!: memory_usage: int = -1
+    memory_usage: float = -1
     timeout: bool = False
     exceptions: dict[int, BaseException] = dataclasses.field(default_factory=dict, init=False)
     assertion_trace: at.AssertionTrace = dataclasses.field(default_factory=at.AssertionTrace, init=False)
@@ -2114,12 +2116,23 @@ class TestCaseExecutor(AbstractTestCaseExecutor):
 
     def _execute_test_case(self, test_case: tc.TestCase, result_queue: Queue[ExecutionResult]) -> None:
         self._before_test_case_execution(test_case)
+        self._tracer.current_thread_identifier = threading.current_thread().ident
+
+        tracemalloc.start()
+        result, total_exec_time = self._run_test_case_statements(test_case)
+        # TODO!: subtract current memory used from peak memory usage?
+        peak_memory_usage = tracemalloc.get_traced_memory()[1]
+        tracemalloc.stop()
+
+        self._after_test_case_execution_inside_thread(
+            test_case=test_case, result=result, execution_time=total_exec_time, memory_usage=peak_memory_usage
+        )
+        result_queue.put(result)
+
+    def _run_test_case_statements(self, test_case: tc.TestCase):
         result = ExecutionResult()
         exec_ctx = ExecutionContext(self._module_provider)
-        self._tracer.current_thread_identifier = threading.current_thread().ident
         total_exec_time = 0
-        # process = psutil.Process(os.getpid())
-        # before_memory_usage = process.memory_info().rss
         for idx, statement in enumerate(test_case.statements):
             ast_node = self._before_statement_execution(statement, exec_ctx)
             exception, exec_time = self.execute_ast(ast_node, exec_ctx)
@@ -2128,33 +2141,22 @@ class TestCaseExecutor(AbstractTestCaseExecutor):
             if exception is not None:
                 result.report_new_thrown_exception(idx, exception)
                 break
-        # TODO!: we want to measure mean memory usage. This doesn't count for memory used but released during execution.
-        # after_memory_usage = process.memory_info().rss
-        self._after_test_case_execution_inside_thread(
-            test_case,
-            result,
-            total_exec_time,
-            # after_memory_usage - before_memory_usage,
-        )
-        result_queue.put(result)
+        return result, total_exec_time
 
     def _after_test_case_execution_inside_thread(
-        self,
-        test_case: tc.TestCase,
-        result: ExecutionResult,
-        execution_time_ns: int,
-        # memory_usage: int,
+        self, test_case: tc.TestCase, result: ExecutionResult, execution_time: int, memory_usage: float
     ) -> None:
         """Collect the trace data after each executed test case.
 
         Args:
             test_case: The executed test case
             result: The execution result
-            execution_time_ns: The execution time of test case in nanoseconds
-            memory_usage: The memory usage in bytes.
+            execution_time: The execution time of test case in nanoseconds
+            memory_usage: The mean memory usage multiplied by execution time
         """
         result.execution_trace = self._tracer.get_trace()
-        result.execution_time = execution_time_ns
+        result.execution_time = execution_time
+        result.memory_usage = memory_usage
         for observer in self._observers:
             observer.after_test_case_execution_inside_thread(test_case, result)
 

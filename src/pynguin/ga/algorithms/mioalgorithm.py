@@ -138,7 +138,6 @@ class MIOAlgorithm(GenerationAlgorithm[arch.MIOArchive, tcc.TestCaseChromosome])
             offspring.mutate()
             self._current_mutations = 1
 
-        # TODO!: doc
         if not offspring.satisfies_constraints():
             self._logger.info("Constraints not satisfied")
             return

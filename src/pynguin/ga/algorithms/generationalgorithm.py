@@ -245,7 +245,7 @@ class GenerationAlgorithm(Generic[A, CH]):  # noqa: PLR0904
 
     @property
     def test_case_constraints(self) -> OrderedSet[ff.TestCaseConstraint]:
-        # TODO!: docstring
+        """Returns the test case constraints."""
         return self._test_case_constraints
 
     @test_case_constraints.setter
@@ -254,7 +254,7 @@ class GenerationAlgorithm(Generic[A, CH]):  # noqa: PLR0904
 
     @property
     def test_suite_constraints(self) -> OrderedSet[ff.TestSuiteConstraint]:
-        # TODO!: docstring
+        """Returns the test suite constraints."""
         return self._test_suite_constraints
 
     @test_suite_constraints.setter

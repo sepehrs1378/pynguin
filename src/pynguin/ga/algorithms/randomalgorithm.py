@@ -108,7 +108,6 @@ class RandomAlgorithm(GenerationAlgorithm):
         new_test.set_last_execution_result(exec_result)
         new_test.changed = False
 
-        # TODO!: doc
         if not new_test.satisfies_constraints():
             self._logger.info("Constraints not satisfied")
             return

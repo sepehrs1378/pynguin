@@ -151,10 +151,6 @@ class CoverageMetric(str, enum.Enum):
     """Calculate how many of the possible lines in the
     code are checked by an assertion."""
 
-    EXECUTION_TIME = "EXECUTION_TIME"
-
-    # TODO!: MEMORY_USAGE = "MEMORY_USAGE"
-
 
 class Selection(str, enum.Enum):
     """Different selection algorithms to select from."""
@@ -185,8 +181,6 @@ class StatisticsOutputConfiguration:
     timeline_interpolation: bool = True
     """Interpolate timeline values"""
 
-    # TODO!: now exec time and memory usage are considered coverage metrics but it's better to define a new variable
-    # config (like 'constraints').
     coverage_metrics: list[CoverageMetric] = dataclasses.field(
         default_factory=lambda: [
             CoverageMetric.BRANCH,
@@ -467,6 +461,14 @@ class TestCreationConfiguration:
     of only modifiers for that type. Expects values in [0, 1]."""
 
 
+class Constraint(str, enum.Enum):
+    """The different available constraints."""
+
+    EXECUTION_TIME = "EXECUTION_TIME"
+
+    MEMORY_USAGE = "MEMORY_USAGE"
+
+
 @dataclasses.dataclass
 class SearchAlgorithmConfiguration:
     """General configuration for search algorithms."""
@@ -536,11 +538,20 @@ class SearchAlgorithmConfiguration:
     number_of_mutations: int = 1
     """Number of mutations that should be applied in one breeding step."""
 
+    constraints: list[Constraint] = dataclasses.field(default_factory=lambda: [])
+    """The list of constraints that we check for the test cases (test suites)."""
+
     test_suite_execution_time_limit: int = 1_000_000_000  # Nano seconds
-    """If test suite execution time is below this value, its execution time fitness is covered."""
+    """If test suite execution time is below this value, it satisfies execution time constraint."""
 
     test_case_execution_time_limit: int = 100_000_000  # Nano seconds
-    """If test case execution time is below this value, its execution time fitness is covered."""
+    """If test case execution time is below this value, it satisfies execution time constraint."""
+
+    test_suite_memory_usage_limit: int = 200000 # Bytes
+    """If test suite memory usage is below this value, it satisfies memory usage constraint."""
+
+    test_case_memory_usage_limit: int = 20000 # Bytes
+    """If test case memory usage is below this value, it satisfies memory usage constraint."""
 
 
 @dataclasses.dataclass
@@ -567,7 +578,7 @@ class StoppingConfiguration:
     maximum_iterations: int = -1
     """Maximum iterations"""
 
-    maximum_test_execution_timeout: int = 5
+    maximum_test_execution_timeout: int = 20  # NOTE!: Changed from 5 to 1000
     """The maximum time (in seconds) after which a test case times out."""
 
     maximum_coverage: int = 100
@@ -586,7 +597,7 @@ class StoppingConfiguration:
     """Minimum iterations without a coverage change to stop early.  Expects values
     larger than 0; also requires the setting of minimum_coverage."""
 
-    test_execution_time_per_statement: int = 1
+    test_execution_time_per_statement: int = 5  # NOTE!: Changed from 1 to 1000
     """The time (in seconds) per statement that a test is allowed to run
     (up to maximum_test_execution_timeout)."""
 

@@ -64,41 +64,8 @@ class DynaMOSAAlgorithm(AbstractMOSAAlgorithm):
 
         self.before_first_search_iteration(self.create_test_suite(self._archive.solutions))
         while self.resources_left() and len(self._archive.uncovered_goals) > 0:
-            # TODO!: delete commented these lines.
-            # orig_population = copy.copy(self._population)
-            # orig_on_target_covered_callbacks = copy.copy(self._archive._on_target_covered_callbacks)
-            # archive_orig_covered = copy.copy(self._archive._covered)
-            # archive_orig_uncovered = copy.copy(self._archive._uncovered)
-            # archive_orig_objectives = copy.copy(self._archive._objectives)
-
             self.evolve()
             self.after_search_iteration(self.create_test_suite(self._archive.solutions))
-
-            # TODO!: delete commented these lines.
-            # test_suite = self.create_test_suite(
-            #     self._archive.solutions if len(self._archive.solutions) > 0 else self._get_best_individuals()
-            # )
-            # exec_time_cf = next(
-            #     (
-            #         cf
-            #         for cf in test_suite.get_coverage_functions()
-            #         if isinstance(cf, ff.TestSuiteExecutionTimeCoverageFunction)
-            #     ),
-            #     None,
-            # )
-            # if exec_time_cf is None:
-            #     continue
-            # cov = test_suite.get_coverage_for(coverage_function=exec_time_cf)
-            # # TODO!: maybe I can present a check better than this. For example, ignore test cases that take too long
-            # #   to run.
-            # if cov < 1.0:
-            #     self._logger.info(f"Test suite too slow: coverage={cov}")
-            #     # Revert to the state to before the evolution if we surpass execution time limit.
-            #     self._population = orig_population
-            #     self._archive._on_target_covered_callbacks = orig_on_target_covered_callbacks
-            #     self._archive._covered = archive_orig_covered
-            #     self._archive._uncovered = archive_orig_uncovered
-            #     self._archive._objectives = archive_orig_objectives
 
         self.after_search_finish()
         return self.create_test_suite(

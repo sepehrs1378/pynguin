@@ -50,19 +50,18 @@ class TestCaseChromosomeComputation(ChromosomeComputation, abc.ABC):
     """A function that computes something on a test case chromosome."""
 
     def _run_test_case_chromosome(self, individual: tcc.TestCaseChromosome) -> ExecutionResult:
-        """Runs a test suite and updates the execution results.
-
-        Updates all test cases that were changed.
+        """Runs a test case and updates the execution results.
 
         Args:
             individual: The individual to run
 
         Returns:
-            A list of execution results
+            An execution result
         """
         if individual.changed or individual.get_last_execution_result() is None:
             individual.set_last_execution_result(self._executor.execute(individual.test_case))
             individual.changed = False
+            individual.invalidate_cache()
         result = individual.get_last_execution_result()
         assert result is not None
         return result
@@ -467,11 +466,11 @@ class ComputationCache:
         self._fitness_functions.append(fitness_function)
 
     def get_constraints(self) -> list[Constraint]:
-        """TODO!: docstring"""
+        """Returns the configured constraints of this chromosome."""
         return self._constraints
 
     def add_constraint(self, constraint: Constraint) -> None:
-        """TODO! docstring"""
+        """Adds the given constraint."""
         self._constraints.append(constraint)
 
     def get_coverage_functions(self) -> list[CoverageFunction]:
@@ -991,11 +990,19 @@ class TestCaseExecutionTimeConstraint(TestCaseConstraint):
 
     @override
     def is_satisfied(self, individual: tcc.TestCaseChromosome) -> bool:
-        result: ExecutionResult = self._run_test_case_chromosome(individual=individual)
+        result = self._run_test_case_chromosome(individual=individual)
         return result.execution_time <= self.exec_time_limit
 
 
-# TODO!: add test case memory usage constraint
+class TestCaseMemoryUsageConstraint(TestCaseConstraint):
+    def __init__(self, executor, mem_usage_limit: int) -> None:
+        super().__init__(executor)
+        self.mem_usage_limit = mem_usage_limit
+
+    @override
+    def is_satisfied(self, individual: tcc.TestCaseChromosome) -> bool:
+        result = self._run_test_case_chromosome(individual=individual)
+        return result.memory_usage <= self.mem_usage_limit
 
 
 class TestSuiteConstraint(Constraint, TestSuiteChromosomeComputation):
@@ -1015,4 +1022,12 @@ class TestSuiteExecutionTimeConstraint(TestSuiteConstraint):
         return sum(r.execution_time for r in results) <= self.exec_time_limit
 
 
-# TODO!: add test suite memory usage constraint
+class TestSuiteMemoryUsageConstraint(TestSuiteConstraint):
+    def __init__(self, executor, exec_time_limit: int) -> None:
+        super().__init__(executor)
+        self.exec_time_limit = exec_time_limit
+
+    @override
+    def is_satisfied(self, individual: tsc.TestSuiteChromosome) -> bool:
+        results = self._run_test_suite_chromosome(individual=individual)
+        return statistics.mean(r.memory_usage for r in results) <= self.exec_time_limit

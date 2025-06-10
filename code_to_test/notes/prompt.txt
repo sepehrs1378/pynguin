@@ -1,0 +1,155 @@
+import numpy as np
+import random
+from dataclasses import dataclass
+
+
+@dataclass
+class Image:
+    width: int
+    height: int
+    channels: int
+    pixels: np.ndarray
+    metadata: dict[str, str | float]
+
+
+class ImageProcessor:
+    def __init__(self):
+        self._intermediate_buffers: list[np.ndarray] = []
+        self._cache: dict[str, np.ndarray] = {}
+        self._current_workspace: np.ndarray | None = None
+
+    def create_random_image(self, width: int = 64, height: int = 64, channels: int = 3) -> Image:
+        pixels = np.random.rand(height, width, channels)
+        metadata = {"source": "synthetic", "generated_at": "now", "color_space": "RGB"}
+        return Image(width, height, channels, pixels, metadata)
+
+    def process_image(self, image: Image, operations: list[str], quality: str = "medium") -> Image:
+        quality_levels = {"low": 1, "medium": 2, "high": 3, "ultra": 4}
+        if quality not in quality_levels:
+            raise ValueError(f"Invalid quality level: {quality}")
+
+        downscale_factor = 1.0 / quality_levels[quality]
+        kernel_size = quality_levels[quality] * 2 + 1
+        iterations = quality_levels[quality]
+
+        working_image = image
+        for op in operations:
+            if op == "enhance":
+                working_image = self._enhance_image(working_image, kernel_size, iterations)
+            elif op == "denoise":
+                working_image = self._denoise_image(working_image, quality_levels[quality])
+            elif op == "segment":
+                working_image = self._segment_image(working_image, downscale_factor)
+            elif op == "transform":
+                working_image = self._transform_image(working_image, quality_levels[quality])
+            else:
+                raise ValueError(f"Unknown operation: {op}")
+
+        if len(self._intermediate_buffers) > 5:
+            self._intermediate_buffers.clear()
+
+        return working_image
+
+    def _enhance_image(self, image: Image, kernel_size: int, iterations: int) -> Image:
+        kernel = np.random.randn(kernel_size, kernel_size) / (kernel_size**2)
+        processed_channels = []
+        for c in range(image.channels):
+            channel_data = image.pixels[:, :, c]
+            result = channel_data.copy()
+            for _ in range(iterations):
+                result = self._apply_convolution(result, kernel)
+                if iterations > 2:
+                    self._intermediate_buffers.append(result.copy())
+            processed_channels.append(result)
+        processed_pixels = np.stack(processed_channels, axis=-1)
+        return Image(image.width, image.height, image.channels, processed_pixels, image.metadata)
+
+    def _denoise_image(self, image: Image, strength: int) -> Image:
+        denoised = image.pixels.copy()
+        for _ in range(strength):
+            denoised = self._apply_bilateral_filter(denoised)
+        self._current_workspace = denoised.copy()
+        return Image(image.width, image.height, image.channels, denoised, image.metadata)
+
+    def _apply_convolution(self, data: np.ndarray, kernel: np.ndarray) -> np.ndarray:
+        pad = kernel.shape[0] // 2
+        padded = np.pad(data, pad, mode="reflect")
+        result = np.zeros_like(data)
+        for i in range(data.shape[0]):
+            for j in range(data.shape[1]):
+                region = padded[i : i + kernel.shape[0], j : j + kernel.shape[1]]
+                result[i, j] = np.sum(region * kernel)
+        return result
+
+    def _apply_bilateral_filter(self, image: np.ndarray) -> np.ndarray:
+        result = image.copy()
+        diameter = 5
+        sigma_color = 0.1
+        sigma_space = 5
+        pad = diameter // 2
+        padded = np.pad(image, ((pad, pad), (pad, pad), (0, 0)), mode="reflect")
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                region = padded[i : i + diameter, j : j + diameter, :]
+                center = padded[i + pad, j + pad, :]
+                diff = region - center
+                color_weight = np.exp(-np.sum(diff**2, axis=2) / (2 * sigma_color**2))
+                y, x = np.ogrid[-pad : pad + 1, -pad : pad + 1]
+                space_weight = np.exp(-(x**2 + y**2) / (2 * sigma_space**2))
+                combined_weight = color_weight * space_weight
+                combined_weight = combined_weight[..., np.newaxis]
+                result[i, j] = np.sum(region * combined_weight, axis=(0, 1)) / np.sum(combined_weight)
+        return result
+
+    def _segment_image(self, image: Image, scale_factor: float) -> Image:
+        resized = self._resize_image(image.pixels, scale_factor) if scale_factor < 1.0 else image.pixels
+        mask = (resized.mean(axis=2) > 0.5).astype(np.uint8)
+        segmented = image.pixels.copy()
+        segmented[mask == 0] = 0
+        return Image(image.width, image.height, image.channels, segmented, image.metadata)
+
+    def _transform_image(self, image: Image, complexity: int) -> Image:
+        transformed = image.pixels.copy()
+        for _ in range(complexity):
+            angle = random.uniform(0, 2 * np.pi)
+            scale = random.uniform(0.8, 1.2)
+            tx = random.uniform(-0.1, 0.1) * image.width
+            ty = random.uniform(-0.1, 0.1) * image.height
+            transform = np.array([
+                [scale * np.cos(angle), -scale * np.sin(angle), tx],
+                [scale * np.sin(angle), scale * np.cos(angle), ty],
+            ])
+            coords = np.indices((image.height, image.width)).reshape(2, -1)
+            coords = np.vstack((coords, np.ones((1, coords.shape[1]))))
+            new_coords = transform @ coords
+            new_coords = new_coords.round().astype(int)
+            new_x, new_y = new_coords[0], new_coords[1]
+            valid = (0 <= new_x) & (new_x < image.width) & (0 <= new_y) & (new_y < image.height)
+            result = np.zeros_like(transformed)
+            result[coords[1, valid], coords[0, valid]] = transformed[new_y[valid], new_x[valid]]
+            transformed = result
+            if complexity > 2:
+                self._intermediate_buffers.append(transformed.copy())
+        return Image(image.width, image.height, image.channels, transformed, image.metadata)
+
+    def _resize_image(self, image: np.ndarray, factor: float) -> np.ndarray:
+        new_shape = (int(image.shape[0] * factor), int(image.shape[1] * factor), image.shape[2])
+        resized = np.zeros(new_shape, dtype=image.dtype)
+        for i in range(new_shape[0]):
+            for j in range(new_shape[1]):
+                src_x = int(i / factor)
+                src_y = int(j / factor)
+                resized[i, j] = image[src_x, src_y]
+        return resized
+
+    def clear_cache(self) -> None:
+        self._intermediate_buffers.clear()
+        self._cache.clear()
+        self._current_workspace = None
+
+
+it is a program that i want to test my extended pynguin framework on it
+pynguin should be able to generate test cases with an upper limit for memory usage
+change the code so it doesn't use numpy or other alike external libraries
+is the memory usage of the program dependant on inputs enough? it should vary based on inputs using branches or etc
+use list, dict, etc instead of List, Dict, etc
