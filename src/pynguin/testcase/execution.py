@@ -781,8 +781,8 @@ class ExecutionTrace:
 class ExecutionResult:
     """Result of an execution."""
 
-    execution_time: int = -1
-    memory_usage: float = -1
+    execution_time: int = -1  # Nano seconds
+    peak_memory_usage: float = -1  # Bytes
     timeout: bool = False
     exceptions: dict[int, BaseException] = dataclasses.field(default_factory=dict, init=False)
     assertion_trace: at.AssertionTrace = dataclasses.field(default_factory=at.AssertionTrace, init=False)
@@ -2135,12 +2135,12 @@ class TestCaseExecutor(AbstractTestCaseExecutor):
         tracemalloc.stop()
 
         self._after_test_case_execution_inside_thread(
-            test_case=test_case, result=result, execution_time=total_exec_time, memory_usage=peak_memory_usage
+            test_case=test_case, result=result, execution_time=total_exec_time, peak_memory_usage=peak_memory_usage
         )
         result_queue.put(result)
 
     def _after_test_case_execution_inside_thread(
-        self, test_case: tc.TestCase, result: ExecutionResult, execution_time: int, memory_usage: float
+        self, test_case: tc.TestCase, result: ExecutionResult, execution_time: int, peak_memory_usage: float
     ) -> None:
         """Collect the trace data after each executed test case.
 
@@ -2148,11 +2148,11 @@ class TestCaseExecutor(AbstractTestCaseExecutor):
             test_case: The executed test case
             result: The execution result
             execution_time: The execution time of test case in nanoseconds
-            memory_usage: The mean memory usage multiplied by execution time
+            peak_memory_usage: The peak memory usage in bytes
         """
         result.execution_trace = self._tracer.get_trace()
         result.execution_time = execution_time
-        result.memory_usage = memory_usage
+        result.peak_memory_usage = peak_memory_usage
         for observer in self._observers:
             observer.after_test_case_execution_inside_thread(test_case, result)
 

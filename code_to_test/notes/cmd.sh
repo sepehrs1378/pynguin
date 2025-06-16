@@ -5,7 +5,7 @@ python3 src/pynguin/__main__.py --project-path code_to_test/modules --output-pat
     --maximum-search-time 30
 python3 src/pynguin/__main__.py --project-path code_to_test/modules --output-path code_to_test/output --module-name matrix_calculus --assertion-generation NONE -v \
     --seed 1 \
-    --constraints MEMORY_USAGE \
+    --constraints PEAK_MEMORY_USAGE \
     --algorithm DYNAMOSA \
     --test-case-memory-usage-limit 26000 \
     --maximum-search-time 30

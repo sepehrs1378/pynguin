@@ -994,7 +994,7 @@ class TestCaseExecutionTimeConstraint(TestCaseConstraint):
         return result.execution_time <= self.exec_time_limit
 
 
-class TestCaseMemoryUsageConstraint(TestCaseConstraint):
+class TestCasePeakMemoryUsageConstraint(TestCaseConstraint):
     def __init__(self, executor, mem_usage_limit: int) -> None:
         super().__init__(executor)
         self.mem_usage_limit = mem_usage_limit
@@ -1002,7 +1002,7 @@ class TestCaseMemoryUsageConstraint(TestCaseConstraint):
     @override
     def is_satisfied(self, individual: tcc.TestCaseChromosome) -> bool:
         result = self._run_test_case_chromosome(individual=individual)
-        return result.memory_usage <= self.mem_usage_limit
+        return result.peak_memory_usage <= self.mem_usage_limit
 
 
 class TestSuiteConstraint(Constraint, TestSuiteChromosomeComputation):
@@ -1022,7 +1022,7 @@ class TestSuiteExecutionTimeConstraint(TestSuiteConstraint):
         return sum(r.execution_time for r in results) <= self.exec_time_limit
 
 
-class TestSuiteMemoryUsageConstraint(TestSuiteConstraint):
+class TestSuitePeakMemoryUsageConstraint(TestSuiteConstraint):
     def __init__(self, executor, exec_time_limit: int) -> None:
         super().__init__(executor)
         self.exec_time_limit = exec_time_limit
@@ -1030,4 +1030,4 @@ class TestSuiteMemoryUsageConstraint(TestSuiteConstraint):
     @override
     def is_satisfied(self, individual: tsc.TestSuiteChromosome) -> bool:
         results = self._run_test_suite_chromosome(individual=individual)
-        return statistics.mean(r.memory_usage for r in results) <= self.exec_time_limit
+        return statistics.mean(r.peak_memory_usage for r in results) <= self.exec_time_limit

@@ -466,7 +466,7 @@ class Constraint(str, enum.Enum):
 
     EXECUTION_TIME = "EXECUTION_TIME"
 
-    MEMORY_USAGE = "MEMORY_USAGE"
+    PEAK_MEMORY_USAGE = "PEAK_MEMORY_USAGE"
 
 
 @dataclasses.dataclass
