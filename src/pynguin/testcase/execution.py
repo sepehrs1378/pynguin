@@ -2118,21 +2118,10 @@ class TestCaseExecutor(AbstractTestCaseExecutor):
         self._before_test_case_execution(test_case)
         self._tracer.current_thread_identifier = threading.current_thread().ident
 
-        tracemalloc.start()
-        result, total_exec_time = self._run_test_case_statements(test_case)
-        # TODO!: subtract current memory used from peak memory usage?
-        peak_memory_usage = tracemalloc.get_traced_memory()[1]
-        tracemalloc.stop()
-
-        self._after_test_case_execution_inside_thread(
-            test_case=test_case, result=result, execution_time=total_exec_time, memory_usage=peak_memory_usage
-        )
-        result_queue.put(result)
-
-    def _run_test_case_statements(self, test_case: tc.TestCase):
         result = ExecutionResult()
         exec_ctx = ExecutionContext(self._module_provider)
         total_exec_time = 0
+        tracemalloc.start()
         for idx, statement in enumerate(test_case.statements):
             ast_node = self._before_statement_execution(statement, exec_ctx)
             exception, exec_time = self.execute_ast(ast_node, exec_ctx)
@@ -2141,7 +2130,14 @@ class TestCaseExecutor(AbstractTestCaseExecutor):
             if exception is not None:
                 result.report_new_thrown_exception(idx, exception)
                 break
-        return result, total_exec_time
+        current_usage, peak_usage = tracemalloc.get_traced_memory()
+        peak_memory_usage = peak_usage - current_usage
+        tracemalloc.stop()
+
+        self._after_test_case_execution_inside_thread(
+            test_case=test_case, result=result, execution_time=total_exec_time, memory_usage=peak_memory_usage
+        )
+        result_queue.put(result)
 
     def _after_test_case_execution_inside_thread(
         self, test_case: tc.TestCase, result: ExecutionResult, execution_time: int, memory_usage: float
