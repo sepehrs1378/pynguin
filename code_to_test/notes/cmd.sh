@@ -7,7 +7,7 @@ python3 src/pynguin/__main__.py --project-path code_to_test/modules --output-pat
     --seed 1 \
     --constraints PEAK_MEMORY_USAGE \
     --algorithm DYNAMOSA \
-    --test-case-memory-usage-limit 26000 \
+    --test-case-memory-usage-limit 7500 \
     --maximum-search-time 30
 
 # execution time
