@@ -1030,4 +1030,4 @@ class TestSuitePeakMemoryUsageConstraint(TestSuiteConstraint):
     @override
     def is_satisfied(self, individual: tsc.TestSuiteChromosome) -> bool:
         results = self._run_test_suite_chromosome(individual=individual)
-        return statistics.mean(r.peak_memory_usage for r in results) <= self.exec_time_limit
+        return max(r.peak_memory_usage for r in results) <= self.exec_time_limit

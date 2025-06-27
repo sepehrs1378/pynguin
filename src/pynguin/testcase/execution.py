@@ -2115,18 +2115,18 @@ class TestCaseExecutor(AbstractTestCaseExecutor):
             observer.before_test_case_execution(test_case)
 
     def _execute_test_case(self, test_case: tc.TestCase, result_queue: Queue[ExecutionResult]) -> None:
+        result = ExecutionResult()
+        exec_ctx = ExecutionContext(self._module_provider)
         self._before_test_case_execution(test_case)
         self._tracer.current_thread_identifier = threading.current_thread().ident
 
-        result = ExecutionResult()
-        exec_ctx = ExecutionContext(self._module_provider)
         total_exec_time = 0
         tracemalloc.start()
         for idx, statement in enumerate(test_case.statements):
             ast_node = self._before_statement_execution(statement, exec_ctx)
             exception, exec_time = self.execute_ast(ast_node, exec_ctx)
-            self._after_statement_execution(statement, exec_ctx, exception)
             total_exec_time += exec_time
+            self._after_statement_execution(statement, exec_ctx, exception)
             if exception is not None:
                 result.report_new_thrown_exception(idx, exception)
                 break
