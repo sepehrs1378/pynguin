@@ -117,3 +117,4 @@ docs/_build
 # Test examples
 code_to_test/output/*
 code_to_test/report/*
+results/*

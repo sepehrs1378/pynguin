@@ -409,7 +409,7 @@ class TestSuiteGenerationAlgorithmFactory(GenerationAlgorithmFactory[tsc.TestSui
             exec_time_limit = config.configuration.search_algorithm.test_suite_execution_time_limit
             test_suite_constraints.add(ff.TestSuiteExecutionTimeConstraint(self._executor, exec_time_limit))
         if config.Constraint.PEAK_MEMORY_USAGE in constraints:
-            mem_usage_limit = config.configuration.search_algorithm.test_case_memory_usage_limit
+            mem_usage_limit = config.configuration.search_algorithm.test_suite_memory_usage_limit
             test_suite_constraints.add(ff.TestSuitePeakMemoryUsageConstraint(self._executor, mem_usage_limit))
         return test_suite_constraints
 

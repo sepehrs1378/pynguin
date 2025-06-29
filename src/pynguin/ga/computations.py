@@ -1019,15 +1019,16 @@ class TestSuiteExecutionTimeConstraint(TestSuiteConstraint):
     @override
     def is_satisfied(self, individual: tsc.TestSuiteChromosome) -> bool:
         results = self._run_test_suite_chromosome(individual=individual)
+        # print(sum(r.execution_time for r in results))
         return sum(r.execution_time for r in results) <= self.exec_time_limit
 
 
 class TestSuitePeakMemoryUsageConstraint(TestSuiteConstraint):
-    def __init__(self, executor, exec_time_limit: int) -> None:
+    def __init__(self, executor, mem_usage_limit: int) -> None:
         super().__init__(executor)
-        self.exec_time_limit = exec_time_limit
+        self.mem_usage_limit = mem_usage_limit
 
     @override
     def is_satisfied(self, individual: tsc.TestSuiteChromosome) -> bool:
         results = self._run_test_suite_chromosome(individual=individual)
-        return max(r.peak_memory_usage for r in results) <= self.exec_time_limit
+        return max(r.peak_memory_usage for r in results) <= self.mem_usage_limit

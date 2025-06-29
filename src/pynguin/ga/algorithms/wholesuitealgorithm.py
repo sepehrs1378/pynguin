@@ -62,13 +62,6 @@ class WholeSuiteAlgorithm(GenerationAlgorithm[arch.CoverageArchive, tsc.TestSuit
             offspring1 = parent1.clone()
             offspring2 = parent2.clone()
 
-            if not offspring1.satisfies_constraints():
-                self._logger.info("1st offspring doesn't satisfy constraints")
-                continue
-            if not offspring2.satisfies_constraints():
-                self._logger.info("2nd offspring doesn't satisfy constraints")
-                continue
-
             try:
                 if randomness.next_float() <= config.configuration.search_algorithm.crossover_rate:
                     self._crossover_function.cross_over(offspring1, offspring2)
@@ -77,6 +70,13 @@ class WholeSuiteAlgorithm(GenerationAlgorithm[arch.CoverageArchive, tsc.TestSuit
                 offspring2.mutate()
             except ConstructionFailedException as ex:
                 self._logger.info("Crossover/Mutation failed: %s", ex)
+                continue
+
+            if not offspring1.satisfies_constraints():
+                self._logger.info("1st offspring doesn't satisfy constraints")
+                continue
+            if not offspring2.satisfies_constraints():
+                self._logger.info("2nd offspring doesn't satisfy constraints")
                 continue
 
             fitness_parents = min(parent1.get_fitness(), parent2.get_fitness())

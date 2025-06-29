@@ -479,7 +479,7 @@ def _run() -> ReturnCode:
     _LOGGER.info("Start generating test cases")
     generation_result = algorithm.generate_tests()
     exec_times = [
-        tcc.get_last_execution_result().execution_time * 1e-9 for tcc in generation_result.test_case_chromosomes
+        tcc.get_last_execution_result().execution_time for tcc in generation_result.test_case_chromosomes
     ]
     _LOGGER.info(
         "Execution Time: min=%s, max=%s, mean=%s, sum=%s, count=%s",
