@@ -19,7 +19,6 @@ import os
 import sys
 import threading
 import time
-import statistics
 
 from abc import abstractmethod
 from collections.abc import Sized
@@ -39,7 +38,6 @@ from typing import cast
 
 # Needs to be loaded, i.e., in sys.modules for the execution of assertions to work.
 import pytest  # noqa: F401
-import memory_profiler
 import tracemalloc
 
 from bytecode import BasicBlock

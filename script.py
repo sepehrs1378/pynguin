@@ -9,13 +9,7 @@ import time
 
 def setup_environment():
     """Set up environment variables and activate virtualenv"""
-    # Set environment variables (modify as needed)
-    env_vars = {
-        "PYTHONPATH": "/home/sepehr/university/MS/thesis/pynguin/src/",  # Example - modify or remove
-        "PYNGUIN_DANGER_AWARE": "1",  # Example - modify or remove
-    }
-
-    # Update current environment
+    env_vars = {"PYTHONPATH": "/home/sepehr/university/MS/thesis/pynguin/src/", "PYNGUIN_DANGER_AWARE": "1"}
     os.environ.update(env_vars)
 
     # Activate virtualenv
@@ -102,7 +96,7 @@ def main():
                     "constraints": "EXECUTION_TIME",
                     "test-suite-execution-time-limit": "600_000_000",
                 },
-                output_file=f"results/{algo}_time",
+                output_file=f"results/raw/{algo}_time",
             )
             run_pynguin(
                 flags={
@@ -111,7 +105,7 @@ def main():
                     "constraints": "PEAK_MEMORY_USAGE",
                     "test-suite-memory-usage-limit": "9000",
                 },
-                output_file=f"results/{algo}_mem",
+                output_file=f"results/raw/{algo}_mem",
             )
         else:
             run_pynguin(
@@ -121,7 +115,7 @@ def main():
                     "constraints": "EXECUTION_TIME",
                     "test-case-execution-time-limit": "100_000_000",
                 },
-                output_file=f"results/{algo}_time",
+                output_file=f"results/raw/{algo}_time",
             )
             run_pynguin(
                 flags={
@@ -130,21 +124,21 @@ def main():
                     "constraints": "PEAK_MEMORY_USAGE",
                     "test-case-memory-usage-limit": "7500",
                 },
-                output_file=f"results/{algo}_mem",
+                output_file=f"results/raw/{algo}_mem",
             )
         run_pynguin(
             flags={
                 "module-name": "banking",
                 "algorithm": algo,
             },
-            output_file=f"results/{algo}_no_time",
+            output_file=f"results/raw/{algo}_no_time",
         )
         run_pynguin(
             flags={
                 "module-name": "matrix_calculus",
                 "algorithm": algo,
             },
-            output_file=f"results/{algo}_no_mem",
+            output_file=f"results/raw/{algo}_no_mem",
         )
 
 
