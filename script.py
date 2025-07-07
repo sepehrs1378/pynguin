@@ -79,11 +79,11 @@ def main():
     setup_environment()
 
     algorithms = [
-        # "DYNAMOSA",
-        # "MOSA",
-        # "MIO",
-        # "RANDOM",
-        # "RANDOM_TEST_CASE_SEARCH",
+        "DYNAMOSA",
+        "MOSA",
+        "MIO",
+        "RANDOM",
+        "RANDOM_TEST_CASE_SEARCH",
         "RANDOM_TEST_SUITE_SEARCH",
         "WHOLE_SUITE",
     ]

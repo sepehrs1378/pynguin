@@ -13,6 +13,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import time
 
@@ -83,7 +84,7 @@ class LogSearchObserver(SearchObserver):
     ) -> None:
         self.iteration += 1
         self._logger.info("Iteration: %7i, Coverage: %5f", self.iteration, best.get_coverage())
-        print({"time": time.time(), "iteration": self.iteration, "coverage": best.get_coverage()})
+        print(json.dumps({"time": time.time(), "iteration": self.iteration, "coverage": best.get_coverage()}))
 
     def after_search_finish(self) -> None:
         """Not used."""

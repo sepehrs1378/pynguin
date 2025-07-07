@@ -153,6 +153,7 @@ class Chromosome(ABC):  # noqa: PLR0904
         return self.computation_cache.get_coverage_for(coverage_function)
 
     def satisfies_constraints(self) -> bool:
+        """Checks whether the constraints are satisfied for this chromosome or not."""
         return self.computation_cache.satisfies_constraints()
 
     @abstractmethod

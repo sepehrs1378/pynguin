@@ -633,6 +633,7 @@ class ComputationCache:
         return self._coverage_cache[coverage_function]
 
     def satisfies_constraints(self) -> bool:
+        """Checks whether the constraints are satisfied for this chromosome or not."""
         return all(c.is_satisfied(self._chromosome) for c in self._constraints)
 
 
@@ -1019,7 +1020,6 @@ class TestSuiteExecutionTimeConstraint(TestSuiteConstraint):
     @override
     def is_satisfied(self, individual: tsc.TestSuiteChromosome) -> bool:
         results = self._run_test_suite_chromosome(individual=individual)
-        # print(sum(r.execution_time for r in results))
         return sum(r.execution_time for r in results) <= self.exec_time_limit
 
 
