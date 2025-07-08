@@ -55,7 +55,7 @@ class RandomTestCaseSearchAlgorithm(GenerationAlgorithm[arch.CoverageArchive, tc
 
     def generate_tests(self) -> tsc.TestSuiteChromosome:  # noqa: D102
         self.before_search_start()
-        solution = self._chromosome_factory.get_chromosome()
+        solution = self._get_random_test_case()
         self._archive.update([solution])
         test_suite = self.create_test_suite(self._archive.solutions)
         self.before_first_search_iteration(test_suite)
