@@ -31,7 +31,6 @@ class TestSuiteChromosomeFactory(cf.ChromosomeFactory[tsc.TestSuiteChromosome]):
         test_case_chromosome_factory: cf.ChromosomeFactory,
         fitness_functions: OrderedSet[ff.TestSuiteFitnessFunction],
         coverage_functions: OrderedSet[ff.TestSuiteCoverageFunction],
-        constraints: OrderedSet[ff.TestSuiteConstraint],
     ):
         """Instantiates a new factory.
 
@@ -48,7 +47,6 @@ class TestSuiteChromosomeFactory(cf.ChromosomeFactory[tsc.TestSuiteChromosome]):
         self._test_case_chromosome_factory = test_case_chromosome_factory
         self._fitness_functions = fitness_functions
         self._coverage_functions = coverage_functions
-        self._constraints = constraints
 
     def get_chromosome(self) -> tsc.TestSuiteChromosome:  # noqa: D102
         chromosome = tsc.TestSuiteChromosome(self._test_case_chromosome_factory)
@@ -63,6 +61,4 @@ class TestSuiteChromosomeFactory(cf.ChromosomeFactory[tsc.TestSuiteChromosome]):
             chromosome.add_fitness_function(fitness_function)
         for coverage_function in self._coverage_functions:
             chromosome.add_coverage_function(coverage_function)
-        for constraint in self._constraints:
-            chromosome.add_constraint(constraint)
         return chromosome

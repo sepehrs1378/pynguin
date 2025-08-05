@@ -87,8 +87,6 @@ class RandomAlgorithm(GenerationAlgorithm):
         # Select random test cases from existing ones to base generation on
         tests = self._random_test_cases([chromosome.test_case for chromosome in test_chromosome.test_case_chromosomes])
         new_test = tcc.TestCaseChromosome(dtc.DefaultTestCase(self.test_cluster))
-        for constraint in self.test_case_constraints:
-            new_test.add_constraint(constraint)
         for test in tests:
             new_test.test_case.append_test_case(test)
 
@@ -107,10 +105,6 @@ class RandomAlgorithm(GenerationAlgorithm):
         exec_result = self._executor.execute(new_test.test_case)
         new_test.set_last_execution_result(exec_result)
         new_test.changed = False
-
-        if not new_test.satisfies_constraints():
-            self._logger.info("Constraints not satisfied")
-            return
 
         # Classify new test case and outputs
         if exec_result.timeout:

@@ -28,9 +28,6 @@ class RandomTestSuiteSearchAlgorithm(GenerationAlgorithm[arch.CoverageArchive, t
         self.before_first_search_iteration(solution)
         while self.resources_left() and solution.get_fitness() != 0.0:
             candidate = self._chromosome_factory.get_chromosome()
-            if not candidate.satisfies_constraints():
-                self._logger.info("Constraints not satisfied")
-                continue
             if candidate.get_fitness() < solution.get_fitness():
                 solution = candidate
             self.after_search_iteration(solution)
@@ -38,14 +35,7 @@ class RandomTestSuiteSearchAlgorithm(GenerationAlgorithm[arch.CoverageArchive, t
         return solution
 
     def _get_random_test_suite(self) -> tsc.TestSuiteChromosome:
-        iteration = 0
-        solution = self._chromosome_factory.get_chromosome()
-        while iteration < 10:
-            if solution.satisfies_constraints():
-                break
-            solution = self._chromosome_factory.get_chromosome()
-            iteration += 1
-        return solution
+        return self._chromosome_factory.get_chromosome()
 
 
 class RandomTestCaseSearchAlgorithm(GenerationAlgorithm[arch.CoverageArchive, tcc.TestCaseChromosome]):
@@ -61,9 +51,6 @@ class RandomTestCaseSearchAlgorithm(GenerationAlgorithm[arch.CoverageArchive, tc
         self.before_first_search_iteration(test_suite)
         while self.resources_left() and test_suite.get_fitness() != 0.0:
             candidate = self._chromosome_factory.get_chromosome()
-            if not candidate.satisfies_constraints():
-                self._logger.info("Constraints not satisfied")
-                continue
             self._archive.update([candidate])
             test_suite = self.create_test_suite(self._archive.solutions)
             self.after_search_iteration(test_suite)
@@ -71,10 +58,4 @@ class RandomTestCaseSearchAlgorithm(GenerationAlgorithm[arch.CoverageArchive, tc
         return self.create_test_suite(self._archive.solutions)
 
     def _get_random_test_case(self) -> tcc.TestCaseChromosome:
-        iteration = 0
-        solution = self._chromosome_factory.get_chromosome()
-        while iteration < 10:
-            if solution.satisfies_constraints():
-                break
-            iteration += 1
-        return solution
+        return self._chromosome_factory.get_chromosome()

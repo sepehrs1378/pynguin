@@ -461,14 +461,6 @@ class TestCreationConfiguration:
     of only modifiers for that type. Expects values in [0, 1]."""
 
 
-class Constraint(str, enum.Enum):
-    """The different available constraints."""
-
-    EXECUTION_TIME = "EXECUTION_TIME"
-
-    PEAK_MEMORY_USAGE = "PEAK_MEMORY_USAGE"
-
-
 @dataclasses.dataclass
 class SearchAlgorithmConfiguration:
     """General configuration for search algorithms."""
@@ -537,21 +529,6 @@ class SearchAlgorithmConfiguration:
 
     number_of_mutations: int = 1
     """Number of mutations that should be applied in one breeding step."""
-
-    constraints: list[Constraint] = dataclasses.field(default_factory=lambda: [])
-    """The list of constraints that we check for the test cases (test suites)."""
-
-    test_suite_execution_time_limit: int = 1_000_000_000  # Nano seconds
-    """If test suite execution time is below this value, it satisfies execution time constraint."""
-
-    test_case_execution_time_limit: int = 100_000_000  # Nano seconds
-    """If test case execution time is below this value, it satisfies execution time constraint."""
-
-    test_suite_memory_usage_limit: int = 200000 # Bytes
-    """If test suite memory usage is below this value, it satisfies memory usage constraint."""
-
-    test_case_memory_usage_limit: int = 20000 # Bytes
-    """If test case memory usage is below this value, it satisfies memory usage constraint."""
 
 
 @dataclasses.dataclass

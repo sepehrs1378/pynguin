@@ -60,8 +60,6 @@ class GenerationAlgorithm(Generic[A, CH]):  # noqa: PLR0904
         self._test_case_fitness_functions: OrderedSet[ff.TestCaseFitnessFunction] = OrderedSet()
         self._test_suite_fitness_functions: OrderedSet[ff.TestSuiteFitnessFunction] = OrderedSet()
         self._test_suite_coverage_functions: OrderedSet[ff.TestSuiteCoverageFunction] = OrderedSet()
-        self._test_case_constraints: OrderedSet[ff.TestCaseConstraint] = OrderedSet()
-        self._test_suite_constraints: OrderedSet[ff.TestSuiteConstraint] = OrderedSet()
         self._branch_goal_pool: bg.BranchGoalPool
         self._search_observers: list[so.SearchObserver] = []
 
@@ -242,24 +240,6 @@ class GenerationAlgorithm(Generic[A, CH]):  # noqa: PLR0904
         test_suite_coverage_functions: OrderedSet[ff.TestSuiteCoverageFunction],
     ) -> None:
         self._test_suite_coverage_functions = test_suite_coverage_functions
-
-    @property
-    def test_case_constraints(self) -> OrderedSet[ff.TestCaseConstraint]:
-        """Returns the test case constraints."""
-        return self._test_case_constraints
-
-    @test_case_constraints.setter
-    def test_case_constraints(self, test_case_constraints: OrderedSet[ff.TestCaseConstraint]) -> None:
-        self._test_case_constraints = test_case_constraints
-
-    @property
-    def test_suite_constraints(self) -> OrderedSet[ff.TestSuiteConstraint]:
-        """Returns the test suite constraints."""
-        return self._test_suite_constraints
-
-    @test_suite_constraints.setter
-    def test_suite_constraints(self, test_suite_constraints: OrderedSet[ff.TestSuiteConstraint]) -> None:
-        self._test_suite_constraints = test_suite_constraints
 
     def create_test_suite(self, population: Iterable[tcc.TestCaseChromosome]) -> tsc.TestSuiteChromosome:
         """Wraps a population of test-case chromosomes in a test-suite chromosome.

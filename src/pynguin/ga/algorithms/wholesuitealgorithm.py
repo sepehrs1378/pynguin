@@ -72,13 +72,6 @@ class WholeSuiteAlgorithm(GenerationAlgorithm[arch.CoverageArchive, tsc.TestSuit
                 self._logger.info("Crossover/Mutation failed: %s", ex)
                 continue
 
-            if not offspring1.satisfies_constraints():
-                self._logger.info("1st offspring doesn't satisfy constraints")
-                continue
-            if not offspring2.satisfies_constraints():
-                self._logger.info("2nd offspring doesn't satisfy constraints")
-                continue
-
             fitness_parents = min(parent1.get_fitness(), parent2.get_fitness())
             fitness_offspring = min(offspring1.get_fitness(), offspring2.get_fitness())
             length_parents = parent1.length() + parent2.length()
@@ -106,8 +99,7 @@ class WholeSuiteAlgorithm(GenerationAlgorithm[arch.CoverageArchive, tsc.TestSuit
         population_size = config.configuration.search_algorithm.population
         while len(population) < population_size and iteration < 5 * population_size:
             chromosome = self._chromosome_factory.get_chromosome()
-            if chromosome.satisfies_constraints():
-                population.append(chromosome)
+            population.append(chromosome)
             iteration += 1
         self._logger.info("Initial population size: %d/%d", len(population), population_size)
         return population

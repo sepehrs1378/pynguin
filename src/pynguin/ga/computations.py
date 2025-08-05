@@ -413,7 +413,6 @@ class ComputationCache:
         *,
         fitness_functions: list[FitnessFunction] | None = None,
         coverage_functions: list[CoverageFunction] | None = None,
-        constraints: list[Constraint] | None = None,
         fitness_cache: dict[FitnessFunction, float] | None = None,
         is_covered_cache: dict[FitnessFunction, bool] | None = None,
         coverage_cache: dict[CoverageFunction, float] | None = None,
@@ -421,7 +420,6 @@ class ComputationCache:
         self._chromosome = chromosome
         self._fitness_functions = fitness_functions or []
         self._coverage_functions = coverage_functions or []
-        self._constraints = constraints or []
         self._fitness_cache: dict[FitnessFunction, float] = fitness_cache or {}
         self._is_covered_cache: dict[FitnessFunction, bool] = is_covered_cache or {}
         self._coverage_cache: dict[CoverageFunction, float] = coverage_cache or {}
@@ -439,7 +437,6 @@ class ComputationCache:
             new_chromosome,
             fitness_functions=list(self._fitness_functions),
             coverage_functions=list(self._coverage_functions),
-            constraints=list(self._constraints),
             fitness_cache=dict(self._fitness_cache),
             is_covered_cache=dict(self._is_covered_cache),
             coverage_cache=dict(self._coverage_cache),
@@ -464,14 +461,6 @@ class ComputationCache:
         """
         assert not fitness_function.is_maximisation_function(), "Currently only minimization is supported"
         self._fitness_functions.append(fitness_function)
-
-    def get_constraints(self) -> list[Constraint]:
-        """Returns the configured constraints of this chromosome."""
-        return self._constraints
-
-    def add_constraint(self, constraint: Constraint) -> None:
-        """Adds the given constraint."""
-        self._constraints.append(constraint)
 
     def get_coverage_functions(self) -> list[CoverageFunction]:
         """Provide the currently configured coverage functions of this chromosome.
@@ -631,10 +620,6 @@ class ComputationCache:
             coverage_function,
         )
         return self._coverage_cache[coverage_function]
-
-    def satisfies_constraints(self) -> bool:
-        """Checks whether the constraints are satisfied for this chromosome or not."""
-        return all(c.is_satisfied(self._chromosome) for c in self._constraints)
 
 
 def normalise(value: float) -> float:
@@ -969,66 +954,3 @@ def compare(fitness_1: float, fitness_2: float) -> int:
     return 0
 
 
-class Constraint:
-    def __init__(self, executor) -> None:
-        super().__init__(executor)
-
-    @abstractmethod
-    def is_satisfied(self, individual) -> bool:
-        pass
-
-
-class TestCaseConstraint(Constraint, TestCaseChromosomeComputation):
-    @abstractmethod
-    def is_satisfied(self, individual: tcc.TestCaseChromosome) -> bool:
-        pass
-
-
-class TestCaseExecutionTimeConstraint(TestCaseConstraint):
-    def __init__(self, executor, exec_time_limit: int) -> None:
-        super().__init__(executor)
-        self.exec_time_limit = exec_time_limit
-
-    @override
-    def is_satisfied(self, individual: tcc.TestCaseChromosome) -> bool:
-        result = self._run_test_case_chromosome(individual=individual)
-        return result.execution_time <= self.exec_time_limit
-
-
-class TestCasePeakMemoryUsageConstraint(TestCaseConstraint):
-    def __init__(self, executor, mem_usage_limit: int) -> None:
-        super().__init__(executor)
-        self.mem_usage_limit = mem_usage_limit
-
-    @override
-    def is_satisfied(self, individual: tcc.TestCaseChromosome) -> bool:
-        result = self._run_test_case_chromosome(individual=individual)
-        return result.peak_memory_usage <= self.mem_usage_limit
-
-
-class TestSuiteConstraint(Constraint, TestSuiteChromosomeComputation):
-    @abstractmethod
-    def is_satisfied(self, individual: tsc.TestSuiteChromosome) -> bool:
-        pass
-
-
-class TestSuiteExecutionTimeConstraint(TestSuiteConstraint):
-    def __init__(self, executor, exec_time_limit: int) -> None:
-        super().__init__(executor)
-        self.exec_time_limit = exec_time_limit
-
-    @override
-    def is_satisfied(self, individual: tsc.TestSuiteChromosome) -> bool:
-        results = self._run_test_suite_chromosome(individual=individual)
-        return sum(r.execution_time for r in results) <= self.exec_time_limit
-
-
-class TestSuitePeakMemoryUsageConstraint(TestSuiteConstraint):
-    def __init__(self, executor, mem_usage_limit: int) -> None:
-        super().__init__(executor)
-        self.mem_usage_limit = mem_usage_limit
-
-    @override
-    def is_satisfied(self, individual: tsc.TestSuiteChromosome) -> bool:
-        results = self._run_test_suite_chromosome(individual=individual)
-        return max(r.peak_memory_usage for r in results) <= self.mem_usage_limit

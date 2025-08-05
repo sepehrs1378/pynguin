@@ -52,13 +52,13 @@ class AbstractMOSAAlgorithm(GenerationAlgorithm[CoverageArchive, tcc.TestCaseChr
             # Apply mutation on offspring_1
             for _ in range(config.configuration.search_algorithm.number_of_mutations):
                 self._mutate(offspring_1)
-            if offspring_1.changed and offspring_1.size() > 0 and offspring_1.satisfies_constraints():
+            if offspring_1.changed and offspring_1.size() > 0:
                 offspring_population.append(offspring_1)
 
             # Apply mutation on offspring_2
             for _ in range(config.configuration.search_algorithm.number_of_mutations):
                 self._mutate(offspring_2)
-            if offspring_2.changed and offspring_2.size() > 0 and offspring_2.satisfies_constraints():
+            if offspring_2.changed and offspring_2.size() > 0:
                 offspring_population.append(offspring_2)
 
         # Add new randomly generated tests
@@ -74,7 +74,7 @@ class AbstractMOSAAlgorithm(GenerationAlgorithm[CoverageArchive, tcc.TestCaseChr
                 tch = randomness.choice(self._archive.solutions).clone()
                 tch.mutate()
 
-            if tch.changed and tch.size() > 0 and tch.satisfies_constraints():
+            if tch.changed and tch.size() > 0:
                 offspring_population.append(tch)
 
         self._logger.debug("Number of offsprings = %d", len(offspring_population))
@@ -115,8 +115,7 @@ class AbstractMOSAAlgorithm(GenerationAlgorithm[CoverageArchive, tcc.TestCaseChr
         population_size = config.configuration.search_algorithm.population
         while len(population) < population_size and iteration < 5 * population_size:
             chromosome = self._chromosome_factory.get_chromosome()
-            if chromosome.satisfies_constraints():
-                population.append(chromosome)
+            population.append(chromosome)
             iteration += 1
         self._logger.info("Initial population size: %d/%d", len(population), population_size)
         return population
