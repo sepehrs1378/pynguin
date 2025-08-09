@@ -3,6 +3,8 @@ import math
 from typing import List, Dict, Optional
 from dataclasses import dataclass
 
+MUL = 0.001
+
 
 @dataclass
 class Transaction:
@@ -33,7 +35,7 @@ class BankAccount:
 
         # Delay based on amount and account risk
         delay = self._calculate_deposit_delay(amount)
-        time.sleep(delay)
+        time.sleep(delay * MUL)
 
         self.balance += amount
         self.transaction_history.append(Transaction(amount, "deposit", time.time(), description))
@@ -41,7 +43,7 @@ class BankAccount:
         # Increase risk score for large deposits
         if amount > 5000:
             self.risk_score += amount / 1000
-            time.sleep(0.02)  # Additional security check
+            time.sleep(0.02 * MUL)  # Additional security check
 
         return True
 
@@ -58,28 +60,28 @@ class BankAccount:
 
         # Significant delay if this would overdraft
         if amount > self.balance:
-            time.sleep(0.1)  # Special overdraft consideration delay
+            time.sleep(0.1 * MUL)  # Special overdraft consideration delay
             return False
 
         delay = self._calculate_withdrawal_delay(amount)
-        time.sleep(delay)
+        time.sleep(delay * MUL)
 
         self.balance -= amount
         self.transaction_history.append(Transaction(amount, "withdrawal", time.time(), description))
 
         # Large withdrawals trigger additional checks
         if amount > 3000:
-            time.sleep(0.05)  # Fraud verification
+            time.sleep(0.05 * MUL)  # Fraud verification
 
         return True
 
     def get_balance(self, detailed: bool = False) -> float:
         """More delay for detailed balance checks"""
         if detailed:
-            time.sleep(0.03)  # Detailed verification
+            time.sleep(0.03 * MUL)  # Detailed verification
             return round(self.balance, 2)
         else:
-            time.sleep(0.005)  # Quick check
+            time.sleep(0.005 * MUL)  # Quick check
             return self.balance
 
     def get_transaction_history(self, days: int = 30) -> List[Transaction]:
@@ -89,12 +91,12 @@ class BankAccount:
 
         # Base delay plus time-based scaling
         delay = 0.02 + (days / 30) * 0.05
-        time.sleep(min(delay, 0.3))  # Cap at 3 seconds
+        time.sleep(min(delay, 0.3) * MUL)  # Cap at 3 seconds
 
         # Simulate processing more transactions takes longer
         relevant_txs = [t for t in self.transaction_history if time.time() - t.timestamp <= days * 86400]
         processing_delay = len(relevant_txs) * 0.001
-        time.sleep(min(processing_delay, 0.1))
+        time.sleep(min(processing_delay, 0.1) * MUL)
 
         return relevant_txs
 
@@ -106,23 +108,23 @@ class Bank:
 
     def _generate_account_number(self) -> str:
         """Delay increases with number of existing accounts"""
-        time.sleep(len(self.accounts) * 0.001 + 0.01)
+        time.sleep((len(self.accounts) * 0.001 + 0.01) * MUL)
         return f"ACCT{len(self.accounts) + 100000:06d}"
 
     def create_account(self, account_holder: str, initial_balance: float = 0.0) -> Optional[BankAccount]:
         """More delay for high initial balances"""
         if self.maintenance_mode:
-            time.sleep(0.5)  # Extended delay during maintenance
+            time.sleep(0.5 * MUL)  # Extended delay during maintenance
             return None
 
         # Initial validation delay
-        time.sleep(0.02)
+        time.sleep(0.02 * MUL)
 
         # Additional checks for large initial deposits
         if initial_balance > 10000:
-            time.sleep(0.2)  # Compliance check
+            time.sleep(0.2 * MUL)  # Compliance check
         elif initial_balance > 5000:
-            time.sleep(0.1)
+            time.sleep(0.1 * MUL)
 
         account_number = self._generate_account_number()
         new_account = BankAccount(account_number, account_holder, initial_balance)
@@ -131,33 +133,33 @@ class Bank:
         # Risk scoring for new accounts
         if initial_balance > 20000:
             new_account.risk_score = 50
-            time.sleep(0.05)  # Enhanced due diligence
+            time.sleep(0.05 * MUL)  # Enhanced due diligence
 
         return new_account
 
     def transfer(self, from_acct: str, to_acct: str, amount: float, description: str = "") -> bool:
         """Transfer delay depends on amount, accounts, and risk profiles"""
         if from_acct not in self.accounts or to_acct not in self.accounts:
-            time.sleep(0.03)  # Account lookup delay
+            time.sleep(0.03 * MUL)  # Account lookup delay
             return False
 
         from_account = self.accounts[from_acct]
         to_account = self.accounts[to_acct]
 
         # Base transfer delay
-        time.sleep(0.04)
+        time.sleep(0.04 * MUL)
 
         # Amount-based delay (logarithmic scaling)
         amount_delay = math.log10(max(amount, 1)) * 0.04
-        time.sleep(amount_delay)
+        time.sleep(amount_delay * MUL)
 
         # Risk-based delays
         risk_delay = (from_account.risk_score + to_account.risk_score) / 1000
-        time.sleep(risk_delay)
+        time.sleep(risk_delay * MUL)
 
         # International transfer simulation
         if description and "international" in description.lower():
-            time.sleep(0.2)  # Additional compliance checks
+            time.sleep(0.2 * MUL)  # Additional compliance checks
 
         # Perform the actual transfer
         if not from_account.withdraw(amount, f"Transfer to {to_acct}: {description}"):
@@ -180,19 +182,19 @@ class Bank:
         # Delay based on transaction history size
         history_size = len(account.transaction_history)
         delay = min(history_size * 0.0005, 0.15)
-        time.sleep(delay)
+        time.sleep(delay * MUL)
 
         # Simulate complex interest calculation
         balance = account.get_balance()
         if balance < 1000:
-            time.sleep(0.01)
+            time.sleep(0.01 * MUL)
             return 0.0
         elif balance < 5000:
-            time.sleep(0.03)
+            time.sleep(0.03 * MUL)
             return balance * 0.01 * (days / 365)
         else:
             # Tiered interest calculation
-            time.sleep(0.05)
+            time.sleep(0.05 * MUL)
             tier1 = min(balance, 5000) * 0.015
             tier2 = max(balance - 5000, 0) * 0.02
             return (tier1 + tier2) * (days / 365)
@@ -205,11 +207,11 @@ class Bank:
         account = self.accounts[account_number]
 
         # Base delay
-        time.sleep(0.03)
+        time.sleep(0.03 * MUL)
 
         # Detailed statements take longer
         if detailed:
-            time.sleep(0.05 + len(account.transaction_history) * 0.002)
+            time.sleep((0.05 + len(account.transaction_history) * 0.002) * MUL)
 
             return {
                 "account": account_number,
@@ -220,7 +222,7 @@ class Bank:
                 "generated_at": time.time(),
             }
         else:
-            time.sleep(0.02)
+            time.sleep(0.02 * MUL)
             return {
                 "account": account_number,
                 "holder": account.account_holder,
