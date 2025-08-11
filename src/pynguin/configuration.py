@@ -555,7 +555,7 @@ class StoppingConfiguration:
     maximum_iterations: int = -1
     """Maximum iterations"""
 
-    maximum_test_execution_timeout: int = 20  # NOTE!: Changed from 5 to 1000
+    maximum_test_execution_timeout: int = 1000  # NOTE!: Changed from 5 to 1000
     """The maximum time (in seconds) after which a test case times out."""
 
     maximum_coverage: int = 100
@@ -574,7 +574,7 @@ class StoppingConfiguration:
     """Minimum iterations without a coverage change to stop early.  Expects values
     larger than 0; also requires the setting of minimum_coverage."""
 
-    test_execution_time_per_statement: int = 5  # NOTE!: Changed from 1 to 1000
+    test_execution_time_per_statement: int = 1000  # NOTE!: Changed from 1 to 1000
     """The time (in seconds) per statement that a test is allowed to run
     (up to maximum_test_execution_timeout)."""
 

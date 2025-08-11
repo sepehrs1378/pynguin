@@ -1,34 +1,36 @@
 import time
 
-SLEEP_MUL = 0.1
+BASE_SLEEP = 1
+FAST_PATH_SLEEP = BASE_SLEEP * 1e-3
+SLOW_PATH_SLEEP = BASE_SLEEP * 1e1
 
 
 def foo(x: int, y: int, z: int):
     if x < 0:
-        time.sleep(0.001 * SLEEP_MUL)
+        time.sleep(FAST_PATH_SLEEP)
         if y < 0:
-            time.sleep(0.001 * SLEEP_MUL)
+            time.sleep(FAST_PATH_SLEEP)
             if z < 0:
-                time.sleep(0.001 * SLEEP_MUL)
+                time.sleep(FAST_PATH_SLEEP)
             else:
-                time.sleep(0.001 * SLEEP_MUL)
+                time.sleep(FAST_PATH_SLEEP)
         else:
-            time.sleep(0.001 * SLEEP_MUL)
+            time.sleep(FAST_PATH_SLEEP)
             if z < 0:
-                time.sleep(0.001 * SLEEP_MUL)
+                time.sleep(FAST_PATH_SLEEP)
             else:
-                time.sleep(0.001 * SLEEP_MUL)
+                time.sleep(FAST_PATH_SLEEP)
     else:
-        time.sleep(1 * SLEEP_MUL)
+        time.sleep(SLOW_PATH_SLEEP)
         if y < 0:
-            time.sleep(1 * SLEEP_MUL)
+            time.sleep(SLOW_PATH_SLEEP)
             if z < 0:
-                time.sleep(1 * SLEEP_MUL)
+                time.sleep(SLOW_PATH_SLEEP)
             else:
-                time.sleep(1 * SLEEP_MUL)
+                time.sleep(SLOW_PATH_SLEEP)
         else:
-            time.sleep(1 * SLEEP_MUL)
+            time.sleep(SLOW_PATH_SLEEP)
             if z < 0:
-                time.sleep(1 * SLEEP_MUL)
+                time.sleep(SLOW_PATH_SLEEP)
             else:
-                time.sleep(1 * SLEEP_MUL)
+                time.sleep(SLOW_PATH_SLEEP)
