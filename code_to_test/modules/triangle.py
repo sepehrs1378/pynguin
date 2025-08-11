@@ -7,6 +7,3 @@ def check_triangle(a: int, b: int, c: int) -> bool:
         return False
     else:
         return True
-    
-    if 1 == 2:
-        return False
