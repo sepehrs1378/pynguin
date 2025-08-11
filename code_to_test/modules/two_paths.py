@@ -2,7 +2,7 @@ import time
 
 BASE_SLEEP = 1
 FAST_PATH_SLEEP = BASE_SLEEP * 1e-3
-SLOW_PATH_SLEEP = BASE_SLEEP * 1e1
+SLOW_PATH_SLEEP = BASE_SLEEP * 3e-1
 
 
 def foo(x: int, y: int, z: int):
