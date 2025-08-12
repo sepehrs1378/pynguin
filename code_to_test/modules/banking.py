@@ -1,268 +1,341 @@
-# Banking simulator for MS thesis testing (visible execution)
-# - Produces nested functions with configurable delays (time.sleep)
-# - Generates test cases and measures execution time per transaction and per operation
-# - Demonstrates slower functions and instrumentation for your algorithm benchmarking
-# NOTE: This code runs a short demo. Adjust parameters for larger tests.
-
 import time
-import random
-import uuid
-from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import date
 
-random.seed(42)
+# Sleeps should be in the form of BASE_SLEEP * X.
+BASE_SLEEP = 0.1  # Reduced for testing purposes
 
 
-class BankingSimulator:
-    """
-    BankingSimulator simulates processing of banking transactions.
-    Key design choices:
-    - process_transaction has nested functions (multi-level nesting)
-    - Some nested functions are intentionally much slower (use time.sleep)
-    - Configurable delays per operation to tune "hot" and "slow" functions
-    - Instrumentation captures execution time per nested function and overall
-    """
+class Customer:
+    def __init__(self, name: str, address: str, phone: str) -> None:
+        self.name: str = name
+        self.address: str = address
+        self.phone: str = phone
+        self.accounts: list[Account] = []
+        time.sleep(BASE_SLEEP * 2)  # Basic initialization time
 
-    def __init__(self, delays=None, enable_io_sleep=True):
-        """
-        delays: dict mapping operation name to delay in seconds (float)
-                supported keys: 'validate', 'deep_validate', 'fraud_check',
-                                'apply', 'persist', 'notify'
-        enable_io_sleep: if False, sleep calls will be skipped (fast-mode)
-        """
-        # sensible defaults: make fraud_check and notify much slower
-        default_delays = {
-            "validate": 0.01,
-            "deep_validate": 0.05,
-            "fraud_check": 0.25,  # intentionally slow
-            "apply": 0.005,
-            "persist": 0.06,
-            "notify": 0.18,  # slow-ish
-        }
-        self.delays = default_delays if delays is None else {**default_delays, **delays}
-        self.enable_io_sleep = enable_io_sleep
-        # simple in-memory ledger: account_id -> balance
-        self.ledger = defaultdict(float)
-        self.tx_log = []  # record of processed transactions
+    def change_address(self, new_address: str) -> bool:
+        # More complex address changes take longer
+        if len(new_address) < 5:
+            time.sleep(BASE_SLEEP * 1)
+            return False
+        elif len(new_address) > 100:
+            time.sleep(BASE_SLEEP * 3)
+            return False
+        else:
+            if self.address == new_address:
+                time.sleep(BASE_SLEEP * 2)
+                return False
+            else:
+                if any(char.isdigit() for char in new_address):
+                    time.sleep(BASE_SLEEP * 4)
+                    self.address = new_address
+                    return True
+                else:
+                    time.sleep(BASE_SLEEP * 3)
+                    self.address = new_address
+                    return True
 
-    def _sleep(self, sec):
-        if self.enable_io_sleep and sec > 0:
-            time.sleep(sec)
+    def add_account(self, account: "Account") -> None:
+        # More accounts mean longer processing time
+        if len(self.accounts) > 5:
+            time.sleep(BASE_SLEEP * 5)
+        elif len(self.accounts) > 2:
+            time.sleep(BASE_SLEEP * 3)
+        else:
+            time.sleep(BASE_SLEEP * 1)
+        self.accounts.append(account)
 
-    def seed_accounts(self, accounts):
-        """Initialize ledger with accounts: dict account_id -> balance"""
-        for acc, bal in accounts.items():
-            self.ledger[acc] = bal
 
-    def generate_test_cases(self, num_accounts=10, num_transactions=100, amount_range=(1, 1000)):
-        """
-        Generate a list of transactions to feed the simulator.
-        Each tx is a dict: {id, from_acct, to_acct, amount, currency, metadata}
-        """
-        accounts = [f"ACC{str(i).zfill(4)}" for i in range(num_accounts)]
-        # give some accounts higher balances to create skew
-        for i, acc in enumerate(accounts):
-            self.ledger[acc] = 10000.0 if i < 2 else 1000.0  # first 2 are rich accounts
+class Account:
+    def __init__(self, id_: int, customer: Customer) -> None:
+        self.id = id_
+        self.balance: int = 0
+        self.opening_date: date = date.today()
+        self.is_open: bool = True
+        self.customer: Customer = customer
+        time.sleep(BASE_SLEEP * 3)  # Account creation takes some time
 
-        txs = []
-        for _ in range(num_transactions):
-            a = random.choice(accounts)
-            b = random.choice(accounts)
-            # avoid same-account transfer sometimes
-            if random.random() < 0.1:
-                b = a
-            tx = {
-                "id": str(uuid.uuid4()),
-                "from": a,
-                "to": b,
-                "amount": round(random.uniform(*amount_range), 2),
-                "currency": "EUR",
-                "metadata": {"priority": random.choice(["low", "normal", "high"])},
-            }
-            txs.append(tx)
-        return txs
+    def deposit(self, amount: int) -> bool:
+        # Larger or more complex amounts take longer to process
+        if not self.is_open:
+            time.sleep(BASE_SLEEP * 1)
+            return False
 
-    def process_transaction(self, tx, skip_slow_checks=False):
-        """
-        Process a single transaction.
-        Nested functions inside to emulate deep call stacks. The algorithm you're testing
-        can call process_transaction with skip_slow_checks=True to emulate optimization.
-
-        Returns a dict with timing breakdown and result status.
-        """
-        timings = {}
-        start_all = time.perf_counter()
-
-        # Level 1 nested: validation
-        def validate(transaction):
-            t0 = time.perf_counter()
-
-            # Level 2 nested: deep validation (more expensive)
-            def deep_validate(tr):
-                t1 = time.perf_counter()
-                # simulate checks: schema, business rules, KYC references, etc.
-                self._sleep(self.delays["deep_validate"])
-                t2 = time.perf_counter()
-                timings["deep_validate"] = t2 - t1
+        if amount <= 0:
+            time.sleep(BASE_SLEEP * 2)
+            return False
+        elif amount > 1000000:
+            time.sleep(BASE_SLEEP * 6)  # Large amounts need more processing
+            self.balance += amount
+            return True
+        else:
+            if amount % 100 == 0:
+                time.sleep(BASE_SLEEP * 3)
+                self.balance += amount
+                return True
+            else:
+                time.sleep(BASE_SLEEP * 4)  # Odd amounts take longer
+                self.balance += amount
                 return True
 
-            # quick checks
-            self._sleep(self.delays["validate"])
-            ok = True
-            timings_local = {}
-            if ok:
-                deep_validate(transaction)
-            t1 = time.perf_counter()
-            timings["validate"] = t1 - t0
-            return True
+    def withdraw(self, amount: int) -> bool:
+        # Withdrawal complexity depends on amount and balance
+        if not self.is_open:
+            time.sleep(BASE_SLEEP * 1)
+            return False
 
-        # Level 1 nested: fraud detection (intentionally slow)
-        def fraud_check(transaction):
-            t0 = time.perf_counter()
-            # deep/heuristic fraud check (very slow)
-            self._sleep(self.delays["fraud_check"])
-            # small probabilistic "flag" for demonstration
-            flagged = transaction["amount"] > 900 and random.random() < 0.6
-            t1 = time.perf_counter()
-            timings["fraud_check"] = t1 - t0
-            return not flagged  # return True if NOT fraudulent
-
-        # Level 1 nested: apply transaction to ledger (fast)
-        def apply(tr):
-            t0 = time.perf_counter()
-            self._sleep(self.delays["apply"])
-            # simple transfer semantics: allow same-account transfers
-            if self.ledger[tr["from"]] >= tr["amount"] or tr["from"] == tr["to"]:
-                self.ledger[tr["from"]] -= tr["amount"]
-                self.ledger[tr["to"]] += tr["amount"]
-                res = True
+        if amount <= 0:
+            time.sleep(BASE_SLEEP * 2)
+            return False
+        elif amount > self.balance:
+            time.sleep(BASE_SLEEP * 5)  # Insufficient funds check
+            return False
+        else:
+            if amount > 5000:
+                time.sleep(BASE_SLEEP * 6)  # Large withdrawal
+                self.balance -= amount
+                return True
+            elif amount > 1000:
+                time.sleep(BASE_SLEEP * 4)
+                self.balance -= amount
+                return True
             else:
-                res = False  # insufficient funds
-            t1 = time.perf_counter()
-            timings["apply"] = t1 - t0
-            return res
+                if self.balance - amount < 100:
+                    time.sleep(BASE_SLEEP * 3)  # Low balance after withdrawal
+                    self.balance -= amount
+                    return True
+                else:
+                    time.sleep(BASE_SLEEP * 2)
+                    self.balance -= amount
+                    return True
 
-        # Level 1 nested: persist (moderate)
-        def persist(tr, status):
-            t0 = time.perf_counter()
-            self._sleep(self.delays["persist"])
-            # append to tx_log as "persistence"
-            self.tx_log.append({"tx": tr, "status": status, "ts": time.time()})
-            t1 = time.perf_counter()
-            timings["persist"] = t1 - t0
+    def calc_interest(self, days: int) -> int:
+        # Interest calculation complexity
+        if not self.is_open:
+            time.sleep(BASE_SLEEP * 1)
+            return 0
+
+        if days <= 0:
+            time.sleep(BASE_SLEEP * 2)
+            return 0
+        elif days > 365:
+            time.sleep(BASE_SLEEP * 6)  # Long-term interest
+            return int(self.balance * 0.05)
+        else:
+            if self.balance > 10000:
+                time.sleep(BASE_SLEEP * 5)
+                return int(self.balance * 0.03 * days / 365)
+            elif self.balance > 1000:
+                time.sleep(BASE_SLEEP * 4)
+                return int(self.balance * 0.02 * days / 365)
+            else:
+                time.sleep(BASE_SLEEP * 3)
+                return int(self.balance * 0.01 * days / 365)
+
+    def get_info(self):
+        # More complex info for older accounts
+        age = (date.today() - self.opening_date).days
+        if age > 365 * 5:
+            time.sleep(BASE_SLEEP * 5)
+            return f"Account {self.id}, Balance: {self.balance}, Open for {age} days"
+        elif age > 365:
+            time.sleep(BASE_SLEEP * 3)
+            return f"Account {self.id}, Balance: {self.balance}"
+        else:
+            time.sleep(BASE_SLEEP * 2)
+            return f"Account {self.id}"
+
+    def transfer_ownership(self, new_customer: Customer) -> bool:
+        # Transfer complexity depends on various factors
+        if not self.is_open:
+            time.sleep(BASE_SLEEP * 1)
+            return False
+
+        if new_customer == self.customer:
+            time.sleep(BASE_SLEEP * 2)
+            return False
+
+        if len(new_customer.accounts) > 10:
+            time.sleep(BASE_SLEEP * 6)  # Customer has many accounts
+            return False
+
+        if self.balance > 10000:
+            time.sleep(BASE_SLEEP * 5)  # Large balance transfer
+            self.customer = new_customer
             return True
-
-        # Level 1 nested: notify (slow, e.g., external push/email)
-        def notify(tr, status):
-            t0 = time.perf_counter()
-            self._sleep(self.delays["notify"])
-            # pretend to send push/email; here we just return success
-            t1 = time.perf_counter()
-            timings["notify"] = t1 - t0
-            return True
-
-        # --- Execution flow ---
-        ok = validate(tx)
-        if not ok:
-            result = "validation_failed"
-            persist(tx, result)
-            end_all = time.perf_counter()
-            timings["total"] = end_all - start_all
-            return {"txid": tx["id"], "result": result, "timings": timings}
-
-        # Option to skip slow checks (simulates algorithm optimization)
-        if not skip_slow_checks:
-            ok_fraud = fraud_check(tx)
-            if not ok_fraud:
-                result = "fraud_detected"
-                persist(tx, result)
-                notify(tx, result)
-                end_all = time.perf_counter()
-                timings["total"] = end_all - start_all
-                return {"txid": tx["id"], "result": result, "timings": timings}
         else:
-            # record that fraud_check was skipped
-            timings["fraud_check"] = 0.0
+            if len(self.customer.accounts) == 1:
+                time.sleep(BASE_SLEEP * 4)  # Only account
+                self.customer = new_customer
+                return True
+            else:
+                time.sleep(BASE_SLEEP * 3)
+                self.customer = new_customer
+                return True
 
-        applied = apply(tx)
-        result = "applied" if applied else "rejected_insufficient_funds"
-        persist(tx, result)
-        # Optionally avoid notify to save time when not needed
-        if tx["metadata"].get("priority", "normal") == "high":
-            notify(tx, result)
+
+class Transaction:
+    def __init__(self, src_account: Account, dest_account: Account, amount: int) -> None:
+        self.src_account: Account = src_account
+        self.dest_account: Account = dest_account
+        self.amount: int = amount
+        time.sleep(BASE_SLEEP * 2)  # Basic initialization
+
+    def sign_transaction(self, sign_date: date) -> None:
+        # Transaction signing complexity
+        if sign_date < date.today():
+            time.sleep(BASE_SLEEP * 5)  # Backdated transaction
+            return
+
+        if self.amount > 10000:
+            time.sleep(BASE_SLEEP * 6)  # Large transaction
+        elif self.amount > 1000:
+            time.sleep(BASE_SLEEP * 4)
         else:
-            # normal priority: simulate deferred notification (we still account for small time)
-            self._sleep(0.002)
-            timings["notify"] = 0.002
+            if not self.src_account.is_open or not self.dest_account.is_open:
+                time.sleep(BASE_SLEEP * 3)
+            else:
+                time.sleep(BASE_SLEEP * 2)
 
-        end_all = time.perf_counter()
-        timings["total"] = end_all - start_all
-        return {"txid": tx["id"], "result": result, "timings": timings}
 
-    def run_batch(self, txs, skip_slow_checks_for=None, max_workers=1):
-        """
-        Process a batch of transactions.
-        skip_slow_checks_for: a function(tx) -> bool; if True, skip slow checks for that tx.
-        max_workers: if >1, uses ThreadPoolExecutor to simulate concurrent processing.
+class Loan:
+    def __init__(self, account: Account, amount: int, days: int) -> None:
+        self.account: Account = account
+        self.amount: int = amount
+        self.days: int = days
+        self.is_delayed: bool = False
+        time.sleep(BASE_SLEEP * 4)  # Loan creation takes time
 
-        Returns list of results (in order of completion) and aggregated metrics.
-        """
-        results = []
+    def calc_penalty(self, for_days: int) -> int:
+        # Penalty calculation complexity
+        if for_days <= 0:
+            time.sleep(BASE_SLEEP * 1)
+            return 0
 
-        # helper wrapper to pass skip flag per tx
-        def _worker(tx):
-            skip = False
-            if skip_slow_checks_for:
-                try:
-                    skip = bool(skip_slow_checks_for(tx))
-                except Exception:
-                    skip = False
-            return self.process_transaction(tx, skip_slow_checks=skip)
-
-        if max_workers == 1:
-            for tx in txs:
-                results.append(_worker(tx))
+        if self.amount > 100000:
+            time.sleep(BASE_SLEEP * 6)
+            return int(for_days * self.amount * 0.001)
+        elif self.amount > 10000:
+            time.sleep(BASE_SLEEP * 4)
+            return int(for_days * self.amount * 0.0005)
         else:
-            with ThreadPoolExecutor(max_workers=max_workers) as ex:
-                futures = {ex.submit(_worker, tx): tx for tx in txs}
-                for fut in as_completed(futures):
-                    results.append(fut.result())
-        # compute simple aggregate metrics
-        agg = {
-            "count": len(results),
-            "avg_total_time": sum(r["timings"]["total"] for r in results) / max(1, len(results)),
-            "avg_deep_validate": sum(r["timings"].get("deep_validate", 0) for r in results) / max(1, len(results)),
-            "avg_fraud_check": sum(r["timings"].get("fraud_check", 0) for r in results) / max(1, len(results)),
-        }
-        return results, agg
+            if self.is_delayed:
+                time.sleep(BASE_SLEEP * 3)
+                return int(for_days * self.amount * 0.0002)
+            else:
+                time.sleep(BASE_SLEEP * 2)
+                return 0
+
+    def calc_remaining_debt(self) -> int:
+        # Debt calculation complexity
+        if self.days <= 0:
+            time.sleep(BASE_SLEEP * 1)
+            return self.amount
+
+        if self.is_delayed:
+            time.sleep(BASE_SLEEP * 6)
+            return int(self.amount * 1.2)
+        else:
+            if self.days > 365:
+                time.sleep(BASE_SLEEP * 5)
+                return int(self.amount * 1.1)
+            elif self.days > 30:
+                time.sleep(BASE_SLEEP * 3)
+                return int(self.amount * 1.05)
+            else:
+                time.sleep(BASE_SLEEP * 2)
+                return self.amount
 
 
-# # ---------------- Demo run ----------------
-# sim = BankingSimulator()
-# txs = sim.generate_test_cases(num_accounts=8, num_transactions=30, amount_range=(1, 1200))
+class Bank:
+    def __init__(self, name: str, address: str) -> None:
+        self.name: str = name
+        self.address: str = address
+        self.customers = []
+        self.accounts = []
+        self.maintenance_mode = False
+        time.sleep(BASE_SLEEP * 5)  # Bank initialization takes time
 
-# # Define a simple strategy for skipping slow checks:
-# # Skip fraud check if amount < 500 and priority is low
-# def skip_strategy(tx):
-#     return (tx['amount'] < 500 and tx['metadata'].get('priority') == 'low')
+    def create_account(self, customer: Customer) -> Account:
+        # Account creation complexity
+        if self.maintenance_mode:
+            time.sleep(BASE_SLEEP * 6)  # Maintenance mode slows things down
+            raise Exception("Bank in maintenance mode")
 
-# print("Running baseline (no skip) with single-threaded execution...")
-# results_baseline, agg_baseline = sim.run_batch(txs, skip_slow_checks_for=None, max_workers=1)
-# print(f"Baseline aggregated metrics: {agg_baseline}")
+        if len(customer.accounts) > 5:
+            time.sleep(BASE_SLEEP * 5)  # Customer has many accounts
+            new_account = Account(len(self.accounts) + 1, customer)
+        else:
+            if len(self.accounts) > 1000:
+                time.sleep(BASE_SLEEP * 4)  # Bank has many accounts
+                new_account = Account(len(self.accounts) + 1, customer)
+            else:
+                time.sleep(BASE_SLEEP * 3)
+                new_account = Account(len(self.accounts) + 1, customer)
 
-# # Clear tx_log for next run but keep ledger state
-# sim.tx_log = []
+        self.accounts.append(new_account)
+        customer.add_account(new_account)
+        return new_account
 
-# print("\nRunning optimized (skip some slow checks) with same workload...")
-# results_opt, agg_opt = sim.run_batch(txs, skip_slow_checks_for=skip_strategy, max_workers=1)
-# print(f"Optimized aggregated metrics: {agg_opt}")
+    def create_customer(self, name: str, address: str, phone: str) -> Customer:
+        # Customer creation complexity
+        if self.maintenance_mode:
+            time.sleep(BASE_SLEEP * 5)
+            raise Exception("Bank in maintenance mode")
 
-# # Show top 5 slowest transactions by total time in baseline
-# sorted_baseline = sorted(results_baseline, key=lambda r: r['timings']['total'], reverse=True)
-# print("\nTop 5 slowest transactions (baseline):")
-# for item in sorted_baseline[:5]:
-#     print(item['txid'], item['result'], f"total={item['timings']['total']:.3f}s",
-#           f"fraud_check={item['timings'].get('fraud_check',0):.3f}s")
+        if len(name.split()) < 2:
+            time.sleep(BASE_SLEEP * 3)  # Short name
+            customer = Customer(name, address, phone)
+        else:
+            if len(self.customers) > 100:
+                time.sleep(BASE_SLEEP * 4)  # Many customers
+                customer = Customer(name, address, phone)
+            else:
+                time.sleep(BASE_SLEEP * 2)
+                customer = Customer(name, address, phone)
 
-# # Return the simulator object for further interactive use if needed
-# sim, results_baseline[:3], results_opt[:3], agg_baseline, agg_opt
+        self.customers.append(customer)
+        return customer
+
+    def get_loan(self, account: Account, amount: int, for_days: int) -> Loan:
+        # Loan processing complexity
+        if self.maintenance_mode:
+            time.sleep(BASE_SLEEP * 6)
+            raise Exception("Bank in maintenance mode")
+
+        if amount > account.balance * 10:
+            time.sleep(BASE_SLEEP * 8)  # Large loan relative to balance
+            return Loan(account, amount, for_days)
+        elif amount > 100000:
+            time.sleep(BASE_SLEEP * 7)  # Large loan
+            return Loan(account, amount, for_days)
+        else:
+            if for_days > 365:
+                time.sleep(BASE_SLEEP * 5)  # Long-term loan
+                return Loan(account, amount, for_days)
+            else:
+                if account.balance < 1000:
+                    time.sleep(BASE_SLEEP * 4)  # Low balance
+                    return Loan(account, amount, for_days)
+                else:
+                    time.sleep(BASE_SLEEP * 3)
+                    return Loan(account, amount, for_days)
+
+    def change_maintenance_mode(self, new_mode: bool) -> None:
+        # Mode change complexity depends on current state
+        if self.maintenance_mode == new_mode:
+            time.sleep(BASE_SLEEP * 2)
+            return
+
+        if new_mode:
+            if len(self.accounts) > 1000:
+                time.sleep(BASE_SLEEP * 6)  # Many accounts to put in maintenance
+            else:
+                time.sleep(BASE_SLEEP * 4)
+        else:
+            if len(self.customers) > 100:
+                time.sleep(BASE_SLEEP * 5)  # Many customers to notify
+            else:
+                time.sleep(BASE_SLEEP * 3)
+
+        self.maintenance_mode = new_mode
