@@ -89,7 +89,7 @@ class LogSearchObserver(SearchObserver):
         self._logger.info("Iteration: %7i, Coverage: %5f", self.iteration, best.get_coverage())
         print(
             json.dumps({
-                "time": math.floor(time.time() - self.start_time()),
+                "time": math.floor(time.time() - self.start_time),
                 "iteration": self.iteration,
                 "coverage": best.get_coverage(),
             })
