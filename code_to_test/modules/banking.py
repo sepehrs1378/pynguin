@@ -1,7 +1,7 @@
 import time
 
 # Sleeps should be in the form of BASE_SLEEP * X.
-BASE_SLEEP = 0.1  # Reduced for testing purposes
+BASE_SLEEP = 0.01  # Reduced for testing purposes
 
 
 def create_employee(id_: int, age: int, is_senior: bool) -> None:
