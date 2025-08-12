@@ -8,14 +8,14 @@ def create_employee(name: str, age: int, is_senior: bool) -> None:
     # More complex name validation and age checks increase processing time
     if len(name) < 3:
         time.sleep(BASE_SLEEP * 1)
-        return
+        pass
     elif len(name) > 50:
         time.sleep(BASE_SLEEP * 2)
-        return
+        pass
 
     if age < 18:
         time.sleep(BASE_SLEEP * 3)
-        return
+        pass
     elif age > 65:
         time.sleep(BASE_SLEEP * 4)
         if is_senior:
@@ -37,15 +37,15 @@ def create_customer(name: str, phone: int, age: int, is_premium: bool) -> None:
     # Complex validation based on multiple factors
     if len(name) < 2:
         time.sleep(BASE_SLEEP * 1)
-        return
+        pass
 
     if len(str(phone)) != 10:
         time.sleep(BASE_SLEEP * 2)
-        return
+        pass
 
     if age < 16:
         time.sleep(BASE_SLEEP * 3)
-        return
+        pass
     elif age > 100:
         time.sleep(BASE_SLEEP * 4)
         if is_premium:
@@ -69,11 +69,11 @@ def create_account(owner_name: str, amount: int, is_premium: bool) -> None:
     # Account creation complexity based on amount and premium status
     if amount < 0:
         time.sleep(BASE_SLEEP * 1)
-        return
+        pass
 
     if len(owner_name) < 3:
         time.sleep(BASE_SLEEP * 2)
-        return
+        pass
 
     if is_premium:
         if amount < 1000:
@@ -99,7 +99,7 @@ def get_employee_info(name: str, output_type: int, brief_or_all: bool) -> None:
     # Complex info retrieval based on multiple parameters
     if len(name) < 3:
         time.sleep(BASE_SLEEP * 1)
-        return
+        pass
 
     if output_type == 1:
         if brief_or_all:
@@ -126,7 +126,7 @@ def get_customer_info(name: str, output_type: int, brief_or_all: bool) -> None:
     # Customer info retrieval with nested conditions
     if len(name) < 2:
         time.sleep(BASE_SLEEP * 1)
-        return
+        pass
 
     if output_type == 1:
         if brief_or_all:
@@ -155,7 +155,7 @@ def get_account_info(name: str, output_type: int, brief_or_all: bool) -> None:
     # Account info with complex retrieval paths
     if len(name) < 3:
         time.sleep(BASE_SLEEP * 1)
-        return
+        pass
 
     if output_type == 1:
         if brief_or_all:
@@ -184,11 +184,11 @@ def deposit(account_name: str, amount: int, chunks: int) -> None:
     # Deposit processing time depends on amount and chunks
     if amount <= 0:
         time.sleep(BASE_SLEEP * 1)
-        return
+        pass
 
     if chunks <= 0:
         time.sleep(BASE_SLEEP * 2)
-        return
+        pass
 
     if amount < 100:
         if chunks == 1:
@@ -215,7 +215,7 @@ def withdraw(account_name: str, amount: int, money_type: bool) -> None:
     # Withdrawal complexity based on amount and money type
     if amount <= 0:
         time.sleep(BASE_SLEEP * 1)
-        return
+        pass
 
     if money_type:
         if amount < 500:
@@ -241,11 +241,11 @@ def borrow_loan(customer_name: str, amount: int, for_days: int) -> None:
     # Loan processing with multiple nested conditions
     if amount <= 0 or for_days <= 0:
         time.sleep(BASE_SLEEP * 1)
-        return
+        pass
 
     if len(customer_name) < 3:
         time.sleep(BASE_SLEEP * 2)
-        return
+        pass
 
     if amount < 1000:
         if for_days < 30:
@@ -278,7 +278,7 @@ def calculate_account_interest(account_name: str, money: int, for_days: int, acc
     # Interest calculation with complex conditions
     if money <= 0 or for_days <= 0:
         time.sleep(BASE_SLEEP * 1)
-        return
+        pass
 
     if account_type:
         if money < 5000:
@@ -316,11 +316,11 @@ def calculate_loan_interest(loan_name: str, debt: int, for_days: int) -> None:
     # Loan interest with multiple calculation paths
     if debt <= 0 or for_days <= 0:
         time.sleep(BASE_SLEEP * 1)
-        return
+        pass
 
     if len(loan_name) < 3:
         time.sleep(BASE_SLEEP * 2)
-        return
+        pass
 
     if debt < 5000:
         if for_days < 30:
@@ -351,11 +351,11 @@ def transfer_money(src_acc_name: str, dest_acc_name: str, money: int, transfer_d
     # Money transfer with complex validation
     if money <= 0 or transfer_day <= 0:
         time.sleep(BASE_SLEEP * 1)
-        return
+        pass
 
     if len(src_acc_name) < 3 or len(dest_acc_name) < 3:
         time.sleep(BASE_SLEEP * 2)
-        return
+        pass
 
     if money < 100:
         if transfer_day % 7 == 0:
@@ -382,7 +382,7 @@ def sign_transaction(transaction_name: str, sign_day: int, sign_type: bool) -> N
     # Transaction signing with multiple paths
     if len(transaction_name) < 3:
         time.sleep(BASE_SLEEP * 1)
-        return
+        pass
 
     if sign_type:
         if sign_day % 2 == 0:
@@ -404,11 +404,11 @@ def lock_account(account_name: str, for_days: int, reason: str) -> None:
     # Account locking with complex conditions
     if for_days <= 0:
         time.sleep(BASE_SLEEP * 1)
-        return
+        pass
 
     if len(account_name) < 3:
         time.sleep(BASE_SLEEP * 2)
-        return
+        pass
 
     if for_days < 7:
         if len(reason) < 5:
@@ -435,11 +435,11 @@ def unlock_account(account_name: str, for_days: int, reason: str) -> None:
     # Account unlocking with nested conditions
     if for_days <= 0:
         time.sleep(BASE_SLEEP * 1)
-        return
+        pass
 
     if len(account_name) < 3:
         time.sleep(BASE_SLEEP * 2)
-        return
+        pass
 
     if for_days < 7:
         if len(reason) < 5:
@@ -466,7 +466,7 @@ def change_account_owner(account_name: str, customer_name: str) -> None:
     # Owner change with complex validation
     if len(account_name) < 3 or len(customer_name) < 3:
         time.sleep(BASE_SLEEP * 1)
-        return
+        pass
 
     if len(account_name) < 5:
         if len(customer_name) < 5:
