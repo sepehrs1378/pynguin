@@ -74,12 +74,12 @@ class LogSearchObserver(SearchObserver):
         self.start_time = -1
 
     def before_search_start(self, start_time_ns: int) -> None:  # noqa: D102
+        self.start_time = time.time()
         self.iteration = 0
 
     def before_first_search_iteration(  # noqa: D102
         self, initial: tsc.TestSuiteChromosome
     ) -> None:
-        self.start_time = time.time()
         self._logger.info("Initial Population, Coverage: %5f", initial.get_coverage())
 
     def after_search_iteration(  # noqa: D102
