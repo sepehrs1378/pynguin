@@ -13,10 +13,7 @@
 
 from __future__ import annotations
 
-import json
 import logging
-import time
-import math
 
 from abc import ABC
 from abc import abstractmethod
@@ -71,10 +68,8 @@ class LogSearchObserver(SearchObserver):
 
     def __init__(self):  # noqa: D107
         self.iteration = 0
-        self.start_time = -1
 
     def before_search_start(self, start_time_ns: int) -> None:  # noqa: D102
-        self.start_time = time.time()
         self.iteration = 0
 
     def before_first_search_iteration(  # noqa: D102
@@ -87,13 +82,6 @@ class LogSearchObserver(SearchObserver):
     ) -> None:
         self.iteration += 1
         self._logger.info("Iteration: %7i, Coverage: %5f", self.iteration, best.get_coverage())
-        print(
-            json.dumps({
-                "time": math.floor(time.time() - self.start_time),
-                "iteration": self.iteration,
-                "coverage": best.get_coverage(),
-            })
-        )
 
     def after_search_finish(self) -> None:
         """Not used."""

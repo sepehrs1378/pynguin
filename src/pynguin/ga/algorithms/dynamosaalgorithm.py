@@ -11,20 +11,24 @@ import logging
 
 from typing import TYPE_CHECKING
 from typing import cast
+import time
+import statistics
 
 import networkx as nx
+import numpy as np
 
 from networkx.drawing.nx_pydot import to_pydot
 
 import pynguin.configuration as config
 import pynguin.ga.coveragegoals as bg
 import pynguin.utils.statistics.statistics as stat
+import pynguin.ga.computations as ff
 
 from pynguin.ga.algorithms.abstractmosaalgorithm import AbstractMOSAAlgorithm
 from pynguin.ga.operators.ranking import fast_epsilon_dominance_assignment
 from pynguin.utils.orderedset import OrderedSet
 from pynguin.utils.statistics.runtimevariable import RuntimeVariable
-import pynguin.ga.computations as ff
+from pynguin.utils import helpers
 
 
 if TYPE_CHECKING:
@@ -63,9 +67,52 @@ class DynaMOSAAlgorithm(AbstractMOSAAlgorithm):
             fast_epsilon_dominance_assignment(fronts.get_sub_front(i), self._goals_manager.current_goals)
 
         self.before_first_search_iteration(self.create_test_suite(self._archive.solutions))
+        iteration = 1
+        start = time.time()
         while self.resources_left() and len(self._archive.uncovered_goals) > 0:
             self.evolve()
-            self.after_search_iteration(self.create_test_suite(self._archive.solutions))
+            solutions = self.create_test_suite(self._archive.solutions)
+            self.after_search_iteration(solutions)
+
+            pop_times = [tc.get_last_execution_result().execution_time for tc in self._population]
+            pop_mems = [tc.get_last_execution_result().peak_memory_usage for tc in self._population]
+            sols_times = [tc.get_last_execution_result().execution_time for tc in solutions.test_case_chromosomes]
+            sols_mems = [tc.get_last_execution_result().peak_memory_usage for tc in solutions.test_case_chromosomes]
+            helpers.print_dict({
+                "elapsed_time": time.time() - start,
+                "iteration": iteration,
+                "num_covered_goals": len(self._archive.covered_goals),
+                "solutions": {
+                    "coverage": solutions.get_coverage(),
+                    "exec_times": {
+                        "min": min(sols_times),
+                        "max": max(sols_times),
+                        "std": statistics.stdev(sols_times),
+                        "mean": statistics.mean(sols_times),
+                    },
+                    "peak_memory_usage": {
+                        "min": min(sols_mems),
+                        "max": max(sols_mems),
+                        "std": statistics.stdev(sols_mems),
+                        "mean": statistics.mean(sols_mems),
+                    },
+                },
+                "population": {
+                    "exec_time": {
+                        "min": min(pop_times),
+                        "max": max(pop_times),
+                        "std": statistics.stdev(pop_times),
+                        "mean": statistics.mean(pop_times),
+                    },
+                    "peak_memory_usage": {
+                        "min": min(pop_mems),
+                        "max": max(pop_mems),
+                        "std": statistics.stdev(pop_mems),
+                        "mean": statistics.mean(pop_mems),
+                    },
+                },
+            })
+            iteration += 1
 
         self.after_search_finish()
         return self.create_test_suite(
