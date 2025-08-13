@@ -45,7 +45,7 @@ def run_pynguin(flags: dict[str, Any], output_file: str) -> None:
         # "--seed",
         # "1",
         "--maximum-search-time",
-        "300",
+        "600",
     ]
     for flag, val in flags.items():
         command.extend([f"--{flag}", val])
@@ -74,15 +74,9 @@ def main():
             module_name = sys.argv[2]
             if module_name not in ["banking", "matrix"]:
                 raise ValueError
-            population = sys.argv[3]
-            if not isinstance(population, int):
-                raise ValueError
-            total_runs = sys.argv[4]
-            if not isinstance(total_runs, int):
-                raise ValueError
-            batch = sys.argv[5]
-            if not isinstance(batch, int):
-                raise ValueError
+            population = int(sys.argv[3])
+            total_runs = int(sys.argv[4])
+            batch = int(sys.argv[5])
         except ValueError:
             print("python script.py branch module_name population total_runs batch")
             return
