@@ -6,6 +6,7 @@ import subprocess
 import time
 import sys
 
+
 def setup_environment():
     """Set up environment variables and activate virtualenv"""
     env_vars = {"PYTHONPATH": "/home/sepehr/university/MS/thesis/pynguin/src/", "PYNGUIN_DANGER_AWARE": "1"}
@@ -66,22 +67,38 @@ def main():
     if len(sys.argv) == 1:
         raise ValueError("Input `dev` or `algo`.")
     else:
-        branch = "dev" if sys.argv[1] == "dev" else "algo"
+        try:
+            branch = sys.argv[1]
+            if branch not in ["dev", "algo"]:
+                raise ValueError
+            module_name = sys.argv[2]
+            if module_name not in ["banking", "matrix"]:
+                raise ValueError
+            population = sys.argv[3]
+            if not isinstance(population, int):
+                raise ValueError
+            total_runs = sys.argv[4]
+            if not isinstance(total_runs, int):
+                raise ValueError
+            batch = sys.argv[5]
+            if not isinstance(batch, int):
+                raise ValueError
+        except ValueError:
+            print("python script.py branch module_name population total_runs batch")
+            return
 
     setup_environment()
 
-    TOTAL_RUNS = 15
-    BATCH = 5
-    with ThreadPoolExecutor(max_workers=BATCH) as executor:
+    with ThreadPoolExecutor(max_workers=batch) as executor:
         executor.map(
             lambda i: run_pynguin(
                 flags={
-                    "population": "10",
-                    "module-name": "banking",
+                    "population": str(population),
+                    "module-name": module_name,
                 },
-                output_file=f"results/raw/{branch}_banking_{i}",
+                output_file=f"results/raw/{branch}_{module_name}_{i}",
             ),
-            range(1, TOTAL_RUNS + 1),
+            range(1, total_runs + 1),
         )
 
 
