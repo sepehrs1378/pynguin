@@ -1,7 +1,7 @@
 from typing import Any
 import os
-import sys
 import traceback
+from concurrent.futures import ThreadPoolExecutor
 
 import subprocess
 import time
@@ -40,8 +40,10 @@ def run_pynguin(flags: dict[str, Any], output_file: str) -> None:
         "--assertion-generation",
         "NONE",
         "-v",
-        "--seed",
-        "1",
+        "--algorithm",
+        "DYNAMOSA",
+        # "--seed",
+        # "1",
         "--maximum-search-time",
         "300",
     ]
@@ -58,87 +60,29 @@ def run_pynguin(flags: dict[str, Any], output_file: str) -> None:
             print(f"Pynguin completed successfully. Output saved to {output_file}")
     except Exception as e:
         traceback.print_exc()
-    end_time = time.time()
-    print(f"Execution time: {end_time - start_time:.2f} seconds")
+    print(f"Execution time: {time.time() - start_time:.2f} seconds")
 
 
 def main():
     if len(sys.argv) == 1:
-        algorithms = [
-            "DYNAMOSA",
-            "MOSA",
-            "MIO",
-            "RANDOM",
-            "RANDOM_TEST_CASE_SEARCH",
-            "RANDOM_TEST_SUITE_SEARCH",
-            "WHOLE_SUITE",
-        ]
+        raise ValueError("Input `dev` or `algo`.")
     else:
-        algorithms = sys.argv[1:]
+        branch = "dev" if sys.argv[1] == "dev" else "algo"
 
     setup_environment()
 
-    algorithms = [
-        "DYNAMOSA",
-        "MOSA",
-        "MIO",
-        "RANDOM",
-        "RANDOM_TEST_CASE_SEARCH",
-        "RANDOM_TEST_SUITE_SEARCH",
-        "WHOLE_SUITE",
-    ]
-    for algo in algorithms:
-        if algo in {"RANDOM_TEST_SUITE_SEARCH", "WHOLE_SUITE"}:
-            run_pynguin(
+    TOTAL_RUNS = 15
+    BATCH = 5
+    with ThreadPoolExecutor(max_workers=BATCH) as executor:
+        executor.map(
+            lambda i: run_pynguin(
                 flags={
+                    "population": "10",
                     "module-name": "banking",
-                    "algorithm": algo,
-                    "constraints": "EXECUTION_TIME",
-                    "test-suite-execution-time-limit": "600_000_000",
                 },
-                output_file=f"results/raw/{algo}_time",
-            )
-            run_pynguin(
-                flags={
-                    "module-name": "matrix_calculus",
-                    "algorithm": algo,
-                    "constraints": "PEAK_MEMORY_USAGE",
-                    "test-suite-memory-usage-limit": "9000",
-                },
-                output_file=f"results/raw/{algo}_mem",
-            )
-        else:
-            run_pynguin(
-                flags={
-                    "module-name": "banking",
-                    "algorithm": algo,
-                    "constraints": "EXECUTION_TIME",
-                    "test-case-execution-time-limit": "100_000_000",
-                },
-                output_file=f"results/raw/{algo}_time",
-            )
-            run_pynguin(
-                flags={
-                    "module-name": "matrix_calculus",
-                    "algorithm": algo,
-                    "constraints": "PEAK_MEMORY_USAGE",
-                    "test-case-memory-usage-limit": "7500",
-                },
-                output_file=f"results/raw/{algo}_mem",
-            )
-        run_pynguin(
-            flags={
-                "module-name": "banking",
-                "algorithm": algo,
-            },
-            output_file=f"results/raw/{algo}_no_time",
-        )
-        run_pynguin(
-            flags={
-                "module-name": "matrix_calculus",
-                "algorithm": algo,
-            },
-            output_file=f"results/raw/{algo}_no_mem",
+                output_file=f"results/raw/{branch}_banking_{i}",
+            ),
+            range(1, TOTAL_RUNS + 1),
         )
 
 
