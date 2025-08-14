@@ -4,7 +4,7 @@ import traceback
 from concurrent.futures import ThreadPoolExecutor
 import subprocess
 import time
-import sys
+import argparse
 
 
 def setup_environment():
@@ -44,8 +44,6 @@ def run_pynguin(flags: dict[str, Any], output_file: str) -> None:
         "DYNAMOSA",
         # "--seed",
         # "1",
-        "--maximum-search-time",
-        "600",
     ]
     for flag, val in flags.items():
         command.extend([f"--{flag}", val])
@@ -64,35 +62,28 @@ def run_pynguin(flags: dict[str, Any], output_file: str) -> None:
 
 
 def main():
-    if len(sys.argv) == 1:
-        raise ValueError("Input `dev` or `algo`.")
-    else:
-        try:
-            branch = sys.argv[1]
-            if branch not in ["dev", "algo"]:
-                raise ValueError
-            module_name = sys.argv[2]
-            if module_name not in ["banking", "matrix"]:
-                raise ValueError
-            population = int(sys.argv[3])
-            total_runs = int(sys.argv[4])
-            batch = int(sys.argv[5])
-        except ValueError:
-            print("python script.py branch module_name population total_runs batch")
-            return
+    parser = argparse.ArgumentParser(description="A script to run and get results.")
+    parser.add_argument("--branch", type=str, help="Branch", required=True, choices=["dev", "algo"])
+    parser.add_argument("--module", type=str, help="Module", required=True, choices=["banking", "matrix"])
+    parser.add_argument("--population", type=int, help="Population", required=True)
+    parser.add_argument("--total-runs", type=int, help="Total runs", required=True)
+    parser.add_argument("--batch", type=int, help="Batch", required=True)
+    parser.add_argument("--max-search-time", type=int, help="Max search time", required=True)
+    args = parser.parse_args()
 
     setup_environment()
 
-    with ThreadPoolExecutor(max_workers=batch) as executor:
+    with ThreadPoolExecutor(max_workers=args.batch) as executor:
         executor.map(
             lambda i: run_pynguin(
                 flags={
-                    "population": str(population),
-                    "module-name": module_name,
+                    "population": str(args.population),
+                    "module-name": args.module,
+                    "maximum-search-time": str(args.max_search_time),
                 },
-                output_file=f"results/raw/{branch}_{module_name}_{i}",
+                output_file=f"results/raw/{args.branch}_{args.module}_{i}",
             ),
-            range(1, total_runs + 1),
+            range(1, args.total_runs + 1),
         )
 
 
