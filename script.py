@@ -38,12 +38,10 @@ def run_pynguin(flags: dict[str, Any], output_file: str) -> None:
         "--output-path",
         "code_to_test/output",
         "--assertion-generation",
-        "NONE",
+        "NONE",  # TODO!: comment this?
         "-v",
         "--algorithm",
         "DYNAMOSA",
-        # "--seed",
-        # "1",
     ]
     for flag, val in flags.items():
         command.extend([f"--{flag}", val])
