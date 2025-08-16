@@ -1,6 +1,6 @@
-# Constants for memory usage
-LOW = 1_000_000
-HIGH = 10_000_000
+# Changes in memory usage start to show from C = 100_000.
+LOW = 1  # 1_000_000
+HIGH = 100000  # 10_000_000
 
 
 # Smart Home Control System Simulation
