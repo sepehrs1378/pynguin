@@ -61,8 +61,8 @@ def run_pynguin(flags: dict[str, Any], output_file: str) -> None:
 
 def main():
     parser = argparse.ArgumentParser(description="A script to run and get results.")
-    parser.add_argument("--branch", type=str, help="Branch", required=True, choices=["dev", "algo"])
-    parser.add_argument("--module", type=str, help="Module", required=True, choices=["banking", "matrix"])
+    parser.add_argument("--branch", type=str, help="Branch", required=True, choices=["base", "algo"])
+    parser.add_argument("--module", type=str, help="Module", required=True, choices=["banking", "sensor"])
     parser.add_argument("--population", type=int, help="Population", required=True)
     parser.add_argument("--total-runs", type=int, help="Total runs", required=True)
     parser.add_argument("--batch", type=int, help="Batch", required=True)
