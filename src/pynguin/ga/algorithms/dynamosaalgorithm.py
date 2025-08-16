@@ -83,14 +83,14 @@ class DynaMOSAAlgorithm(AbstractMOSAAlgorithm):
                 "iteration": iteration,
                 "num_covered_goals": len(self._archive.covered_goals),
                 "solutions": {
-                    "coverage": solutions.get_coverage(),
-                    "exec_times": {
+                    "cov": solutions.get_coverage(),
+                    "et": {
                         "min": min(sols_times),
                         "max": max(sols_times),
                         "std": statistics.stdev(sols_times),
                         "mean": statistics.mean(sols_times),
                     },
-                    "peak_memory_usage": {
+                    "mu": {
                         "min": min(sols_mems),
                         "max": max(sols_mems),
                         "std": statistics.stdev(sols_mems),
@@ -98,13 +98,13 @@ class DynaMOSAAlgorithm(AbstractMOSAAlgorithm):
                     },
                 },
                 "population": {
-                    "exec_time": {
+                    "et": {
                         "min": min(pop_times),
                         "max": max(pop_times),
                         "std": statistics.stdev(pop_times),
                         "mean": statistics.mean(pop_times),
                     },
-                    "peak_memory_usage": {
+                    "mu": {
                         "min": min(pop_mems),
                         "max": max(pop_mems),
                         "std": statistics.stdev(pop_mems),
