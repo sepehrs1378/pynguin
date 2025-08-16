@@ -42,6 +42,8 @@ def run_pynguin(flags: dict[str, Any], output_file: str) -> None:
         "-v",
         "--algorithm",
         "DYNAMOSA",
+        # "--seed",
+        # "1",
     ]
     for flag, val in flags.items():
         command.extend([f"--{flag}", val])
