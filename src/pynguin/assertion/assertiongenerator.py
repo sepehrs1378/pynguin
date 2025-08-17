@@ -33,7 +33,7 @@ from pynguin.instrumentation.machinery import build_transformer
 from pynguin.utils import randomness
 from pynguin.utils.orderedset import OrderedSet
 from pynguin.utils.statistics.runtimevariable import RuntimeVariable
-
+from pynguin.utils import helpers
 
 if TYPE_CHECKING:
     import pynguin.ga.testcasechromosome as tcc
@@ -308,7 +308,7 @@ class MutationAnalysisAssertionGenerator(AssertionGenerator):
             for idx, (mutated_module, _) in enumerate(self._mutation_controller.create_mutants(), start=1):
                 if mutated_module is None:
                     self._logger.info(
-                        "Skipping mutant %3i/%i because " "it created an invalid module",
+                        "Skipping mutant %3i/%i because it created an invalid module",
                         idx,
                         mutant_count,
                     )
@@ -400,3 +400,9 @@ class MutationAnalysisAssertionGenerator(AssertionGenerator):
             len(survived),
             ", ".join(str(x.mut_num) for x in survived),
         )
+        helpers.print_dict({
+            "type": "mutation_analysis",
+            "created": metrics.num_created_mutants,
+            "killed": metrics.num_killed_mutants,
+            "timed_out": metrics.num_timeout_mutants,
+        })
