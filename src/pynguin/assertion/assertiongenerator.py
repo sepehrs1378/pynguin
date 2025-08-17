@@ -302,7 +302,7 @@ class MutationAnalysisAssertionGenerator(AssertionGenerator):
             (test, []) for test in test_cases
         ]
 
-        MAX_MUTANT_COUNT = 5
+        MAX_MUTANT_COUNT = 30
         mutant_count = self._mutation_controller.mutant_count()
         helpers.print_dict({
             "type": "mutation_analysis_mutant_count",
