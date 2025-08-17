@@ -79,6 +79,7 @@ class DynaMOSAAlgorithm(AbstractMOSAAlgorithm):
             sols_times = [tc.get_last_execution_result().execution_time for tc in solutions.test_case_chromosomes]
             sols_mems = [tc.get_last_execution_result().peak_memory_usage for tc in solutions.test_case_chromosomes]
             helpers.print_dict({
+                "type": "iteration",
                 "elapsed_time": time.time() - start,
                 "iteration": iteration,
                 "num_covered_goals": len(self._archive.covered_goals),
