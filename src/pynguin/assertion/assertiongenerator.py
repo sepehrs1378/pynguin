@@ -302,10 +302,22 @@ class MutationAnalysisAssertionGenerator(AssertionGenerator):
             (test, []) for test in test_cases
         ]
 
+        MAX_MUTANT_COUNT = 5
         mutant_count = self._mutation_controller.mutant_count()
-
+        helpers.print_dict({
+            "type": "mutation_analysis_mutant_count",
+            "original": mutant_count,
+            "max_mutant_count": MAX_MUTANT_COUNT,
+        })
+        real_mutant_count = 0
+        mutant_accept_rate = min(1.0, MAX_MUTANT_COUNT / mutant_count)
         with self._mutation_executor.temporarily_add_observer(ato.AssertionVerificationObserver()):
             for idx, (mutated_module, _) in enumerate(self._mutation_controller.create_mutants(), start=1):
+                if randomness.next_float() > mutant_accept_rate:
+                    self._logger.info("Skipped mutant %3i/%i", idx, mutant_count)
+                    continue
+
+                real_mutant_count += 1
                 if mutated_module is None:
                     self._logger.info(
                         "Skipping mutant %3i/%i because it created an invalid module",
@@ -328,7 +340,7 @@ class MutationAnalysisAssertionGenerator(AssertionGenerator):
                 for test, results in tests_and_results:
                     results.append(self._mutation_executor.execute(test))
 
-        summary = self.__compute_mutation_summary(mutant_count, tests_and_results)
+        summary = self.__compute_mutation_summary(real_mutant_count, tests_and_results)
         self.__report_mutation_summary(summary)
         self.__remove_non_relevant_assertions(tests_and_results, summary)
 
