@@ -37,8 +37,6 @@ def run_pynguin(flags: dict[str, Any], output_file: str) -> None:
         "code_to_test/modules",
         "--output-path",
         "code_to_test/output",
-        "--assertion-generation",
-        "NONE",  # TODO!: comment this?
         "-v",
         "--algorithm",
         "DYNAMOSA",
@@ -68,6 +66,7 @@ def main():
     parser.add_argument("--population", type=int, help="Population", required=True)
     parser.add_argument("--total-runs", type=int, help="Total runs", required=True)
     parser.add_argument("--batch", type=int, help="Batch", required=True)
+    parser.add_argument("--mutation-on", type=bool, help="Mutation on?", required=True)
     parser.add_argument("--max-search-time", type=int, help="Max search time", required=True)
     args = parser.parse_args()
 
@@ -80,6 +79,7 @@ def main():
                     "population": str(args.population),
                     "module-name": args.module,
                     "maximum-search-time": str(args.max_search_time),
+                    "assertion-generation": "MUTATION_ANALYSIS" if args.mutation_on else "NONE",
                 },
                 output_file=f"results/raw/{args.branch}_{args.module}_{i}",
             ),
