@@ -66,7 +66,7 @@ def main():
     parser.add_argument("--population", type=int, help="Population", required=True)
     parser.add_argument("--total-runs", type=int, help="Total runs", required=True)
     parser.add_argument("--batch", type=int, help="Batch", required=True)
-    parser.add_argument("--mutation-on", type=bool, help="Mutation on?", required=True)
+    parser.add_argument("--mutation-on", action="store_true", help="Mutation on?")
     parser.add_argument("--max-search-time", type=int, help="Max search time", required=True)
     args = parser.parse_args()
 
