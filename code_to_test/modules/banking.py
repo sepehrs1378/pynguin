@@ -1,8 +1,12 @@
 import time
 
-# Sleeps should be in the form of BASE_SLEEP * X.
-FAST_SLEEP = 0.0001
-SLOW_SLEEP = 0.01
+# # Test run
+# FAST_SLEEP = 0.0001
+# SLOW_SLEEP = 0.01
+
+# Real run
+FAST_SLEEP = 0.001
+SLOW_SLEEP = 0.1
 
 
 def create_employee(id_: int, age: int, is_senior: bool) -> None:
