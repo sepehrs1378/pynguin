@@ -1,10 +1,17 @@
-# Changes in memory usage start to show from C = 100_000.
-LOW = 100_000  # 1_000_000
-HIGH = 10_000_000  # 10_000_000
+# Changes in memory usage start to show from C = 1e5.
+
+# Test run
+LOW = 1e5
+HIGH = 1e7
+
+# Real run
+# LOW = 1e6
+# HIGH = 1e7
 
 
 # Smart Home Control System Simulation
 def control_lighting(light_level: int, motion_detected: bool, manual_override: bool):
+    memory = [0] * LOW
     if light_level < 30:
         if motion_detected:
             memory = [0] * HIGH  # High memory for detailed lighting analysis
@@ -20,6 +27,7 @@ def control_lighting(light_level: int, motion_detected: bool, manual_override: b
 
 
 def manage_temperature(current_temp: int, target_temp: int, eco_mode: bool):
+    memory = [0] * LOW
     if current_temp < target_temp - 5:
         if eco_mode:
             memory = [0] * LOW  # Eco mode uses simpler heating
@@ -32,6 +40,7 @@ def manage_temperature(current_temp: int, target_temp: int, eco_mode: bool):
 
 
 def security_check(window_open: bool, door_open: bool, alarm_armed: bool):
+    memory = [0] * LOW
     if alarm_armed:
         if window_open or door_open:
             memory = [0] * HIGH  # Detailed security analysis
@@ -42,6 +51,7 @@ def security_check(window_open: bool, door_open: bool, alarm_armed: bool):
 
 
 def water_heater_control(water_usage: int, time_of_day: int, vacation_mode: bool):
+    memory = [0] * LOW
     if water_usage > 50:
         memory = [0] * HIGH  # High water usage analysis
     else:
@@ -55,6 +65,7 @@ def water_heater_control(water_usage: int, time_of_day: int, vacation_mode: bool
 
 
 def appliance_scheduler(time: int, day_type: bool, energy_saving: bool):
+    memory = [0] * LOW
     if day_type:  # Weekend
         if time > 10 and time < 20:
             memory = [0] * HIGH  # More analysis during active hours
@@ -69,6 +80,7 @@ def appliance_scheduler(time: int, day_type: bool, energy_saving: bool):
 
 
 def air_quality_control(co2_level: int, humidity: int, purifier_on: bool):
+    memory = [0] * LOW
     if co2_level > 1000:
         memory = [0] * HIGH  # Detailed air quality analysis
         if purifier_on:
@@ -81,6 +93,7 @@ def air_quality_control(co2_level: int, humidity: int, purifier_on: bool):
 
 
 def entertainment_system(volume: int, content_type: bool, user_premium: bool):
+    memory = [0] * LOW
     if volume > 80:
         memory = [0] * HIGH  # Loud volume needs more processing
     else:
@@ -94,6 +107,7 @@ def entertainment_system(volume: int, content_type: bool, user_premium: bool):
 
 
 def irrigation_control(soil_moisture: int, weather_forecast: bool, season: int):
+    memory = [0] * LOW
     if soil_moisture < 30:
         if weather_forecast:  # Rain expected
             memory = [0] * HIGH  # Detailed forecast analysis
@@ -107,6 +121,7 @@ def irrigation_control(soil_moisture: int, weather_forecast: bool, season: int):
 
 
 def window_control(outside_temp: int, inside_temp: int, rain_detected: bool):
+    memory = [0] * LOW
     if outside_temp > inside_temp + 5:
         if rain_detected:
             memory = [0] * LOW  # Keep windows closed
@@ -119,6 +134,7 @@ def window_control(outside_temp: int, inside_temp: int, rain_detected: bool):
 
 
 def energy_monitor(current_usage: int, time_peak: bool, solar_active: bool):
+    memory = [0] * LOW
     if current_usage > 5000:
         memory = [0] * HIGH  # High usage analysis
     else:
@@ -132,6 +148,7 @@ def energy_monitor(current_usage: int, time_peak: bool, solar_active: bool):
 
 
 def safety_check(smoke_detected: bool, co_detected: bool, system_age: int):
+    memory = [0] * LOW
     if smoke_detected or co_detected:
         memory = [0] * HIGH  # Emergency situation
     else:
@@ -142,6 +159,7 @@ def safety_check(smoke_detected: bool, co_detected: bool, system_age: int):
 
 
 def user_profile_update(profile_age: int, activity_level: int, new_device: bool):
+    memory = [0] * HIGH
     if profile_age > 365:  # 1 year
         memory = [0] * HIGH  # Long-term pattern analysis
     else:
@@ -155,6 +173,7 @@ def user_profile_update(profile_age: int, activity_level: int, new_device: bool)
 
 
 def backup_system(backup_size: int, critical_data: bool, network_speed: int):
+    memory = [0] * HIGH
     if backup_size > 1000:
         if critical_data:
             memory = [0] * HIGH  # Secure backup
@@ -168,6 +187,7 @@ def backup_system(backup_size: int, critical_data: bool, network_speed: int):
 
 
 def system_diagnostics(error_count: int, uptime: int, last_maintenance: int):
+    memory = [0] * HIGH
     if error_count > 10:
         memory = [0] * HIGH  # Detailed error analysis
     else:
