@@ -1,12 +1,12 @@
 # Changes in memory usage start to show from C = 1e5.
 
 # Test run
-LOW = 1e5
-HIGH = 1e7
+LOW = 100_000
+HIGH = 10_000_000
 
 # Real run
-# LOW = 1e6
-# HIGH = 1e7
+# LOW = 1_000_000
+# HIGH = 10_000_000
 
 
 # Smart Home Control System Simulation
