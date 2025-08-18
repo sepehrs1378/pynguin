@@ -1,8 +1,8 @@
 # Changes in memory usage start to show from C = 1e5.
 
 # Test run
-LOW = 100_000
-HIGH = 10_000_000
+LOW = 1_000
+HIGH = 100_000
 
 # Real run
 # LOW = 1_000_000
