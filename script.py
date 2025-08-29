@@ -38,8 +38,6 @@ def run_pynguin(flags: dict[str, Any], output_file: str) -> None:
         "--output-path",
         "code_to_test/output",
         "-v",
-        "--algorithm",
-        "DYNAMOSA",
         # "--seed",
         # "1",
     ]
@@ -61,7 +59,9 @@ def run_pynguin(flags: dict[str, Any], output_file: str) -> None:
 
 def main():
     parser = argparse.ArgumentParser(description="A script to run and get results.")
-    parser.add_argument("--branch", type=str, help="Branch", required=True, choices=["base", "algo"])
+    parser.add_argument(
+        "--branch", type=str, help="Branch", required=True, choices=["dynamosa", "mosa", "wholesuite", "algo"]
+    )
     parser.add_argument("--module", type=str, help="Module", required=True, choices=["banking", "sensor"])
     parser.add_argument("--population", type=int, help="Population", required=True)
     parser.add_argument("--total-runs", type=int, help="Total runs", required=True)
@@ -69,6 +69,13 @@ def main():
     parser.add_argument("--mutation-on", action="store_true", help="Mutation on?")
     parser.add_argument("--max-search-time", type=int, help="Max search time", required=True)
     args = parser.parse_args()
+
+    if args.branch in {"dynamosa", "algo"}:
+        args.algorithm = "DYNAMOSA"
+    elif args.branch == "mosa":
+        args.algorithm = "MOSA"
+    elif args.branch == "wholesuite":
+        args.algorithm = "WHOLE_SUITE"
 
     setup_environment()
 
@@ -80,6 +87,7 @@ def main():
                     "module-name": args.module,
                     "maximum-search-time": str(args.max_search_time),
                     "assertion-generation": "MUTATION_ANALYSIS" if args.mutation_on else "NONE",
+                    "algorithm": args.algorithm,
                 },
                 output_file=f"results/raw/{args.branch}_{args.module}_{i}",
             ),
