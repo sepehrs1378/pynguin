@@ -9,6 +9,8 @@
 from __future__ import annotations
 
 import logging
+import time
+import statistics
 
 from typing import cast
 
@@ -16,11 +18,12 @@ import pynguin.configuration as config
 import pynguin.ga.algorithms.archive as arch
 import pynguin.ga.computations as ff
 import pynguin.ga.coveragegoals as bg
+import pynguin.ga.testsuitechromosome as tsc
 
 from pynguin.ga.algorithms.generationalgorithm import GenerationAlgorithm
 from pynguin.utils import randomness
 from pynguin.utils.exceptions import ConstructionFailedException
-import pynguin.ga.testsuitechromosome as tsc
+from pynguin.utils import helpers
 
 # TODO(fk) instead of switching on 'use_archive' on two locations, we could
 # also create another subclass?
@@ -44,10 +47,61 @@ class WholeSuiteAlgorithm(GenerationAlgorithm[arch.CoverageArchive, tsc.TestSuit
         self._sort_population()
         suite = self._get_solution()
         self.before_first_search_iteration(suite)
+        start = time.time()
+        iteration = 1
         while self.resources_left() and suite.get_fitness() != 0.0:
             self.evolve()
             suite = self._get_solution()
             self.after_search_iteration(suite)
+
+            pop_times = [
+                tc.get_last_execution_result().execution_time
+                for suite in self._population
+                for tc in suite.test_case_chromosomes
+            ]
+            pop_mems = [
+                tc.get_last_execution_result().peak_memory_usage
+                for suite in self._population
+                for tc in suite.test_case_chromosomes
+            ]
+            sols_times = [tc.get_last_execution_result().execution_time for tc in suite.test_case_chromosomes]
+            sols_mems = [tc.get_last_execution_result().peak_memory_usage for tc in suite.test_case_chromosomes]
+            helpers.print_dict({
+                "type": "iteration",
+                "elapsed_time": time.time() - start,
+                "iteration": iteration,
+                "num_covered_goals": len(self._archive.covered_goals),
+                "solutions": {
+                    "cov": suite.get_coverage(),
+                    "et": {
+                        "min": min(sols_times),
+                        "max": max(sols_times),
+                        "std": statistics.stdev(sols_times),
+                        "mean": statistics.mean(sols_times),
+                    },
+                    "mu": {
+                        "min": min(sols_mems),
+                        "max": max(sols_mems),
+                        "std": statistics.stdev(sols_mems),
+                        "mean": statistics.mean(sols_mems),
+                    },
+                },
+                "population": {
+                    "et": {
+                        "min": min(pop_times),
+                        "max": max(pop_times),
+                        "std": statistics.stdev(pop_times),
+                        "mean": statistics.mean(pop_times),
+                    },
+                    "mu": {
+                        "min": min(pop_mems),
+                        "max": max(pop_mems),
+                        "std": statistics.stdev(pop_mems),
+                        "mean": statistics.mean(pop_mems),
+                    },
+                },
+            })
+            iteration += 1
         self.after_search_finish()
         return suite
 
