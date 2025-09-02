@@ -43,12 +43,12 @@ class MOSAAlgorithm(AbstractMOSAAlgorithm):
         # Calculate dominance ranks and crowding distance
         fronts = self._ranking_function.compute_ranking_assignment(
             self._population,
-            self._archive.uncovered_goals,  # type: ignore[arg-type]
+            self._archive.current_goals,  # type: ignore[arg-type]
         )
         for i in range(fronts.get_number_of_sub_fronts()):
             fast_epsilon_dominance_assignment(
                 fronts.get_sub_front(i),
-                self._archive.uncovered_goals,  # type: ignore[arg-type]
+                self._archive.current_goals,  # type: ignore[arg-type]
             )
 
         self.before_first_search_iteration(self.create_test_suite(self._archive.solutions))
@@ -70,7 +70,7 @@ class MOSAAlgorithm(AbstractMOSAAlgorithm):
         union.extend(self._population)
         union.extend(offspring_population)
 
-        uncovered_goals: OrderedSet[ff.FitnessFunction] = self._archive.uncovered_goals  # type: ignore[assignment]
+        uncovered_goals: OrderedSet[ff.FitnessFunction] = self._archive.current_goals  # type: ignore[assignment]
 
         # Ranking the union
         self._logger.debug("Union Size = %d", len(union))

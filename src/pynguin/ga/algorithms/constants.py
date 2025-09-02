@@ -1,0 +1,33 @@
+# Not needed anymore
+# W_BRANCHES = 2e2
+
+
+# # Banking
+# CUR_GOAL_COUNT = 30
+# START_TEMPERATURE = 10
+# TEMPERATURE_MUL = 0.95
+# EMA_ALPHA = 0.3
+
+# C_TIME = 1e0
+# C_MEMORY = 1e0 # 1e-1
+
+# W_TIME = 1e0
+# W_MEMORY = 1e0
+
+# MAX_TIME = 1e8
+# MAX_MEMORY = 1e8
+
+# Sensor
+CUR_GOAL_COUNT = 30
+START_TEMPERATURE = 10
+TEMPERATURE_MUL = 0.95
+EMA_ALPHA = 0.3
+
+C_TIME = 1e0
+C_MEMORY = 2e0
+
+W_TIME = 1e0
+W_MEMORY = 1e0
+
+MAX_TIME = 1e8
+MAX_MEMORY = 1e8

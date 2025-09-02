@@ -9,7 +9,7 @@
 from __future__ import annotations
 
 import logging
-import sys
+import copy
 
 from abc import ABC
 from abc import abstractmethod
@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import pynguin.ga.computations as ff
+import pynguin.ga.coveragegoals as cg
 import pynguin.ga.testcasechromosome as tcc
 
 from pynguin.utils import randomness
@@ -99,13 +100,10 @@ class CoverageArchive(Archive):
 
     _logger = logging.getLogger(__name__)
 
-    def __init__(  # noqa: D107
-        self, objectives: OrderedSet[ff.TestCaseFitnessFunction]
-    ) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self._covered: dict[ff.TestCaseFitnessFunction, tcc.TestCaseChromosome] = {}
-        self._uncovered = OrderedSet(objectives)
-        self._objectives = OrderedSet(objectives)
+        self._covered: dict[cg.BranchCoverageTestFitness, tcc.TestCaseChromosome] = {}
+        self._current_goals: OrderedSet[cg.BranchCoverageTestFitness] = OrderedSet()
 
     def update(self, solutions: Iterable[tcc.TestCaseChromosome]) -> bool:
         """Updates this archive with the given set of solutions.
@@ -119,36 +117,69 @@ class CoverageArchive(Archive):
         Args:
             solutions: The solutions to update the archive with
         """
-        updated = False
-        for objective in self._objectives:
-            best_solution = self._covered.get(objective, None)
-            best_size = sys.maxsize if best_solution is None else best_solution.size()
+        # updated = False
+        # for objective in self._objectives:
+        #     best_solution = self._covered.get(objective, None)
+        #     best_size = sys.maxsize if best_solution is None else best_solution.size()
 
+        #     for solution in solutions:
+        #         covers = solution.get_is_covered(objective)
+        #         size = solution.size()
+
+        #         if covers and size < best_size:
+        #             updated = True
+        #             self._covered[objective] = solution
+        #             best_size = size
+        #             if objective in self._uncovered:
+        #                 self._uncovered.remove(objective)
+        #                 self._on_target_covered(objective)
+        # self._logger.debug("ArchiveCoverageGoals: %d", len(self._covered))
+        print("--> archive.update")
+
+        updated = False
+        all_objectives = [*self._current_goals, *self._covered.keys()]
+        # print("# all_objectives:", all_objectives)
+        for objective in all_objectives:
             for solution in solutions:
                 covers = solution.get_is_covered(objective)
-                size = solution.size()
-
-                if covers and size < best_size:
-                    updated = True
-                    self._covered[objective] = solution
-                    best_size = size
-                    if objective in self._uncovered:
-                        self._uncovered.remove(objective)
+                if objective in self._current_goals:
+                    if covers:
+                        updated = True
+                        self._covered[objective] = solution
+                        self._current_goals.remove(objective)
                         self._on_target_covered(objective)
+                        objective.observe_sample(solution.get_last_execution_result())
+                elif objective in self._covered:
+                    result = solution.get_last_execution_result()
+                    prev_result = self._covered[objective].get_last_execution_result()
+                    if (
+                        covers
+                        and result.execution_time < prev_result.execution_time
+                        and result.peak_memory_usage < prev_result.peak_memory_usage
+                    ):
+                        updated = True
+                        self._covered[objective] = solution
+                        objective.observe_sample(solution.get_last_execution_result())
+                else:
+                    assert 1 == 2
         self._logger.debug("ArchiveCoverageGoals: %d", len(self._covered))
+        # print("# covered:", self.covered_goals)
+        # print("# uncoverd:", self.uncovered_goals)
+
+        print("<-- archive.update")
         return updated
 
     @property
-    def uncovered_goals(self) -> OrderedSet[ff.TestCaseFitnessFunction]:
+    def current_goals(self) -> OrderedSet[cg.BranchCoverageTestFitness]:
         """Provides the set of goals that are yet to cover.
 
         Returns:
             The uncovered goals
         """
-        return self._uncovered
+        return self._current_goals
 
     @property
-    def covered_goals(self) -> OrderedSet[ff.TestCaseFitnessFunction]:
+    def covered_goals(self) -> OrderedSet[cg.BranchCoverageTestFitness]:
         """Provides the set of goals that are already covered.
 
         Returns:
@@ -156,33 +187,14 @@ class CoverageArchive(Archive):
         """
         return OrderedSet(self._covered.keys())
 
-    @property
-    def objectives(self) -> OrderedSet[ff.TestCaseFitnessFunction]:
-        """Provides the set of all objectives.
-
-        Returns:
-            All objectives
-        """
-        return self._objectives
-
-    def add_goals(self, new_goals: OrderedSet[ff.TestCaseFitnessFunction]) -> None:
-        """Add goals to the archive to consider."""
-        for goal in new_goals:
-            if goal not in self._objectives:
-                self._logger.debug("Adding goal: %s", goal)
-                self._objectives.add(goal)
-                self._uncovered.add(goal)
+    def set_current_goals(self, goals: OrderedSet[cg.BranchCoverageTestFitness]) -> None:
+        self._current_goals = copy.copy(goals)
 
     @property
     def solutions(self) -> OrderedSet[tcc.TestCaseChromosome]:  # noqa: D102
         # NOTE!: Commented this because of a bug that doesn't belong to me.
-        # assert self._all_covered(), "Some covered targets have a fitness != 0.0"
+        assert self._all_covered(), "Some covered targets have a fitness != 0.0"
         return OrderedSet(self._covered.values())
-
-    def reset(self) -> None:
-        """Resets the archive."""
-        self._uncovered.update(self._objectives)
-        self._covered.clear()
 
     def _all_covered(self) -> bool:
         return all(

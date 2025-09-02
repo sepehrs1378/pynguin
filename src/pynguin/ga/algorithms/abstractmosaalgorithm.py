@@ -34,6 +34,7 @@ class AbstractMOSAAlgorithm(GenerationAlgorithm[CoverageArchive, tcc.TestCaseChr
         self._number_of_goals = -1
 
     def _breed_next_generation(self) -> list[tcc.TestCaseChromosome]:  # noqa: C901
+        # TODO!: Make mutation and cross-over rates adaptive. (is it necessary?)
         offspring_population: list[tcc.TestCaseChromosome] = []
         for _ in range(int(config.configuration.search_algorithm.population / 2)):
             parent_1 = self._selection_function.select(self._population)[0]
@@ -111,12 +112,8 @@ class AbstractMOSAAlgorithm(GenerationAlgorithm[CoverageArchive, tcc.TestCaseChr
 
     def _get_random_population(self) -> list[tcc.TestCaseChromosome]:
         population: list[tcc.TestCaseChromosome] = []
-        iteration = 0
         population_size = config.configuration.search_algorithm.population
-        while len(population) < population_size and iteration < 5 * population_size:
-            chromosome = self._chromosome_factory.get_chromosome()
-            population.append(chromosome)
-            iteration += 1
+        population = [self._chromosome_factory.get_chromosome() for _ in range(population_size)]
         self._logger.info("Initial population size: %d/%d", len(population), population_size)
         return population
 

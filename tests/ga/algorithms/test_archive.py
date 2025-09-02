@@ -47,13 +47,13 @@ def chromosomes(short_chromosome, long_chromosome) -> list[tcc.TestCaseChromosom
 
 def test_uncovered_goals(objectives):
     archive = CoverageArchive(objectives)
-    assert archive.uncovered_goals == objectives
+    assert archive.current_goals == objectives
 
 
 def test_reset(objectives):
     archive = CoverageArchive(objectives)
     archive.reset()
-    assert archive.uncovered_goals == objectives
+    assert archive.current_goals == objectives
     assert archive.covered_goals == OrderedSet()
     assert archive.solutions == OrderedSet()
 

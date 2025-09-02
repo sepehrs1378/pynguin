@@ -338,6 +338,9 @@ class BranchCoverageTestFitness(ff.TestCaseFitnessFunction):
     ):
         super().__init__(executor, goal.code_object_id)
         self._goal = goal
+        self.execution_time: float = 0  # Nano seconds
+        self.peak_memory_usage: float = 0  # Bytes
+        self.samples: int = 0
 
     def compute_fitness(  # noqa: D102
         self, individual: tcc.TestCaseChromosome
@@ -356,11 +359,17 @@ class BranchCoverageTestFitness(ff.TestCaseFitnessFunction):
     def is_maximisation_function(self) -> bool:  # noqa: D102
         return False
 
+    def observe_sample(self, result: ExecutionResult) -> None:
+        assert result is not None
+        self.execution_time = (self.execution_time * self.samples + result.execution_time) / (self.samples + 1)
+        self.peak_memory_usage = (self.peak_memory_usage * self.samples + result.peak_memory_usage) / (self.samples + 1)
+        self.samples += 1
+
     def __str__(self) -> str:
         return f"BranchCoverageTestFitness for {self._goal}"
 
     def __repr__(self) -> str:
-        return f"BranchCoverageTestFitness(executor={self._executor}, " f"goal={self._goal})"
+        return f"BranchCoverageTestFitness(executor={self._executor}, goal={self._goal})"
 
     @property
     def goal(self) -> AbstractBranchCoverageGoal:
@@ -425,7 +434,7 @@ class StatementCheckedCoverageTestFitness(ff.TestCaseFitnessFunction):
         return f"CheckedCoverageTestFitness for {self._goal}"
 
     def __repr__(self) -> str:
-        return f"CheckedCoverageTestFitness(executor={self._executor}, " f"goal={self._goal})"
+        return f"CheckedCoverageTestFitness(executor={self._executor}, goal={self._goal})"
 
 
 def create_branch_coverage_fitness_functions(

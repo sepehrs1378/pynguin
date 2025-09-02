@@ -320,7 +320,7 @@ class TestSuiteGenerationAlgorithmFactory(GenerationAlgorithmFactory[tsc.TestSui
         if config.configuration.algorithm == config.Algorithm.DYNAMOSA:
             # DynaMOSA gradually adds its fitness functions, so we initialize
             # with an empty set.
-            return arch.CoverageArchive(OrderedSet())
+            return arch.CoverageArchive()
         return arch.CoverageArchive(OrderedSet(strategy.test_case_fitness_functions))
 
     def _get_ranking_function(self) -> RankingFunction:

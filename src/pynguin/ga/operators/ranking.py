@@ -143,6 +143,7 @@ class RankBasedPreferenceSorting(RankingFunction, Generic[C]):
 
     @staticmethod
     def _get_zero_front(solutions: list[C], uncovered_goals: OrderedSet[ff.FitnessFunction]) -> list[C]:
+        # TODO!: No need to check time and memory for zero front?
         zero_front: OrderedSet[C] = OrderedSet()
         for goal in uncovered_goals:
             comparator: PreferenceSortingComparator[C] = PreferenceSortingComparator(goal)

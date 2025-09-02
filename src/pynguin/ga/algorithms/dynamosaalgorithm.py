@@ -12,6 +12,7 @@ import logging
 from typing import TYPE_CHECKING
 from typing import cast
 import time
+import math
 import statistics
 
 import networkx as nx
@@ -26,10 +27,10 @@ import pynguin.ga.computations as ff
 
 from pynguin.ga.algorithms.abstractmosaalgorithm import AbstractMOSAAlgorithm
 from pynguin.ga.operators.ranking import fast_epsilon_dominance_assignment
+from pynguin.ga.algorithms import constants
 from pynguin.utils.orderedset import OrderedSet
 from pynguin.utils.statistics.runtimevariable import RuntimeVariable
 from pynguin.utils import helpers
-
 
 if TYPE_CHECKING:
     import pynguin.ga.testcasechromosome as tcc
@@ -37,6 +38,15 @@ if TYPE_CHECKING:
 
     from pynguin.ga.algorithms.archive import CoverageArchive
     from pynguin.testcase.execution import SubjectProperties
+
+# TODO!: Check seed.
+# np.random.seed(config.configuration)  # Classic seed value, but you can use any number
+
+
+def scream(*args):
+    print("&\n&\n&")
+    print(*args)
+    print("&\n&\n&")
 
 
 class DynaMOSAAlgorithm(AbstractMOSAAlgorithm):
@@ -47,6 +57,7 @@ class DynaMOSAAlgorithm(AbstractMOSAAlgorithm):
     def __init__(self) -> None:  # noqa: D107
         super().__init__()
         self._goals_manager: _GoalsManager
+        self._temperature: float = constants.START_TEMPERATURE
 
     def generate_tests(self) -> tsc.TestSuiteChromosome:  # noqa: D102
         self.before_search_start()
@@ -60,17 +71,24 @@ class DynaMOSAAlgorithm(AbstractMOSAAlgorithm):
 
         self._population = self._get_random_population()
         self._goals_manager.update(self._population)
+        self._goals_manager.update_current_goals(self._temperature)
 
         # Calculate dominance ranks and crowding distance
-        fronts = self._ranking_function.compute_ranking_assignment(self._population, self._goals_manager.current_goals)
+        fronts = self._ranking_function.compute_ranking_assignment(
+            self._population, self._goals_manager.candidate_goals
+        )
         for i in range(fronts.get_number_of_sub_fronts()):
-            fast_epsilon_dominance_assignment(fronts.get_sub_front(i), self._goals_manager.current_goals)
+            fast_epsilon_dominance_assignment(fronts.get_sub_front(i), self._goals_manager.candidate_goals)
 
         self.before_first_search_iteration(self.create_test_suite(self._archive.solutions))
-        iteration = 1
         start = time.time()
-        while self.resources_left() and len(self._archive.uncovered_goals) > 0:
+        iteration = 1
+        while self.resources_left() and len(self._goals_manager.candidate_goals) > 0:
             self.evolve()
+
+            # TODO!: complete temperature calc.
+            self._temperature = max(self._temperature * constants.TEMPERATURE_MUL, 1.0)
+
             solutions = self.create_test_suite(self._archive.solutions)
             self.after_search_iteration(solutions)
 
@@ -79,6 +97,7 @@ class DynaMOSAAlgorithm(AbstractMOSAAlgorithm):
             sols_times = [tc.get_last_execution_result().execution_time for tc in solutions.test_case_chromosomes]
             sols_mems = [tc.get_last_execution_result().peak_memory_usage for tc in solutions.test_case_chromosomes]
             helpers.print_dict({
+                "type": "iteration",
                 "elapsed_time": time.time() - start,
                 "iteration": iteration,
                 "num_covered_goals": len(self._archive.covered_goals),
@@ -131,7 +150,7 @@ class DynaMOSAAlgorithm(AbstractMOSAAlgorithm):
         # Ranking the union
         self._logger.debug("Union Size = %d", len(union))
         # Ranking the union using the best rank algorithm
-        fronts = self._ranking_function.compute_ranking_assignment(union, self._goals_manager.current_goals)
+        fronts = self._ranking_function.compute_ranking_assignment(union, self._goals_manager._current_goals)
 
         # Form the next population using “preference sorting and non-dominated
         # sorting” on the updated set of goals
@@ -147,7 +166,7 @@ class DynaMOSAAlgorithm(AbstractMOSAAlgorithm):
 
         while remain > 0 and remain >= len(front) != 0:
             # Assign crowding distance to individuals
-            fast_epsilon_dominance_assignment(front, self._goals_manager.current_goals)
+            fast_epsilon_dominance_assignment(front, self._goals_manager._current_goals)
             # Add the individuals of this front
             self._population.extend(front)
             # Decrement remain
@@ -159,11 +178,31 @@ class DynaMOSAAlgorithm(AbstractMOSAAlgorithm):
 
         # Remain is less than len(front[index]), insert only the best one
         if remain > 0 and len(front) != 0:
-            fast_epsilon_dominance_assignment(front, self._goals_manager.current_goals)
+            fast_epsilon_dominance_assignment(front, self._goals_manager._current_goals)
             front.sort(key=lambda t: t.distance, reverse=True)
             self._population.extend(front[k] for k in range(remain))
 
+        # TODO!: delete below lines if not needed anymore.
+        # union: list[tcc.TestCaseChromosome] = [*self._population, *self._breed_next_generation()]
+        # max_branch_fitenss = max(
+        #     max(tch.get_fitness_for(goal) for goal in self._goals_manager._current_goals) for tch in union
+        # )
+        # for tch in union:
+        #     branches_fitness = [
+        #         tch.get_fitness_for(goal) / max_branch_fitenss for goal in self._goals_manager._current_goals
+        #     ]
+        #     result = tch.get_last_execution_result()
+        #     # tch.fitness = (
+        #     #     W_BRANCHES * statistics.mean(branches_fitness)
+        #     #     + W_TIME * result.execution_time / MAX_TIME
+        #     #     + W_MEMORY * result.peak_memory_usage / MAX_MEMORY
+        #     # )
+        #     tch.fitness = tuple(branches_fitness)
+        # union.sort(key=lambda tch: tch.fitness)
+        # self._population = union[: config.configuration.search_algorithm.population]
+
         self._goals_manager.update(self._population)
+        self._goals_manager.update_current_goals(self._temperature)
 
 
 class _GoalsManager:
@@ -183,17 +222,18 @@ class _GoalsManager:
             assert isinstance(fit, bg.BranchCoverageTestFitness)
             branch_fitness_functions.add(fit)
         self._graph = _BranchFitnessGraph(branch_fitness_functions, subject_properties)
+        self._candidate_goals: OrderedSet[bg.BranchCoverageTestFitness] = self._graph.root_branches
         self._current_goals: OrderedSet[bg.BranchCoverageTestFitness] = self._graph.root_branches
-        self._archive.add_goals(self._current_goals)  # type: ignore[arg-type]
+        self._archive.set_current_goals(self._current_goals)  # type: ignore[arg-type]
 
     @property
-    def current_goals(self) -> OrderedSet[ff.FitnessFunction]:
+    def candidate_goals(self) -> OrderedSet[bg.BranchCoverageTestFitness]:
         """Provides the set of current goals.
 
         Returns:
             The set of current goals
         """
-        return self._current_goals  # type: ignore[return-value]
+        return self._candidate_goals  # type: ignore[return-value]
 
     def update(self, solutions: list[tcc.TestCaseChromosome]) -> None:
         """Updates the information on the current goals from the found solutions.
@@ -202,24 +242,77 @@ class _GoalsManager:
             solutions: The previously found solutions
         """
         # We must keep iterating, as long as new goals are added.
-        new_goals_added = True
-        while new_goals_added:
-            self._archive.update(solutions)
-            covered = self._archive.covered_goals
-            new_goals: OrderedSet[bg.BranchCoverageTestFitness] = OrderedSet()
-            new_goals_added = False
-            for old_goal in self._current_goals:
-                if old_goal in covered:
-                    children = self._graph.get_structural_children(old_goal)
-                    for child in children:
-                        if child not in self._current_goals and child not in covered:
-                            new_goals.add(child)
-                            new_goals_added = True
-                else:
-                    new_goals.add(old_goal)
-            self._current_goals = new_goals
-            self._archive.add_goals(self._current_goals)  # type: ignore[arg-type]
-        self._logger.debug("current goals after update: %s", self._current_goals)
+        print("--> goal_manager.update")
+        self._archive.update(solutions)
+        covered = self._archive.covered_goals
+        for old_goal in self._current_goals:
+            if old_goal in covered:
+                self._candidate_goals.remove(old_goal)
+                children = self._graph.get_structural_children(old_goal)
+                for child in children:
+                    if child not in self._candidate_goals and child not in covered:
+                        self._candidate_goals.add(child)
+
+        self._logger.debug("current goals after update: %s", self._candidate_goals)
+        print("<-- goal_manager.update")
+
+    def update_current_goals(self, temperature: float) -> None:
+        print("--> goal_manager.update_current_goals")
+        # TODO!: a branch has multiple predecessors.
+        if len(self._candidate_goals) == 0:
+            return
+
+        probs: list[float] = []
+        for goal in self._candidate_goals:
+            # predecessors: list[bg.BranchCoverageTestFitness] = []
+            # cur_goal = goal
+            # TODO!: Fix below.
+            # while True:
+            #     try:
+            #         cur_goal = next(self._graph._graph.predecessors(cur_goal))
+            #         if cur_goal in predecessors:
+            #             break
+            #         predecessors.append(cur_goal)
+            #     except StopIteration:
+            #         break
+            # branch_time_est = 0
+            # branch_memory_est = 0
+            # for branch in reversed(predecessors):
+            #     branch_time_est = branch_time_est * (1 - EMA_ALPHA) + branch.execution_time * EMA_ALPHA
+            #     branch_memory_est = branch_memory_est * (1 - EMA_ALPHA) + branch.peak_memory_usage * EMA_ALPHA
+
+            predecessors: list[bg.BranchCoverageTestFitness] = list(self._graph._graph.predecessors(goal))
+            branch_time_est = 0
+            branch_memory_est = 0
+            if predecessors:
+                branch_time_est = statistics.mean(p.execution_time for p in predecessors)
+                branch_memory_est = statistics.mean(p.peak_memory_usage for p in predecessors)
+
+            probs.append(
+                math.exp(
+                    -(
+                        constants.C_TIME * branch_time_est / constants.MAX_TIME
+                        + constants.C_MEMORY * branch_memory_est / constants.MAX_MEMORY
+                    )
+                    / temperature
+                )
+            )
+        probs = probs / np.sum(probs)
+
+        self._current_goals = OrderedSet(
+            list(
+                np.random.choice(
+                    self._candidate_goals,
+                    size=min(len(self._candidate_goals), constants.CUR_GOAL_COUNT, len([1 for p in probs if p > 0])),
+                    replace=False,
+                    p=probs,
+                )
+            )
+        )
+        assert len(self._current_goals) != 0
+        self._archive.set_current_goals(self._current_goals)
+
+        print("<-- goal_manager.update_current_goals")
 
 
 class _BranchFitnessGraph:

@@ -109,11 +109,11 @@ class WholeSuiteAlgorithm(GenerationAlgorithm[arch.CoverageArchive, tsc.TestSuit
         if not config.configuration.search_algorithm.use_archive:
             return
 
-        before = len(self._archive.uncovered_goals)
+        before = len(self._archive.current_goals)
         for suite in self._population:
             self._archive.update(suite.test_case_chromosomes)
         # New goals were covered
-        if before != len(self._archive.uncovered_goals):
+        if before != len(self._archive.current_goals):
             exclude_code: set[int] = set()
             exclude_true: set[int] = set()
             exclude_false: set[int] = set()

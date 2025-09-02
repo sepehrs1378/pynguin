@@ -15,7 +15,8 @@ import pynguin.ga.chromosome as chrom
 import pynguin.ga.computations as ff
 
 from pynguin.utils.orderedset import OrderedSet
-
+from pynguin.ga.algorithms.constants import W_TIME, MAX_TIME, W_MEMORY, MAX_MEMORY
+from pynguin.testcase import execution
 
 C = TypeVar("C", bound=chrom.Chromosome)
 
@@ -85,6 +86,23 @@ class DominanceComparator(Generic[C]):
                 dominate_2 = True
                 if dominate_1:
                     return 0
+
+        result_1: execution.ExecutionResult = chromosome_1.get_last_execution_result()
+        result_2: execution.ExecutionResult = chromosome_2.get_last_execution_result()
+        resource_fitness_1 = (
+            W_TIME * result_1.execution_time / MAX_TIME + W_MEMORY * result_1.peak_memory_usage / MAX_MEMORY
+        )
+        resource_fitness_2 = (
+            W_TIME * result_2.execution_time / MAX_TIME + W_MEMORY * result_2.peak_memory_usage / MAX_MEMORY
+        )
+        if resource_fitness_1 < resource_fitness_2:
+            dominate_1 = True
+            if dominate_2:
+                return 0
+        elif resource_fitness_2 < resource_fitness_1:
+            dominate_2 = True
+            if dominate_1:
+                return 0
 
         if dominate_1 == dominate_2:
             return 0  # no one dominates the other
